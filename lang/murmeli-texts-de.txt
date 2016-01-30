@@ -1,0 +1,58 @@
+# German texts for Murmeli
+
+[startupwizard]
+title=Murmeli Startup Wizard
+intro.heading=Murmeli ist ein Kommunikationsmittel, für dich.  Unter deine Kontrolle.
+intro.description1=Mit Murmeli ist alles was du schickst und empfängst verschlüsselt, and auschliesslich nur für dich und deine Freunde lesbar.
+intro.description2=Es gibt keinen zentralen Server, es läuft alles nur auf den Rechnern die ihr steuert und vertraut.  Es ist Email, es ist Bloggen, es ist Foto-verteilen, es ist Quatschen.
+intro.description3=Zuerst gibt es ein paar Aufstartschritte zu erledigen, und dann kannst du beginnen, dich mit deinen Freunden zu verbinden.
+dependencies.heading=Abhängigkeiten
+dependencies.intro=Murmeli braucht folgende Programmen und Bibliotheken um zu laufen
+dependencies.pyqt=PyQt (und Qt), für Dialoge und Darstellung
+dependencies.gnupg=Python-GnuPG (und GPG) für Ver- und Entschlüsselung
+dependencies.pymongo=Pymongo (und MongoDB) für das Speichern alle Nachrichten
+dependencies.allfound=Das sieht gut aus, jetzt weiter!
+dependencies.notallfound=Murmeli kann nicht ohne diese laufen.  Bitte nochmals prüfen und ggf. installieren.
+dependencies.alsotor=Murmeli braucht auch Tor zu kommunizieren, dies wird später geprüft.
+dep.found=Gefunden
+dep.notfound=Fehlt
+paths.heading=Dateipfade
+paths.configfile=Konfigurationsdatei
+paths.datadir=Data Verzeichnis,<br>wo alle Nachrichten gespeichert werden
+paths.mongoexe=Pfad zum Mongo
+paths.torexe=Pfad zum Tor
+paths.considerencryption=Es könnte sich lohnen, das Data Verzeichnis innerhalb einen<br>verschlüsselten Volume zu platzieren, falls vorhanden.
+paths.failedtocreatedatadir=Der Versuch, die Verzeichnisse zu kreieren, ist fehlgeschlagen.<br>Bitte einen anderen Pfad auswählen.
+services.heading=Dienstleistungen
+services.intro=Murmeli braucht folgende Dienstleistungen initialisiert und gestartet zu sein
+services.mongo=Mongo, für die Datenbank
+services.gpg=GPG, für die Keyringverwaltung
+services.tor=Tor, für die Routing von Nachrichten
+services.abouttostart=Diese Dienstleistungen werden jetzt gestartet...
+services.allstarted=Alle Dienstleistungen wurden erfolgreich gestartet.
+services.notallstarted=Nicht alle Dienstleistungen konnten gestartet werden.  Bitte prüfen.
+keygen.heading=Key Generierung
+keygen.introemptykeyring=Dein Schlüsselbund ist momentan leer, das heisst es muss ein Schlüsselpaar generiert werden.
+keygen.introsinglekey='Weiter' klicken um mit diesem Schlüsselpaar fortzusetzen.
+keygen.introselectkey=Bitte einen von den folgenden Schlüsseln auswählen, oder einen neuen generieren.
+keygen.param.name=Name oder Spitzname
+keygen.param.email=Email (optional)
+keygen.param.comment=Bemerkung (optional)
+keygen.mighttakeawhile=Die Schlüsselgenerierung könnte ein paar Minuten in Anspruch nehmen.  Bitte Geduld haben.
+finished.heading=Aufsetzen abgeschlossen
+finished.congrats=Glückwunsch, Murmeli ist jetzt startbereit.
+finished.nowstart=Jetzt kannst du Murmeli starten und beginnen, Freunde zu kontaktieren.
+finished.yourid=Du kannst ihnen deinen Murmeli-Id geben: <big><code>%s</code></big>.
+
+[mainwindow]
+title=Murmeli
+
+[button]
+back=Zurück
+exit=Beenden
+next=Weiter
+ok=OK
+cancel=Abbrechen
+finish=Fertig
+generate=Generieren
+

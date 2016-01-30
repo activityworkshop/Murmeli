@@ -1,0 +1,58 @@
+# English texts for Murmeli
+
+[startupwizard]
+title=Murmeli Startup Wizard
+intro.heading=Murmeli is a way for you to communicate.  Under your control.
+intro.description1=With Murmeli, everything you send and receive is encrypted, so that only you and your friends can read it.
+intro.description2=There is no central server, everything runs on the computers which you control.  It's email, it's blogging, it's photo sharing, it's social.
+intro.description3=There are just a few steps needed to setup your system, and then you can begin connecting to your friends.
+dependencies.heading=Dependencies
+dependencies.intro=Murmeli needs all these additional programs in order to run
+dependencies.pyqt=PyQt (and Qt), for all dialogs and controls
+dependencies.gnupg=Python-GnuPG (and GPG) for encryption
+dependencies.pymongo=Pymongo (and MongoDB) for storing messages
+dependencies.allfound=That looks good, now onto the next step!
+dependencies.notallfound=Murmeli can't run without all these programs. Please check them again.
+dependencies.alsotor=Murmeli also requires tor to be installed, this will be checked shortly.
+dep.found=Found
+dep.notfound=Missing
+paths.heading=File paths
+paths.configfile=Settings file
+paths.datadir=Data directory,<br>where all messages will be stored
+paths.mongoexe=Path to mongo executable
+paths.torexe=Path to tor executable
+paths.considerencryption=Consider putting your data directory inside an encrypted volume, if you have one.
+paths.failedtocreatedatadir=Failed to create the data directories.<br>Please choose another path.
+services.heading=Services
+services.intro=Murmeli needs the following services to be initialised and started
+services.mongo=Mongo, for the database
+services.gpg=GPG, for the keyring management
+services.tor=Tor, for the message routing
+services.abouttostart=Each of these services will now be started...
+services.allstarted=All services were started successfully.
+services.notallstarted=Not all the services were started.  Please check the failed ones.
+keygen.heading=Key Generation
+keygen.introemptykeyring=Your keyring is currently empty, so you need to generate a new keypair.
+keygen.introsinglekey=Press 'Next' to continue using this key.
+keygen.introselectkey=You can select one of these keys from your keyring, or generate a new one.
+keygen.param.name=Name or nickname
+keygen.param.email=Email (optional)
+keygen.param.comment=Comment (optional)
+keygen.mighttakeawhile=The key generation is complex and may take up to one or two minutes.  Please be patient.
+finished.heading=Finished Setup
+finished.congrats=Congratulations, Murmeli is now ready to run.
+finished.nowstart=Now you can start Murmeli itself and start adding friends.
+finished.yourid=You can give your Murmeli id to them: <big><code>%s</code></big>.
+
+[mainwindow]
+title=Murmeli
+
+[button]
+back=Back
+exit=Exit
+next=Next
+ok=OK
+cancel=Cancel
+finish=Finish
+generate=Generate
+
