@@ -10,8 +10,10 @@
 
 import sys
 from PyQt4 import QtGui, QtCore
+from gui import GuiWindow
 from i18n import I18nManager
 from config import Config
+from pages import PageServer
 from dbclient import DbClient
 from torclient import TorClient
 
@@ -21,11 +23,17 @@ import signal
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 # Class for main window
-class MainWindow(QtGui.QMainWindow):
+class MainWindow(GuiWindow):
 	def __init__(self, *args):
-		QtGui.QMainWindow.__init__(*(self,) + args)
+		GuiWindow.__init__(*(self,) + args)
+		self.toolbar = self.makeToolbar([
+			("images/toolbar-home.png",     self.onHomeClicked,     "mainwindow.toolbar.home"),
+			("images/toolbar-people.png",   self.onContactsClicked, "mainwindow.toolbar.contacts"),
+			("images/toolbar-messages.png", self.onMessagesClicked, "mainwindow.toolbar.messages"),
+			("images/toolbar-calendar.png", self.onCalendarClicked, "mainwindow.toolbar.calendar"),
+			("images/toolbar-settings.png", self.onSettingsClicked, "mainwindow.toolbar.settings") ])
+		self.addToolBar(self.toolbar)
 		self.setContextMenuPolicy(QtCore.Qt.NoContextMenu)
-		self.setCentralWidget(QtGui.QLabel("That's right, the main Murmeli bits are still missing!"))
 		# status bar
 		self.statusbar = QtGui.QStatusBar(self)
 		self.statusbar.setObjectName("statusbar")
@@ -38,6 +46,8 @@ class MainWindow(QtGui.QMainWindow):
 		self.setWindowIcon(icon)
 
 		self.setStatusTip("Murmeli")
+		self.setPageServer(PageServer())
+		self.navigateTo("/")
 		# we want to be notified of Config changes
 		Config.registerSubscriber(self)
 
@@ -45,7 +55,27 @@ class MainWindow(QtGui.QMainWindow):
 		DbClient.stopDatabase()
 		TorClient.stopTor()
 
+	def makeToolbar(self, deflist):
+		'''Given a list of (image, method, tooltip), make a QToolBar with those actions'''
+		toolbar = QtGui.QToolBar(self)
+		toolbar.setFloatable(False)
+		toolbar.setMovable(False)
+		toolbar.setIconSize(QtCore.QSize(48, 48))
+		self.toolbarActions = []
+		for actdef in deflist:
+			action = toolbar.addAction(QtGui.QIcon(actdef[0]), "_", actdef[1])
+			action.tooltipkey = actdef[2]
+			self.toolbarActions.append(action)
+		self.configUpdated()  # to set the tooltips
+		return toolbar
+
+	def onHomeClicked(self):     self.navigateTo("/")
+	def onContactsClicked(self): self.navigateTo("/contacts/")
+	def onMessagesClicked(self): self.navigateTo("/messages/")
+	def onCalendarClicked(self): self.navigateTo("/calendar/")
+	def onSettingsClicked(self): self.navigateTo("/settings/")
 
 	def configUpdated(self):
-		pass
+		for a in self.toolbarActions:
+			a.setToolTip(I18nManager.getText(a.tooltipkey))
 

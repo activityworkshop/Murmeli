@@ -17,3 +17,18 @@ Please try out the code and report back any difficulties encountered.  The tool 
 
 All feedback and help is very welcome.
 
+## Known issues
+
+* The DbClient checks to see if the 'mongod' database server is running or not, to see whether
+ it needs to be started.  On Linux it can do this by trying to create a 'MongoClient' object,
+ and if the server isn't running, this will fail with a ConnectionFailure: Connection refused.
+ From some preliminary tests on Windows, it seems that it behaves differently and the client
+ object can be created even if the mongod server isn't even installed!  The result is that the
+ DbClient thinks that mongod is already running, and doesn't try to start it.
+* Mongod requires a Windows hotfix to be installed if you're using Windows 7.
+* Murmeli doesn't yet use any kind of authentication for the access to the Mongod server.  It's
+ restricted to connections from the same machine, but other users on the same machine can connect
+ to the server and read all the contents of the database.  This needs to be fixed at some point.
+* The startup wizard assumes that the 'gpg' executable is in the path already, but this probably
+ needs to be added to the panel in the same way that the tor and mongod paths are specified.
+ It would be nice to be able to select the paths with a file dialog too.

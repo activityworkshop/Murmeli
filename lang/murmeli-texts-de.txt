@@ -46,6 +46,23 @@ finished.yourid=Du kannst ihnen deinen Murmeli-Id geben: <big><code>%s</code></b
 
 [mainwindow]
 title=Murmeli
+toolbar.home=Zuhause
+toolbar.contacts=Kontakte
+toolbar.messages=Nachrichten
+toolbar.calendar=Kalender
+toolbar.settings=Einstellungen
+
+[contacts]
+title=Kontakte
+
+[messages]
+title=Nachrichten
+
+[calendar]
+title=Kalender
+
+[settings]
+title=Einstellungen
 
 [button]
 back=Zurück
