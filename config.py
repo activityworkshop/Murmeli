@@ -23,6 +23,8 @@ class Config():
 	properties = {}
 	# keys
 	KEY_LANGUAGE = "gui.language"
+	KEY_ALLOW_FRIENDS_TO_SEE_FRIENDS = "privacy.friendsseefriends"
+	KEY_ALLOW_FRIEND_REQUESTS = "privacy.allowfriendrequests"
 	# paths
 	KEY_DATA_DIR = "path.data"
 	KEY_MONGO_EXE = "path.mongoexe"
@@ -46,6 +48,9 @@ class Config():
 		Config.properties[Config.KEY_LANGUAGE]  = "en"
 		Config.properties[Config.KEY_MONGO_EXE] = "mongo"
 		Config.properties[Config.KEY_TOR_EXE]   = "tor"
+		# Default privacy settings
+		Config.properties[Config.KEY_ALLOW_FRIENDS_TO_SEE_FRIENDS] = True
+		Config.properties[Config.KEY_ALLOW_FRIEND_REQUESTS] = True
 
 		# Locate file in home directory, and load it if found
 		try:
@@ -55,6 +60,15 @@ class Config():
 				for opt in parser.options(sec):
 					Config.properties[sec + '.' + opt] = parser.get(sec, opt)
 		except configparser.MissingSectionHeaderError: pass
+		# Convert strings to True/False
+		Config._fixBooleanProperty(Config.KEY_ALLOW_FRIENDS_TO_SEE_FRIENDS)
+		Config._fixBooleanProperty(Config.KEY_ALLOW_FRIEND_REQUESTS)
+
+	@staticmethod
+	def _fixBooleanProperty(propName):
+		value = Config.getProperty(propName)
+		if value and type(value) == str:
+			Config.properties[propName] = (value == "True")
 
 	@staticmethod
 	def getProperty(key):

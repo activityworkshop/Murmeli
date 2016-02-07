@@ -1,5 +1,6 @@
 from i18n import I18nManager
 from config import Config
+from dbclient import DbClient
 from pagetemplate import PageTemplate
 import os.path
 
@@ -132,9 +133,35 @@ class SettingsPageSet(PageSet):
 		self.formtemplate = PageTemplate('settingsform')
 
 	def servePage(self, view, url, params):
-		contents = self.buildPage({'pageTitle' : I18nManager.getText("settings.title"),
-			'pageBody' : self.formtemplate.getHtml(),
-			'pageFooter' : "<p>Footer</p>"})
-		view.setHtml(contents)
+		if url == "/edit":
+			selectedLang = params.get('lang', None)
+			if selectedLang and len(selectedLang) == 2:
+				Config.setProperty(Config.KEY_LANGUAGE, selectedLang)
+				# I18nManager will be triggered here because it listens to the Config
+			fsf = params.get('friendsseefriends', None)
+			friendsseefriends = fsf is not None and len(fsf) > 0
+			Config.setProperty(Config.KEY_ALLOW_FRIENDS_TO_SEE_FRIENDS, friendsseefriends)
+			# If Config has changed, may need to update profile to include/hide friends info
+			DbClient.updateContactList(friendsseefriends)
+			# When friends are notified next time, the profile's hash will be calculated and sent
+			afw = params.get('allowfriendrequests', None)
+			allowfriendrequests = afw is not None and len(afw) > 0
+			Config.setProperty(Config.KEY_ALLOW_FRIEND_REQUESTS, allowfriendrequests)
+			# Save config to file in case it's changed
+			Config.save()
+			contents = self.buildPage({'pageTitle' : I18nManager.getText("settings.title"),
+				'pageBody' : "<p>Settings changed... should I go back to settings or back to home now?</p>",
+				'pageFooter' : "<p>Footer</p>"})
+			view.setHtml(contents)
+		else:
+			pageProps = {"friendsseefriends" : ("checked" if Config.getProperty(Config.KEY_ALLOW_FRIENDS_TO_SEE_FRIENDS) else ""),
+				"allowfriendrequests" : ("checked" if Config.getProperty(Config.KEY_ALLOW_FRIEND_REQUESTS) else ""),
+				"language_en":"", "language_de":""}
+			pageProps["language_" + Config.getProperty(Config.KEY_LANGUAGE)] = "selected"
+			#print("body:", self.formtemplate.getHtml(pageProps))
+			contents = self.buildPage({'pageTitle' : I18nManager.getText("settings.title"),
+				'pageBody' : self.formtemplate.getHtml(pageProps),
+				'pageFooter' : "<p>Footer</p>"})
+			view.setHtml(contents)
 
 

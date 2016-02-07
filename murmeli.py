@@ -51,8 +51,7 @@ class MainWindow(GuiWindow):
 		# we want to be notified of Config changes
 		Config.registerSubscriber(self)
 
-		# TODO: Both tor and mongo should be stopped on exit, but for now we don't need them
-		DbClient.stopDatabase()
+		# TODO: tor should be stopped on exit, but for now we don't need it
 		TorClient.stopTor()
 
 	def makeToolbar(self, deflist):
@@ -78,4 +77,10 @@ class MainWindow(GuiWindow):
 	def configUpdated(self):
 		for a in self.toolbarActions:
 			a.setToolTip(I18nManager.getText(a.tooltipkey))
+
+	def closeEvent(self, event):
+		print("Closing Murmeli")
+		DbClient.stopDatabase()
+		TorClient.stopTor()
+		event.accept()
 

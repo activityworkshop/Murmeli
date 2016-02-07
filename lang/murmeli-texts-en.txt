@@ -63,6 +63,10 @@ title=Calendar
 
 [settings]
 title=Settings
+intro=Here you can change your language and privacy settings:
+language=Language
+friendsseefriends=Friends can see your friends
+allowfriendrequests=Allow unverified friend requests
 
 [button]
 back=Back
@@ -72,4 +76,5 @@ ok=OK
 cancel=Cancel
 finish=Finish
 generate=Generate
+change=Change
 

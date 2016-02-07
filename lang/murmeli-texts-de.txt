@@ -63,6 +63,10 @@ title=Kalender
 
 [settings]
 title=Einstellungen
+intro=Hier kannst du die Einstellungen für Sprache und Veröffentlichung setzen:
+language=Sprache
+friendsseefriends=Kontakte sind für andere sichtbar
+allowfriendrequests=Anfragen von Unbekannten erlaubt
 
 [button]
 back=Zurück
@@ -72,4 +76,5 @@ ok=OK
 cancel=Abbrechen
 finish=Fertig
 generate=Generieren
+change=Ändern
 

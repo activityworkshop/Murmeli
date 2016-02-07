@@ -1,1 +1,19 @@
-<p>Here are the settings.</p>
+<p>{{langs['settings.intro']}}</p>
+
+<form action='http://murmeli/settings/edit' method='post'>
+<table border='0' cellspacing='3'>
+<tr><td>{{langs['settings.language']}}</td><td>:</td>
+<td><select name='lang'>
+<option value='en' {{language_en}}>English</option>
+<option value='de' {{language_de}}>Deutsch</option>
+</select></td></tr>
+<tr><td>{{langs['settings.friendsseefriends']}}</td><td>:</td>
+<td><input type='checkbox' name='friendsseefriends' value='yes' {{friendsseefriends}}></td></tr>
+<tr><td>{{langs['settings.allowfriendrequests']}}</td><td>:</td>
+<td><input type='checkbox' name='allowfriendrequests' value='yes' {{allowfriendrequests}}></td></tr>
+<tr><td colspan="3">
+<input type='submit' value='{{langs['button.change']}}' class='reverseButton'>
+</td></tr></table>
+</form>
+
+<p><i>Other possible settings could include - relay messages Y/N, maximum size of relayed message, ...</i></p>
