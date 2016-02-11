@@ -41,10 +41,6 @@ class MainWindow(GuiWindow):
 
 		self.setWindowTitle(I18nManager.getText("mainwindow.title"))
 
-		icon = QtGui.QIcon()
-		icon.addPixmap(QtGui.QPixmap("images/window-icon.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-		self.setWindowIcon(icon)
-
 		self.setStatusTip("Murmeli")
 		self.setPageServer(PageServer())
 		self.navigateTo("/")

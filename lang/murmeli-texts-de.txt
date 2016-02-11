@@ -54,6 +54,7 @@ toolbar.settings=Einstellungen
 
 [contacts]
 title=Kontakte
+link.showstorm=Netzwerk skizzieren
 
 [messages]
 title=Nachrichten

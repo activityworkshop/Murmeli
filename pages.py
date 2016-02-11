@@ -4,6 +4,11 @@ from dbclient import DbClient
 from pagetemplate import PageTemplate
 import os.path
 
+
+# Class for interacting with page templates by adding properties
+class Bean: pass
+
+
 class PageServer:
 	'''PageServer, containing several page sets'''
 	def __init__(self):
@@ -94,8 +99,21 @@ class ContactsPageSet(PageSet):
 		self.listtemplate = PageTemplate('contactlist')
 
 	def servePage(self, view, url, params):
+		self.requirePageResources(["avatar-none.jpg", "status-self.png"])
+		# Build list of contacts
+		userboxes = []
+		for p in DbClient.getContactList():
+			box = Bean()
+			box.dispName = p['displayName']
+			box.torid = p['torid']
+			box.tilestyle = "contacttileselected"
+			box.status = p['status']
+			box.isonline = True
+			userboxes.append(box)
+		# expand templates using current details
+		lefttext = self.listtemplate.getHtml({'webcachedir' : Config.getWebCacheDir(), 'contacts' : userboxes})
 		contents = self.buildPage({'pageTitle' : I18nManager.getText("contacts.title"),
-			'pageBody' : self.listtemplate.getHtml(),
+			'pageBody' : lefttext,
 			'pageFooter' : "<p>Footer</p>"})
 		view.setHtml(contents)
 

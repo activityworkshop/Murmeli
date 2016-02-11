@@ -60,6 +60,10 @@ class GuiWindow(QtGui.QMainWindow):
 		self.webpane = WebShell(self)
 		self.setCentralWidget(self.webpane)
 
+		icon = QtGui.QIcon()
+		icon.addPixmap(QtGui.QPixmap("images/window-icon.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+		self.setWindowIcon(icon)
+
 	def setPageServer(self, server):
 		self.pageServer = server
 
