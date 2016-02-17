@@ -54,6 +54,12 @@ toolbar.settings=Einstellungen
 
 [contacts]
 title=Kontakte
+details.name=Name
+details.displayname=Für mich so anzeigen
+details.description=Beschreibung
+details.interests=Interessen
+details.birthday=Geburtstag
+link.addnewcontact=Kontakt hinzufügen
 link.showstorm=Netzwerk skizzieren
 
 [messages]

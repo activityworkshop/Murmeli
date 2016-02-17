@@ -77,6 +77,19 @@ class PageSet:
 			"<div class='popuppanel' id='popup'>Here's the message</div>",
 			"</body></html>"]) % params
 
+	# General page-building method using a two-column template with widths 1third/2thirds
+	def buildTwoColumnPage(self, params):
+		self.requirePageResource("default.css")
+		return ''.join([self.standardHead,
+			"<body>",
+			"<table border='0' width='100%%'><tr><td colspan='2'><div class='fancyheader'><p>%(pageTitle)s</p></div></td></tr>",
+			"<tr valign='top'><td width='33%%'><div class='genericbox'>%(leftColumn)s</div></td>",
+			"<td width='67%%'><div class='genericbox'>%(rightColumn)s</div></td></tr>",
+			"<tr><td colspan='2'><div class='footer'>%(pageFooter)s</div></td></tr></table>",
+			"<div class='overlay' id='overlay' onclick='hideOverlay()'></div>",
+			"<div class='popuppanel' id='popup'>Here's the message</div>",
+			"</body></html>"]) % params
+
 
 # Default page server, just for home page
 class DefaultPageSet(PageSet):
@@ -97,9 +110,13 @@ class ContactsPageSet(PageSet):
 	def __init__(self):
 		PageSet.__init__(self, "contacts")
 		self.listtemplate = PageTemplate('contactlist')
+		self.detailstemplate = PageTemplate('contactdetails')
 
 	def servePage(self, view, url, params):
-		self.requirePageResources(["avatar-none.jpg", "status-self.png"])
+		self.requirePageResources(['button-addperson.png', 'button-drawgraph.png'])
+		self.requirePageResources(['avatar-none.jpg', 'status-self.png', 'status-requested.png', 'status-untrusted.png', 'status-trusted.png'])
+		selectedprofile = DbClient.getProfile(None)
+		currId = str(selectedprofile['torid'])
 		# Build list of contacts
 		userboxes = []
 		for p in DbClient.getContactList():
@@ -112,8 +129,11 @@ class ContactsPageSet(PageSet):
 			userboxes.append(box)
 		# expand templates using current details
 		lefttext = self.listtemplate.getHtml({'webcachedir' : Config.getWebCacheDir(), 'contacts' : userboxes})
-		contents = self.buildPage({'pageTitle' : I18nManager.getText("contacts.title"),
-			'pageBody' : lefttext,
+		pageProps = {"webcachedir" : Config.getWebCacheDir(), 'person':selectedprofile}
+		righttext = self.detailstemplate.getHtml(pageProps)
+		contents = self.buildTwoColumnPage({'pageTitle' : I18nManager.getText("contacts.title"),
+			'leftColumn' : lefttext,
+			'rightColumn' : righttext,
 			'pageFooter' : "<p>Footer</p>"})
 		view.setHtml(contents)
 
