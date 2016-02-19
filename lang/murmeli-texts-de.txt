@@ -56,6 +56,7 @@ toolbar.settings=Einstellungen
 title=Kontakte
 details.name=Name
 details.displayname=Für mich so anzeigen
+details.owndescription=Wer bist du?
 details.description=Beschreibung
 details.interests=Interessen
 details.birthday=Geburtstag

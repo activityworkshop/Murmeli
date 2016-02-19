@@ -56,6 +56,7 @@ toolbar.settings=Settings
 title=Contacts
 details.name=Name
 details.displayname=Display for me as
+details.owndescription=Describe yourself
 details.description=Description
 details.interests=Interests
 details.birthday=Birthday

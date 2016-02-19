@@ -1,0 +1,28 @@
+<script type="text/javascript">
+	function updateProfilePic(fname) {
+		document.getElementById('nailpic').src = "file://" + fname;
+		document.getElementById('profilepicpath').value = fname;
+	}
+</script>
+<div class='genericbox' style='float:left;margin:10px'><img src='file://{{webcachedir}}/avatar-{{person['torid']}}.jpg' width='128' height='128' id='nailpic'><br style='clear:both'>
+<a href='/special/selectfile'>{{langs['button.change']}}</a></div>
+
+<h1>{{person['displayName']}}</h1>
+<p>This is the page for <big><b>my own</b></big> details, so these are more editable than most!  All are optional, but at least a name (or nickname) and an avatar picture would be useful for your friends...</p>
+<form name="detailsform" method="post" action="http://murmeli/contacts/{{person['torid']}}/submitedit">
+<table style="border:1px solid #a87">
+	<tr><td>{{langs['contacts.details.name']}}</td>
+		<td><input type="text" value="{{person['name']}}" name="name"></td></tr>
+	<tr><td>{{langs['contacts.details.displayname']}}</td>
+		<td><input type="text" value="{{person['displayName']}}" name="displayName"></td></tr>
+	<tr><td>{{langs['contacts.details.owndescription']}}</td>
+		<td><textarea name="description">{{person['description']}}</textarea></td></tr>
+	<tr><td>{{langs['contacts.details.interests']}}</td>
+		<td><textarea name="interests">{{person['interests']}}</textarea></td></tr>
+	<tr><td>{{langs['contacts.details.birthday']}}</td>
+		<td><input type="text" value="{{person['birthday']}}" name="birthday"></td></tr>
+</table>
+<input type="hidden" name="profilepicpath" id="profilepicpath" value="">
+<p><a class='reversebutton' href='/contacts/{{person['torid']}}'>{{langs['button.cancel']}}</a>
+ or <input type="submit" class="reversebutton" value="{{langs['button.ok']}}"></p>
+</form>

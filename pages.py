@@ -2,6 +2,8 @@ from i18n import I18nManager
 from config import Config
 from dbclient import DbClient
 from pagetemplate import PageTemplate
+from contacts import Contacts
+import re               # for regular expressions
 import os.path
 
 
@@ -111,31 +113,74 @@ class ContactsPageSet(PageSet):
 		PageSet.__init__(self, "contacts")
 		self.listtemplate = PageTemplate('contactlist')
 		self.detailstemplate = PageTemplate('contactdetails')
+		self.editowndetailstemplate = PageTemplate('editcontactself')
+		self.editdetailstemplate = PageTemplate('editcontact')
 
 	def servePage(self, view, url, params):
 		self.requirePageResources(['button-addperson.png', 'button-drawgraph.png'])
+		contents = None
+		userid   = None
+		pageParams = {}
+		# Split url into components /userid/command
+		command = [i for i in url.split("/") if i != ""]
+		if len(command) > 0 and len(command[0]) == 16 and re.match("([a-zA-Z0-9]+)$", command[0]):
+			userid = command[0]
+			# check for command edit or submit-edit
+			if len(command) == 2:
+				if command[1] == "edit":
+					contents = self.generateListPage(doEdit=True, userid=userid) # show edit fields
+				elif command[1] == "submitedit":
+					DbClient.updateContact(userid, params)
+					# don't generate contents, go back to details
+
+		# If we haven't got any contents yet, then do a show details
+		if not contents:
+			# Show details for selected userid (or for self if userid is None)
+			contents = self.generateListPage(doEdit=False, userid=userid, extraParams=pageParams)
+
+		view.setHtml(contents)
+
+	# Generate a page for listing all the contacts and showing the details of one of them
+	def generateListPage(self, doEdit=False, userid=None, extraParams=None):
 		self.requirePageResources(['avatar-none.jpg', 'status-self.png', 'status-requested.png', 'status-untrusted.png', 'status-trusted.png'])
-		selectedprofile = DbClient.getProfile(None)
+		selectedprofile = DbClient.getProfile(userid)
+		if selectedprofile is None:
+			userid = None
+			selectedprofile = DbClient.getProfile()
 		currId = str(selectedprofile['torid'])
+
 		# Build list of contacts
 		userboxes = []
 		for p in DbClient.getContactList():
+			if userid is None: userid = p['torid']
 			box = Bean()
 			box.dispName = p['displayName']
 			box.torid = p['torid']
-			box.tilestyle = "contacttileselected"
+			box.tilestyle = "contacttile" + ("selected" if p['torid'] == userid else "")
 			box.status = p['status']
-			box.isonline = True
+			box.isonline = Contacts.isOnline(box.torid)
 			userboxes.append(box)
 		# expand templates using current details
 		lefttext = self.listtemplate.getHtml({'webcachedir' : Config.getWebCacheDir(), 'contacts' : userboxes})
 		pageProps = {"webcachedir" : Config.getWebCacheDir(), 'person':selectedprofile}
-		righttext = self.detailstemplate.getHtml(pageProps)
+		# Add extra parameters if necessary
+		if extraParams:
+			pageProps.update(extraParams)
+
+		# Which template to use depends on whether we're just showing or also editing
+		if doEdit:
+			# Use two different details templates, one for self and one for others
+			detailstemplate = self.editowndetailstemplate if userid == DbClient.getOwnTorId() else self.editdetailstemplate
+			righttext = detailstemplate.getHtml(pageProps)
+		else:
+			detailstemplate = self.detailstemplate  # just show
+			righttext = detailstemplate.getHtml(pageProps)
+
 		contents = self.buildTwoColumnPage({'pageTitle' : I18nManager.getText("contacts.title"),
 			'leftColumn' : lefttext,
 			'rightColumn' : righttext,
 			'pageFooter' : "<p>Footer</p>"})
-		view.setHtml(contents)
+		return contents
 
 
 # Messages page server, for showing list of messages etc

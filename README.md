@@ -1,7 +1,7 @@
 # Murmeli
 An encrypted, serverless friend-to-friend messaging service.
 
-The tool is very much still under development.  The code published here currently just covers the startup wizard, not (yet) the Murmeli application itself but just the step-by-step tool to check dependencies, set up the database, connect to tor and create the unique keypair for encryption.  The rest of the code will follow as it becomes more stable, but feedback is welcome on the wizard code.
+The tool is very much still under development.  The code published here currently just covers the startup wizard and a few simple components of the Murmeli application itself.  This includes the step-by-step tool to check dependencies, set up the database, connect to tor and create the unique keypair for encryption; also the basic settings page and the contacts list.  The rest of the code will follow as it becomes more stable, but feedback is welcome on the code published so far.
 
 More information about Murmeli is published online here:
     http://activityworkshop.net/software/murmeli/
@@ -25,6 +25,8 @@ All feedback and help is very welcome.
  From some preliminary tests on Windows, it seems that it behaves differently and the client
  object can be created even if the mongod server isn't even installed!  The result is that the
  DbClient thinks that mongod is already running, and doesn't try to start it.
+ (Murmeli could try to query the Mongo server if it thinks it's running on Windows, but unfortunately
+  if there's no server then querying fails with a Windows error, not a python exception.)
 * Mongod requires a Windows hotfix to be installed if you're using Windows 7.
 * Murmeli doesn't yet use any kind of authentication for the access to the Mongod server.  It's
  restricted to connections from the same machine, but other users on the same machine can connect

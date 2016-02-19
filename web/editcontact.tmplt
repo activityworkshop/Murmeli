@@ -1,0 +1,17 @@
+<div class='genericbox' style='float:left;margin:10px'><img src='file://{{webcachedir}}/avatar-{{person['torid']}}.jpg' width='128' height='128'></div>
+
+<h1>{{person['displayName']}}</h1>
+<p>This is the page for {{person['displayName']}}'s details, so these aren't as editable as one's own!
+ But maybe you want to add a displayName or a reminder day...</p>
+
+<form name="detailsform" method="post" action="http://murmeli/contacts/{{person['torid']}}/submitedit">
+<table style="border:1px solid #a87">
+	<tr><td>{{langs['contacts.details.name']}}</td><td>:</td><td>{{person['name']}}</td></tr>
+	<tr><td>{{langs['contacts.details.displayname']}}</td><td>:</td><td><input type="text" value="{{person['displayName']}}" name="displayName"></td></tr>
+	<tr><td>{{langs['contacts.details.description']}}</td><td>:</td><td>{{person['description']}}</td></tr>
+	<tr><td>{{langs['contacts.details.interests']}}</td><td>:</td><td>{{person['interests']}}</td></tr>
+	<tr><td>{{langs['contacts.details.birthday']}}</td><td>:</td><td>{{person['birthday']}}</td></tr>
+</table>
+<p><a class='reversebutton' href='/contacts/{{person['torid']}}'>{{langs['button.cancel']}}</a>
+ or <input type="submit" class="reversebutton" value="{{langs['button.ok']}}"></p>
+</form>

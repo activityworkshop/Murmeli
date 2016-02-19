@@ -17,4 +17,4 @@
 </div>
 {{endif}}
 <p>&nbsp;</p>
-<div style="text-align:center"><a class='reversebutton'>{{langs['button.change']}}</a> these details</div>
+<div style="text-align:center"><a href="/contacts/{{person['torid']}}/edit" class='reversebutton'>{{langs['button.change']}}</a> these details</div>
