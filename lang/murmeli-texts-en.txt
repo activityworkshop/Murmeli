@@ -54,6 +54,11 @@ toolbar.settings=Settings
 
 [contacts]
 title=Contacts
+adduser.intro=Enter the id of the user to request contact with, and a message so they can tell it's from you.
+adduser.checkuserid=The user id should be 16 characters long, and alphanumeric, like yours.
+adduser.useridfield=User id (16 chars)
+adduser.displaynamefield=Display name
+adduser.messagefield=Message to identify yourself
 details.name=Name
 details.displayname=Display for me as
 details.owndescription=Describe yourself
@@ -84,5 +89,6 @@ ok=OK
 cancel=Cancel
 finish=Finish
 generate=Generate
+send=Send
 change=Change
 

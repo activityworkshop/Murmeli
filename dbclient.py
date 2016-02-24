@@ -9,9 +9,12 @@ import os.path
 import subprocess
 import time
 import pymongo
+from bson import ObjectId
+from bson.binary import Binary
 import hashlib # for calculating checksums
 from config import Config
-
+from dbnotify import DbResourceNotifier, DbMessageNotifier
+import imageutils
 
 # Separate class to launch the mongod executable, and then
 # shut it down properly when finished
@@ -139,10 +142,59 @@ class DbClient:
 
 	@staticmethod
 	def updateContact(torid, profile):
+		# Also exports avatar if profile picture has changed
 		client = pymongo.MongoClient()
 		profiles = client.murmelidb.profiles
+		# If the profile pic path has changed, then we need to load the file
+		givenprofilepicpath = profile.get('profilepicpath', None)
+		pic_changed = False
+		if givenprofilepicpath and os.path.exists(givenprofilepicpath):
+			# check if it's the same path as already stored
+			storedProfile = client.murmelidb.profiles.find_one({'torid': torid}, {"profilepicpath":1})
+			if not storedProfile or storedProfile.get('profilepicpath',"") != givenprofilepicpath:
+				profile['profilepic'] = Binary(imageutils.makeThumbnailBinary(givenprofilepicpath))
+				pic_changed = True
+		elif profile.get('profilepic', None):
+			pic_changed = True
 		profiles.update({'torid':torid}, {"$set": profile}, True)
+		if pic_changed:
+			DbClient._updateAvatar(torid, Config.getWebCacheDir())
 
+	@staticmethod
+	def exportAvatars(outputdir):
+		# Get list of friends and their torids
+		client = pymongo.MongoClient()
+		torids = [i['torid'] for i in client.murmelidb.profiles.find({}, {"torid":1}) if i]
+		# For each one, look in outputdir to see if pic is already there
+		for i in torids:
+			outpath = os.path.join(outputdir, "avatar-" + i + ".jpg")
+			if not os.path.exists(outpath):
+				# File doesn't exist, so get profilepic data
+				pic = client.murmelidb.profiles.find_one({'torid': i}, {"profilepic":1}).get('profilepic', None)
+				if pic:
+					print("exporting avatar from db to", outpath)
+					DbClient._writeBsonObjectToFile(pic, outpath)
+				else:
+					print("copying blank avatar to", outpath)
+					shutil.copy(os.path.join(outputdir, "avatar-none.jpg"), outpath)
+
+	@staticmethod
+	def _updateAvatar(userid, outputdir):
+		picname = "avatar-" + userid + ".jpg"
+		outpath = os.path.join(outputdir, picname)
+		try: os.remove(outpath)
+		except: pass # it wasn't there anyway
+		# We export pics for all the contacts but only the ones whose jpg doesn't exist already
+		DbClient.exportAvatars(outputdir)
+		# Inform all interested listeners that there's been some change with the given url
+		DbResourceNotifier.getInstance().notify(picname)
+
+
+	@staticmethod
+	def _writeBsonObjectToFile(bsonfromdb, filename):
+		with open(filename, 'wb') as f:
+			# bsonfromdb is a bson Binary object, but it can be iterated like a bytes object and written directly
+			f.write(bsonfromdb)
 
 	@staticmethod
 	def calculateHash(dbrow):

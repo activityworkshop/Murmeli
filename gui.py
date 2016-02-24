@@ -1,4 +1,5 @@
 from PyQt4 import QtGui, QtWebKit, QtCore, QtNetwork
+from dbnotify import DbResourceNotifier
 
 # Helper classes for GUI functions
 
@@ -50,6 +51,12 @@ class WebShell(QtWebKit.QWebView):
 		self.page().setLinkDelegationPolicy(QtWebKit.QWebPage.DelegateExternalLinks)
 		self.page().setNetworkAccessManager(self.navInterceptor)
 		self.connect(self.page(), QtCore.SIGNAL("linkClicked(const QUrl&)"), parent.slotLinkClicked)
+		DbResourceNotifier.getInstance().addListener(self)
+
+	def notifyResourceChanged(self, resourcePath):
+		'''A resource has changed, so we need to delete it from the cache'''
+		# Would be nice to just clear this single resource, but clearing all of them works too
+		self.settings().clearMemoryCaches()
 
 
 

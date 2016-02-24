@@ -3,6 +3,7 @@ from config import Config
 from dbclient import DbClient
 from pagetemplate import PageTemplate
 from contacts import Contacts
+from PyQt4 import QtGui # for file selection
 import re               # for regular expressions
 import os.path
 
@@ -20,6 +21,7 @@ class PageServer:
 		self.addPageSet(MessagesPageSet())
 		self.addPageSet(CalendarPageSet())
 		self.addPageSet(SettingsPageSet())
+		self.addPageSet(SpecialFunctions())
 
 	def addPageSet(self, ps):
 		self.pageSets[ps.getDomain()] = ps
@@ -115,9 +117,32 @@ class ContactsPageSet(PageSet):
 		self.detailstemplate = PageTemplate('contactdetails')
 		self.editowndetailstemplate = PageTemplate('editcontactself')
 		self.editdetailstemplate = PageTemplate('editcontact')
+		self.addtemplate = PageTemplate('addcontact')
 
 	def servePage(self, view, url, params):
 		self.requirePageResources(['button-addperson.png', 'button-drawgraph.png'])
+		DbClient.exportAvatars(Config.getWebCacheDir())
+		if url == "/add" or url == "/add/":
+			contents = self.generateAddPage()
+			view.setHtml(contents)
+			return
+		elif url == "/submitaddrequest":
+			print("Submit add request!:", url)
+			if len(params) > 0:
+				# request to add a new friend
+				recipientid  = params.get('murmeliid', '')
+				dispname     = params.get('displayname', '')
+				intromessage = params.get('intromessage', '')
+				if len(recipientid) == 16:
+					# TODO: How to react if: person already added (untrusted/trusted); request already sent (requested)
+					# update the database accordingly
+					print("I should send an add request to '%s' now." % recipientid)
+				else:
+					print("Hmm, show an error message here?")
+				# in any case, go back to contact list
+				url = "/" + recipientid
+				# ensure that picture is generated for new id
+				DbClient.exportAvatars(Config.getWebCacheDir())
 		contents = None
 		userid   = None
 		pageParams = {}
@@ -139,6 +164,13 @@ class ContactsPageSet(PageSet):
 			contents = self.generateListPage(doEdit=False, userid=userid, extraParams=pageParams)
 
 		view.setHtml(contents)
+
+	def generateAddPage(self):
+		'''Build the form page for adding a new user, using the template'''
+		bodytext = self.addtemplate.getHtml()
+		return self.buildPage({'pageTitle' : I18nManager.getText("contacts.title"),
+			'pageBody' : bodytext,
+			'pageFooter' : "<p>Footer</p>"})
 
 	# Generate a page for listing all the contacts and showing the details of one of them
 	def generateListPage(self, doEdit=False, userid=None, extraParams=None):
@@ -248,3 +280,16 @@ class SettingsPageSet(PageSet):
 			view.setHtml(contents)
 
 
+# Not delivering pages, but calling special Qt functions such as select file or wobbly network graph
+class SpecialFunctions(PageSet):
+	def __init__(self):
+		PageSet.__init__(self, "special")
+
+	def servePage(self, view, url, params):
+		if url == "/selectfile":
+			# Get home directory for file dialog
+			homedir = os.path.expanduser("~/")
+			# TODO: I18n for "open image" and "image files(*.jpg)"
+			fname = QtGui.QFileDialog.getOpenFileName(view, "Open Image", homedir, "Image files (*.jpg)")
+			if fname:
+				view.page().mainFrame().evaluateJavaScript("updateProfilePic('" + fname + "');")

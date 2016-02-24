@@ -54,6 +54,11 @@ toolbar.settings=Einstellungen
 
 [contacts]
 title=Kontakte
+adduser.intro=Gib bitte die Id des Benutzers ein, und eine Nachricht um dich vorzustellen.
+adduser.checkuserid=Die Benutzerid sollte 16 Character lang und alphanumerisch sein.
+adduser.useridfield=Benutzerid (16 Chars)
+adduser.displaynamefield=Name der angezeigt wird
+adduser.messagefield=Nachricht, um dich vorzustellen
 details.name=Name
 details.displayname=Für mich so anzeigen
 details.owndescription=Wer bist du?
@@ -84,5 +89,6 @@ ok=OK
 cancel=Abbrechen
 finish=Fertig
 generate=Generieren
+send=Abschicken
 change=Ändern
 
