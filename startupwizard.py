@@ -272,7 +272,7 @@ class PathsPanel(WizardPanel):
 		self.panel = QtGui.QWidget()
 		layout = QtGui.QVBoxLayout()
 		self.labels = {}
-		for k in ["heading", "configfile", "datadir", "mongoexe", "torexe", "considerencryption"]:
+		for k in ["heading", "configfile", "datadir", "mongoexe", "torexe", "gpgexe", "considerencryption"]:
 			self.labels[k] = QtGui.QLabel()
 		self._makeLabelHeading(self.labels["heading"])
 		layout.addWidget(self.labels["heading"])
@@ -293,7 +293,11 @@ class PathsPanel(WizardPanel):
 		# Path to tor exe (input)
 		self.torPathField = QtGui.QLineEdit("tor")
 		sublayout.addRow(self.labels["torexe"], self.torPathField)
+		# Path to gnupg exe (input)
+		self.gpgPathField = QtGui.QLineEdit("gpg")
+		sublayout.addRow(self.labels["gpgexe"], self.gpgPathField)
 		# MAYBE: Could we check whether these paths exist, and guess alternative ones if not?
+		# TODO: Browse buttons to select exes from file
 		filepathbox.setLayout(sublayout)
 		sublayout.setFormAlignment(QtCore.Qt.AlignHCenter) # horizontally centred
 		layout.addWidget(filepathbox)
@@ -319,8 +323,10 @@ class PathsPanel(WizardPanel):
 				I18nManager.getText("startupwizard.paths.failedtocreatedatadir"))
 			return False
 		# Also store selected paths to exes
+		# TODO: Check the exes exist?
 		Config.setProperty(Config.KEY_MONGO_EXE, str(self.mongoPathField.text()))
 		Config.setProperty(Config.KEY_TOR_EXE,   str(self.torPathField.text()))
+		Config.setProperty(Config.KEY_GPG_EXE,   str(self.gpgPathField.text()))
 		Config.save()
 		return True
 
@@ -624,4 +630,17 @@ class FinishedPanel(WizardPanel):
 		return ("back", "finish")
 	def getButtonsEnabled(self):
 		return (False, True)
+
+
+if __name__ == "__main__":
+	# Get ready to launch a Qt GUI
+	Config.load()
+	I18nManager.setLanguage()
+	Config.registerSubscriber(I18nManager.instance())
+	app = QtGui.QApplication([])
+
+	win = StartupWizard()
+	win.show()
+
+	app.exec_()
 

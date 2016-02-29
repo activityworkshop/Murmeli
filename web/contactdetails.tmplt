@@ -1,3 +1,12 @@
+<script>
+	function deleteContact(id)
+	{
+		showMessage("{{langs['contacts.confirmdelete']}}"
+			+ "<form action='http://murmeli/contacts/" + id + "/delete' method='post'>"
+			+ "<input type='submit' class='reversebutton' value='{{langs['button.delete']}}'>"
+			+ "</form>");
+	}
+</script>
 <div class='genericbox' style='float:left;margin:10px'><img src='file://{{webcachedir}}/avatar-{{person['torid']}}.jpg' width='128' height='128'></div>
 <div class="genericbox" style='float:right; width:140px;'>
 <div style='float:left;margin-right:5px;font-size:80%%'><a href='/contacts/add'><img src='file://{{webcachedir}}/button-addperson.png' title='{{langs['contacts.link.addnewcontact']}}'></a></div>
@@ -18,3 +27,6 @@
 {{endif}}
 <p>&nbsp;</p>
 <div style="text-align:center"><a href="/contacts/{{person['torid']}}/edit" class='reversebutton'>{{langs['button.change']}}</a> these details</div>
+{{if person['status']!='self'}}
+<div style="text-align:right"><a href='' onclick='deleteContact("{{person['torid']}}");return false;' class='reversebutton'>{{langs['button.delete']}}</a> this contact</div>
+{{endif}}

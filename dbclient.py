@@ -117,7 +117,7 @@ class DbClient:
 		if status:
 			profiles = client.murmelidb.profiles.find({"status":status}, {"profilepic":0}).sort([('ownprofile',-1), ('torid',1)])
 		else:
-			profiles = client.murmelidb.profiles.find({"status":{"$ne":"blocked"}}, {"profilepic":0}).sort([('ownprofile',-1), ('torid',1)])
+			profiles = client.murmelidb.profiles.find({"status":{"$ne":"deleted"}}, {"profilepic":0}).sort([('ownprofile',-1), ('torid',1)])
 		# This sort option insists that our own profile will be the first in the returned set
 		# This isn't what's written in the guide, so may be incompatible with newer/older mongos?
 		return [DbClient.completeProfile(p) for p in profiles]

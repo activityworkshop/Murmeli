@@ -35,14 +35,15 @@ class CryptoClient:
 	def initGpg():
 		'''init the _gpg object if it's not been done yet'''
 		if CryptoClient._gpg is None:
-			print("gpg is still None")
 			# Get keyring path
 			keyring = Config.getKeyringDir()
 			print("keyring is", keyring)
 			if keyring is not None and os.path.exists(keyring):
 				print("keyring exists")
 				try:
-					CryptoClient._gpg = GPG(gnupghome=keyring) # I guess we don't need gpgbinary here?
+					gpgexe = Config.getProperty(Config.KEY_GPG_EXE)
+					if not gpgexe: gpgexe = "gpg"
+					CryptoClient._gpg = GPG(gnupghome=keyring, gpgbinary=gpgexe)
 				except:
 					print("exception thrown")
 					CryptoClient._gpg = None

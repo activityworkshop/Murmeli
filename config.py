@@ -29,6 +29,7 @@ class Config():
 	KEY_DATA_DIR = "path.data"
 	KEY_MONGO_EXE = "path.mongoexe"
 	KEY_TOR_EXE = "path.torexe"
+	KEY_GPG_EXE = "path.gpgexe"
 
 
 	@staticmethod
@@ -48,6 +49,7 @@ class Config():
 		Config.properties[Config.KEY_LANGUAGE]  = "en"
 		Config.properties[Config.KEY_MONGO_EXE] = "mongo"
 		Config.properties[Config.KEY_TOR_EXE]   = "tor"
+		Config.properties[Config.KEY_GPG_EXE]   = "gpg"
 		# Default privacy settings
 		Config.properties[Config.KEY_ALLOW_FRIENDS_TO_SEE_FRIENDS] = True
 		Config.properties[Config.KEY_ALLOW_FRIEND_REQUESTS] = True

@@ -1,6 +1,7 @@
 from i18n import I18nManager
 from config import Config
 from dbclient import DbClient
+from contactmgr import ContactMaker
 from pagetemplate import PageTemplate
 from contacts import Contacts
 from PyQt4 import QtGui # for file selection
@@ -136,6 +137,7 @@ class ContactsPageSet(PageSet):
 				if len(recipientid) == 16:
 					# TODO: How to react if: person already added (untrusted/trusted); request already sent (requested)
 					# update the database accordingly
+					ContactMaker.handleInitiate(recipientid, dispname)
 					print("I should send an add request to '%s' now." % recipientid)
 				else:
 					print("Hmm, show an error message here?")
@@ -157,6 +159,9 @@ class ContactsPageSet(PageSet):
 				elif command[1] == "submitedit":
 					DbClient.updateContact(userid, params)
 					# don't generate contents, go back to details
+				elif command[1] == "delete":
+					ContactMaker.handleDeleteContact(userid)
+					userid = None
 
 		# If we haven't got any contents yet, then do a show details
 		if not contents:
@@ -167,7 +172,7 @@ class ContactsPageSet(PageSet):
 
 	def generateAddPage(self):
 		'''Build the form page for adding a new user, using the template'''
-		bodytext = self.addtemplate.getHtml()
+		bodytext = self.addtemplate.getHtml({"owntorid" : DbClient.getOwnTorId()})
 		return self.buildPage({'pageTitle' : I18nManager.getText("contacts.title"),
 			'pageBody' : bodytext,
 			'pageFooter' : "<p>Footer</p>"})
@@ -179,7 +184,6 @@ class ContactsPageSet(PageSet):
 		if selectedprofile is None:
 			userid = None
 			selectedprofile = DbClient.getProfile()
-		currId = str(selectedprofile['torid'])
 
 		# Build list of contacts
 		userboxes = []

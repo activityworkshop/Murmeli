@@ -21,6 +21,7 @@ paths.configfile=Konfigurationsdatei
 paths.datadir=Data Verzeichnis,<br>wo alle Nachrichten gespeichert werden
 paths.mongoexe=Pfad zum Mongo
 paths.torexe=Pfad zum Tor
+paths.gpgexe=Pfad zum Gpg
 paths.considerencryption=Es könnte sich lohnen, das Data Verzeichnis innerhalb einen<br>verschlüsselten Volume zu platzieren, falls vorhanden.
 paths.failedtocreatedatadir=Der Versuch, die Verzeichnisse zu kreieren, ist fehlgeschlagen.<br>Bitte einen anderen Pfad auswählen.
 services.heading=Dienstleistungen
@@ -56,6 +57,7 @@ toolbar.settings=Einstellungen
 title=Kontakte
 adduser.intro=Gib bitte die Id des Benutzers ein, und eine Nachricht um dich vorzustellen.
 adduser.checkuserid=Die Benutzerid sollte 16 Character lang und alphanumerisch sein.
+adduser.notownuserid=Die Benutzerid sollte nicht identisch sein wie deiner.
 adduser.useridfield=Benutzerid (16 Chars)
 adduser.displaynamefield=Name der angezeigt wird
 adduser.messagefield=Nachricht, um dich vorzustellen
@@ -67,6 +69,7 @@ details.interests=Interessen
 details.birthday=Geburtstag
 link.addnewcontact=Kontakt hinzufügen
 link.showstorm=Netzwerk skizzieren
+confirmdelete=Willst du sicher diesen Kontakt löschen?  Ihr werdet nicht mehr miteinander kommunizieren, ohne die Verbindung neu aufzubauen.
 
 [messages]
 title=Nachrichten
@@ -91,4 +94,5 @@ finish=Fertig
 generate=Generieren
 send=Abschicken
 change=Ändern
+delete=Löschen
 

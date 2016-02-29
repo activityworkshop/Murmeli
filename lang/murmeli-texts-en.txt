@@ -21,6 +21,7 @@ paths.configfile=Settings file
 paths.datadir=Data directory,<br>where all messages will be stored
 paths.mongoexe=Path to mongo executable
 paths.torexe=Path to tor executable
+paths.gpgexe=Path to gpg executable
 paths.considerencryption=Consider putting your data directory inside an encrypted volume, if you have one.
 paths.failedtocreatedatadir=Failed to create the data directories.<br>Please choose another path.
 services.heading=Services
@@ -56,6 +57,7 @@ toolbar.settings=Settings
 title=Contacts
 adduser.intro=Enter the id of the user to request contact with, and a message so they can tell it's from you.
 adduser.checkuserid=The user id should be 16 characters long, and alphanumeric, like yours.
+adduser.notownuserid=The user id you want to contact should be different from your own.
 adduser.useridfield=User id (16 chars)
 adduser.displaynamefield=Display name
 adduser.messagefield=Message to identify yourself
@@ -67,6 +69,7 @@ details.interests=Interests
 details.birthday=Birthday
 link.addnewcontact=Add new contact
 link.showstorm=Draw network
+confirmdelete=Are you sure you want to delete this contact?  You won't be able to contact each other again without reconnecting.
 
 [messages]
 title=Messages
@@ -91,4 +94,5 @@ finish=Finish
 generate=Generate
 send=Send
 change=Change
+delete=Delete
 
