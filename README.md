@@ -31,6 +31,4 @@ All feedback and help is very welcome.
 * Murmeli doesn't yet use any kind of authentication for the access to the Mongod server.  It's
  restricted to connections from the same machine, but other users on the same machine can connect
  to the server and read all the contents of the database.  This needs to be fixed at some point.
-* The startup wizard assumes that the 'gpg' executable is in the path already, but this probably
- needs to be added to the panel in the same way that the tor and mongod paths are specified.
- It would be nice to be able to select the paths with a file dialog too.
+* In the startup wizard, it would be nice to be able to select the executable paths with a file dialog.

@@ -6,6 +6,7 @@
 # (except maybe the startup wizard which can check for pymongo's availability)
 
 import os.path
+import shutil
 import subprocess
 import time
 import pymongo
@@ -13,6 +14,7 @@ from bson import ObjectId
 from bson.binary import Binary
 import hashlib # for calculating checksums
 from config import Config
+from cryptoclient import CryptoError
 from dbnotify import DbResourceNotifier, DbMessageNotifier
 import imageutils
 
@@ -233,3 +235,28 @@ class DbClient:
 		profile = {'contactlist' : ''.join(contactlist)}
 		DbClient.updateContact(DbClient.getOwnTorId(), profile)
 
+
+	@staticmethod
+	def addMessageToOutbox(message):
+		'''Add the given message to the outbox for sending later'''
+		if message.recipients:
+			client = pymongo.MongoClient()
+			for r in message.recipients:
+				# TODO: Check that len(r) == 16 ?
+				print("Add outgoing message for", r)
+				encryptKey = None
+				prof = DbClient.getProfile(userid=r)
+				if prof:
+					encryptKey = prof.get("keyid", None)
+				else:
+					print("No profile for ", r)
+				try:
+					# message.output is a bytes() object, so we need to convert to Binary for storage
+					messageToSend = Binary(message.createOutput(encryptKey))
+					client.murmelidb.outbox.insert({"recipient" : r, "message" : messageToSend,
+						 "queue" : message.shouldBeQueued, "msgType" : "unknown"})
+					# Inform all interested listeners that there's been a change in the messages
+					DbMessageNotifier.getInstance().notify()
+
+				except CryptoError as e:
+					print("Something has thrown a CryptoError :(  can't add message to Outbox!", e)

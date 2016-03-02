@@ -3,6 +3,7 @@ from config import Config
 from dbclient import DbClient
 from contactmgr import ContactMaker
 from pagetemplate import PageTemplate
+import message
 from contacts import Contacts
 from PyQt4 import QtGui # for file selection
 import re               # for regular expressions
@@ -139,6 +140,9 @@ class ContactsPageSet(PageSet):
 					# update the database accordingly
 					ContactMaker.handleInitiate(recipientid, dispname)
 					print("I should send an add request to '%s' now." % recipientid)
+					outmsg = message.ContactRequestMessage(introMessage=intromessage)
+					outmsg.recipients = [recipientid]
+					DbClient.addMessageToOutbox(outmsg)
 				else:
 					print("Hmm, show an error message here?")
 				# in any case, go back to contact list

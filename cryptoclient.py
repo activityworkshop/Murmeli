@@ -12,6 +12,10 @@ from config import Config
 from gnupg  import GPG
 from random import SystemRandom
 
+# Exception if something went wrong with encryption
+class CryptoError(Exception):
+	pass
+
 
 class CryptoClient:
 	'''The CryptoClient is the only class you need to reference when accessing the crypto functions.'''
