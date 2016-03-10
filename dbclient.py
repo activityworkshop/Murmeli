@@ -260,3 +260,14 @@ class DbClient:
 
 				except CryptoError as e:
 					print("Something has thrown a CryptoError :(  can't add message to Outbox!", e)
+
+	@staticmethod
+	def getOutboxMessages():
+		client = pymongo.MongoClient()
+		return client.murmelidb.outbox.find()
+
+	@staticmethod
+	def getInboxMessages():
+		client = pymongo.MongoClient()
+		return client.murmelidb.inbox.find({"deleted":None}).sort("timestamp", -1)
+		# TODO: Other sorting/paging options?

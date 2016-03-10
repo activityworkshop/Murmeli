@@ -8,7 +8,6 @@
 # This file contains the entry point of the application
 # and the construction of the main Qt window
 
-import sys
 from PyQt4 import QtGui, QtCore
 from gui import GuiWindow
 from i18n import I18nManager
@@ -16,6 +15,7 @@ from config import Config
 from pages import PageServer
 from dbclient import DbClient
 from torclient import TorClient
+import postmen
 
 
 # Hack to allow Ctrl-C to work
@@ -26,6 +26,7 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)
 class MainWindow(GuiWindow):
 	def __init__(self, *args):
 		GuiWindow.__init__(*(self,) + args)
+		self.postmen = None
 		self.toolbar = self.makeToolbar([
 			("images/toolbar-home.png",     self.onHomeClicked,     "mainwindow.toolbar.home"),
 			("images/toolbar-people.png",   self.onContactsClicked, "mainwindow.toolbar.contacts"),
@@ -46,6 +47,7 @@ class MainWindow(GuiWindow):
 		self.navigateTo("/")
 		# we want to be notified of Config changes
 		Config.registerSubscriber(self)
+		self.postmen = [postmen.IncomingPostman(self), postmen.OutgoingPostman(self)]
 
 		# TODO: tor should be stopped on exit, but for now we don't need it
 		TorClient.stopTor()
@@ -74,8 +76,18 @@ class MainWindow(GuiWindow):
 		for a in self.toolbarActions:
 			a.setToolTip(I18nManager.getText(a.tooltipkey))
 
+	def postmanKnock(self):
+		# Maybe we don't care about the outgoing postman knocking actually...
+		highlightInbox = self.postmen[0].isSomethingInInbox() if self.postmen else False
+		if highlightInbox:
+			print("Calling modify with value", ("yes" if highlightInbox else "no"))
+
+
 	def closeEvent(self, event):
 		print("Closing Murmeli")
+		# Tell postmen to stop working
+		for p in self.postmen:
+			p.stop()
 		DbClient.stopDatabase()
 		TorClient.stopTor()
 		event.accept()
