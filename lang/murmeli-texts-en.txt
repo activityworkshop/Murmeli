@@ -83,6 +83,7 @@ intro=Here you can change your language and privacy settings:
 language=Language
 friendsseefriends=Friends can see your friends
 allowfriendrequests=Allow unverified friend requests
+showlogwindow=Show log messages
 
 [button]
 back=Back

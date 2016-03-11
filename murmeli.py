@@ -16,7 +16,7 @@ from pages import PageServer
 from dbclient import DbClient
 from torclient import TorClient
 import postmen
-
+from log import LogWindow
 
 # Hack to allow Ctrl-C to work
 import signal
@@ -25,12 +25,14 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)
 # Class for main window
 class MainWindow(GuiWindow):
 	def __init__(self, *args):
-		GuiWindow.__init__(*(self,) + args)
+		self.logPanel = LogWindow()
+		GuiWindow.__init__(self, lowerItem=self.logPanel)
 		self.postmen = None
 		self.toolbar = self.makeToolbar([
 			("images/toolbar-home.png",     self.onHomeClicked,     "mainwindow.toolbar.home"),
 			("images/toolbar-people.png",   self.onContactsClicked, "mainwindow.toolbar.contacts"),
 			("images/toolbar-messages.png", self.onMessagesClicked, "mainwindow.toolbar.messages"),
+			("images/toolbar-messages-highlight.png", self.onMessagesClicked, "mainwindow.toolbar.messages"),
 			("images/toolbar-calendar.png", self.onCalendarClicked, "mainwindow.toolbar.calendar"),
 			("images/toolbar-settings.png", self.onSettingsClicked, "mainwindow.toolbar.settings") ])
 		self.addToolBar(self.toolbar)
@@ -48,6 +50,7 @@ class MainWindow(GuiWindow):
 		# we want to be notified of Config changes
 		Config.registerSubscriber(self)
 		self.postmen = [postmen.IncomingPostman(self), postmen.OutgoingPostman(self)]
+		self.connect(self.postmen[1], QtCore.SIGNAL("messageSent"), self.logPanel.notifyLogEvent)
 
 		# TODO: tor should be stopped on exit, but for now we don't need it
 		TorClient.stopTor()
@@ -66,6 +69,10 @@ class MainWindow(GuiWindow):
 		self.configUpdated()  # to set the tooltips
 		return toolbar
 
+	def modifyToolbar(self, highlightMessages):
+		self.toolbar.actions()[2].setVisible(not highlightMessages)
+		self.toolbar.actions()[3].setVisible(highlightMessages)
+
 	def onHomeClicked(self):     self.navigateTo("/")
 	def onContactsClicked(self): self.navigateTo("/contacts/")
 	def onMessagesClicked(self): self.navigateTo("/messages/")
@@ -75,12 +82,17 @@ class MainWindow(GuiWindow):
 	def configUpdated(self):
 		for a in self.toolbarActions:
 			a.setToolTip(I18nManager.getText(a.tooltipkey))
+		# Show/hide log window
+		if Config.getProperty(Config.KEY_SHOW_LOG_WINDOW):
+			self.logPanel.show()
+		else:
+			self.logPanel.hide()
 
 	def postmanKnock(self):
 		# Maybe we don't care about the outgoing postman knocking actually...
 		highlightInbox = self.postmen[0].isSomethingInInbox() if self.postmen else False
-		if highlightInbox:
-			print("Calling modify with value", ("yes" if highlightInbox else "no"))
+		print("Calling modify with value", ("yes" if highlightInbox else "no"))
+		self.modifyToolbar(highlightInbox)
 
 
 	def closeEvent(self, event):
@@ -90,5 +102,5 @@ class MainWindow(GuiWindow):
 			p.stop()
 		DbClient.stopDatabase()
 		TorClient.stopTor()
+		# TODO: Clear cache directory?
 		event.accept()
-

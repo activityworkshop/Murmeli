@@ -62,10 +62,17 @@ class WebShell(QtWebKit.QWebView):
 
 class GuiWindow(QtGui.QMainWindow):
 	'''Superclass of all the GUI Windows with a WebShell in the middle'''
-	def __init__(self, *args):
-		QtGui.QMainWindow.__init__(*(self,) + args)
+	def __init__(self, lowerItem=None):
+		QtGui.QMainWindow.__init__(self)
 		self.webpane = WebShell(self)
-		self.setCentralWidget(self.webpane)
+		if lowerItem:
+			splitter = QtGui.QSplitter(QtCore.Qt.Vertical)
+			splitter.addWidget(self.webpane)
+			splitter.addWidget(lowerItem)
+			#lowerItem.hide()
+			self.setCentralWidget(splitter)
+		else:
+			self.setCentralWidget(self.webpane)
 
 		icon = QtGui.QIcon()
 		icon.addPixmap(QtGui.QPixmap("images/window-icon.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)

@@ -83,6 +83,7 @@ intro=Hier kannst du die Einstellungen für Sprache und Veröffentlichung setzen
 language=Sprache
 friendsseefriends=Kontakte sind für andere sichtbar
 allowfriendrequests=Anfragen von Unbekannten erlaubt
+showlogwindow=Logmeldungen anzeigen
 
 [button]
 back=Zurück

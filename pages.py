@@ -264,6 +264,9 @@ class SettingsPageSet(PageSet):
 			fsf = params.get('friendsseefriends', None)
 			friendsseefriends = fsf is not None and len(fsf) > 0
 			Config.setProperty(Config.KEY_ALLOW_FRIENDS_TO_SEE_FRIENDS, friendsseefriends)
+			slw = params.get('showlogwindow', None)
+			showlogwindow = slw is not None and len(slw) > 0
+			Config.setProperty(Config.KEY_SHOW_LOG_WINDOW, showlogwindow)
 			# If Config has changed, may need to update profile to include/hide friends info
 			DbClient.updateContactList(friendsseefriends)
 			# When friends are notified next time, the profile's hash will be calculated and sent
@@ -277,8 +280,9 @@ class SettingsPageSet(PageSet):
 				'pageFooter' : "<p>Footer</p>"})
 			view.setHtml(contents)
 		else:
-			pageProps = {"friendsseefriends" : ("checked" if Config.getProperty(Config.KEY_ALLOW_FRIENDS_TO_SEE_FRIENDS) else ""),
-				"allowfriendrequests" : ("checked" if Config.getProperty(Config.KEY_ALLOW_FRIEND_REQUESTS) else ""),
+			pageProps = {"friendsseefriends" : "checked" if Config.getProperty(Config.KEY_ALLOW_FRIENDS_TO_SEE_FRIENDS) else "",
+				"allowfriendrequests" : "checked" if Config.getProperty(Config.KEY_ALLOW_FRIEND_REQUESTS) else "",
+				"showlogwindow" : "checked" if Config.getProperty(Config.KEY_SHOW_LOG_WINDOW) else "",
 				"language_en":"", "language_de":""}
 			pageProps["language_" + Config.getProperty(Config.KEY_LANGUAGE)] = "selected"
 			#print("body:", self.formtemplate.getHtml(pageProps))

@@ -11,6 +11,7 @@ class ConfigTannoy(QObject):
 	def shout(self):
 		self.emit(SIGNAL("fireUpdated()"))
 
+
 # Class to store application-wide config
 class Config():
 	# static tannoy for broadcasting changes
@@ -25,6 +26,7 @@ class Config():
 	KEY_LANGUAGE = "gui.language"
 	KEY_ALLOW_FRIENDS_TO_SEE_FRIENDS = "privacy.friendsseefriends"
 	KEY_ALLOW_FRIEND_REQUESTS = "privacy.allowfriendrequests"
+	KEY_SHOW_LOG_WINDOW = "gui.showlogwindow"
 	# paths
 	KEY_DATA_DIR = "path.data"
 	KEY_MONGO_EXE = "path.mongoexe"
@@ -34,7 +36,7 @@ class Config():
 
 	@staticmethod
 	def foundConfigFile():
-		"""Return True if the config file was found and is readable, False otherwise"""
+		'''Return True if the config file was found and is readable, False otherwise'''
 		try:
 			with open(Config.CONFIG_FILE_PATH, 'r') as conffile:
 				return True
@@ -53,6 +55,8 @@ class Config():
 		# Default privacy settings
 		Config.properties[Config.KEY_ALLOW_FRIENDS_TO_SEE_FRIENDS] = True
 		Config.properties[Config.KEY_ALLOW_FRIEND_REQUESTS] = True
+		# Default gui settings
+		Config.properties[Config.KEY_SHOW_LOG_WINDOW] = False
 
 		# Locate file in home directory, and load it if found
 		try:
@@ -65,6 +69,7 @@ class Config():
 		# Convert strings to True/False
 		Config._fixBooleanProperty(Config.KEY_ALLOW_FRIENDS_TO_SEE_FRIENDS)
 		Config._fixBooleanProperty(Config.KEY_ALLOW_FRIEND_REQUESTS)
+		Config._fixBooleanProperty(Config.KEY_SHOW_LOG_WINDOW)
 
 	@staticmethod
 	def _fixBooleanProperty(propName):
