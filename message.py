@@ -116,10 +116,14 @@ class Message:
 		return 0
 
 	def getOwnPublicKey(self):
+		'''Get our own public key by using an empty torid'''
+		return self.getPublicKey(torid=None)
+
+	def getPublicKey(self, torid):
 		'''Use the keyid stored in mongo, and get the corresponding public key from the Crypto module'''
-		ownprofile = DbClient.getProfile()
-		if ownprofile is not None:
-			keyid = ownprofile.get('keyid', None)
+		profile = DbClient.getProfile(torid)
+		if profile is not None:
+			keyid = profile.get('keyid', None)
 			if keyid is not None:
 				return CryptoClient.getPublicKey(keyid)
 
@@ -174,6 +178,9 @@ class Message:
 			dt = datetime.datetime.now()
 		return dt.timestamp()
 
+	def getMessageTypeKey(self):
+		'''Used for looking up description texts to display the message type'''
+		return "unknown"
 
 # Message without symmetric or asymmetric encryption
 # Used only for requesting or rejecting contact, as we haven't got the
@@ -230,7 +237,8 @@ class ContactRequestMessage(UnencryptedMessage):
 	def _createSubpayload(self):
 		'''Pack the specific fields into the subpayload'''
 		# Get own name
-		if self.senderName is None: self.senderName = DbClient.getProfile(None).get('name', self.senderId)
+		if self.senderName is None:
+			self.senderName = DbClient.getProfile(None).get('name', self.senderId)
 		# Get own public key (first get identifier from DbClient, then use that id to ask crypto module)
 		myPublicKey = self.getOwnPublicKey()
 		messageAsBytes = self.message.encode('utf-8')
@@ -252,6 +260,9 @@ class ContactRequestMessage(UnencryptedMessage):
 		m.publicKey = chomper.getRest()
 		return m
 
+	def getMessageTypeKey(self):
+		return "contactrequest"
+
 
 class ContactDenyMessage(UnencryptedMessage):
 	'''Message to deny a contact request - this can't be encrypted because we didn't
@@ -268,3 +279,6 @@ class ContactDenyMessage(UnencryptedMessage):
 	@staticmethod
 	def constructFrom(subpayload):
 		return ContactDenyMessage()
+
+	def getMessageTypeKey(self):
+		return "contactdeny"

@@ -49,6 +49,8 @@ class DbClient:
 	_daemonLauncher = None
 	# own torid
 	_torId = None
+	# set to true to use alternative db tables for testing
+	_useTestTables = False
 
 
 	@staticmethod
@@ -86,12 +88,22 @@ class DbClient:
 			DbClient._daemonLauncher = None
 
 	@staticmethod
-	def getProfile(userid=None, extend=True):
+	def useTestTables():
+		'''Only call this method from unit tests, so that different db tables are used'''
+		DbClient._useTestTables = True
+
+	@staticmethod
+	def _getProfileTable():
+		'''Only call this method from unit tests, so that different db tables are used'''
 		client = pymongo.MongoClient()
+		return client.murmelidb.testprofiles if DbClient._useTestTables else client.murmelidb.profiles
+
+	@staticmethod
+	def getProfile(userid=None, extend=True):
 		if userid is None:
-			profile = client.murmelidb.profiles.find_one({'ownprofile': True})
+			profile = DbClient._getProfileTable().find_one({'ownprofile': True})
 		else:
-			profile = client.murmelidb.profiles.find_one({'torid': userid})
+			profile = DbClient._getProfileTable().find_one({'torid': userid})
 		if extend:
 			profile = DbClient.completeProfile(profile)
 		return profile
@@ -114,12 +126,11 @@ class DbClient:
 
 	@staticmethod
 	def getContactList(status=None):
-		client = pymongo.MongoClient()
 		# Ignore the "profilepic" field, to save data flow
 		if status:
-			profiles = client.murmelidb.profiles.find({"status":status}, {"profilepic":0}).sort([('ownprofile',-1), ('torid',1)])
+			profiles = DbClient._getProfileTable().find({"status":status}, {"profilepic":0}).sort([('ownprofile',-1), ('torid',1)])
 		else:
-			profiles = client.murmelidb.profiles.find({"status":{"$ne":"deleted"}}, {"profilepic":0}).sort([('ownprofile',-1), ('torid',1)])
+			profiles = DbClient._getProfileTable().find({"status":{"$ne":"deleted"}}, {"profilepic":0}).sort([('ownprofile',-1), ('torid',1)])
 		# This sort option insists that our own profile will be the first in the returned set
 		# This isn't what's written in the guide, so may be incompatible with newer/older mongos?
 		return [DbClient.completeProfile(p) for p in profiles]
@@ -145,14 +156,13 @@ class DbClient:
 	@staticmethod
 	def updateContact(torid, profile):
 		# Also exports avatar if profile picture has changed
-		client = pymongo.MongoClient()
-		profiles = client.murmelidb.profiles
+		profiles = DbClient._getProfileTable()
 		# If the profile pic path has changed, then we need to load the file
 		givenprofilepicpath = profile.get('profilepicpath', None)
 		pic_changed = False
 		if givenprofilepicpath and os.path.exists(givenprofilepicpath):
 			# check if it's the same path as already stored
-			storedProfile = client.murmelidb.profiles.find_one({'torid': torid}, {"profilepicpath":1})
+			storedProfile = profiles.find_one({'torid': torid}, {"profilepicpath":1})
 			if not storedProfile or storedProfile.get('profilepicpath',"") != givenprofilepicpath:
 				profile['profilepic'] = Binary(imageutils.makeThumbnailBinary(givenprofilepicpath))
 				pic_changed = True
@@ -165,14 +175,14 @@ class DbClient:
 	@staticmethod
 	def exportAvatars(outputdir):
 		# Get list of friends and their torids
-		client = pymongo.MongoClient()
-		torids = [i['torid'] for i in client.murmelidb.profiles.find({}, {"torid":1}) if i]
+		profiles = DbClient._getProfileTable()
+		torids = [i['torid'] for i in profiles.find({}, {"torid":1}) if i]
 		# For each one, look in outputdir to see if pic is already there
 		for i in torids:
 			outpath = os.path.join(outputdir, "avatar-" + i + ".jpg")
 			if not os.path.exists(outpath):
 				# File doesn't exist, so get profilepic data
-				pic = client.murmelidb.profiles.find_one({'torid': i}, {"profilepic":1}).get('profilepic', None)
+				pic = profiles.find_one({'torid': i}, {"profilepic":1}).get('profilepic', None)
 				if pic:
 					print("exporting avatar from db to", outpath)
 					DbClient._writeBsonObjectToFile(pic, outpath)
@@ -210,15 +220,20 @@ class DbClient:
 				h.update(val.encode('utf-8'))
 				usedFields.add(k)
 			else:
-				print("Ignored", k, " because it has type", type(dbrow[k]))
+				#print("Ignored", k, " because it has type", type(dbrow[k]))
 				ignoredFields.add(k)
 		print("For the hash, I used fields", usedFields, "and ignored", ignoredFields)
 		return h.hexdigest()
 
 	@staticmethod
+	def getMessageableContacts():
+		'''Get a list of contacts we can send messages to, ie trusted or untrusted'''
+		return DbClient._getProfileTable().find({"status":{"$in" : ["trusted", "untrusted"]}},
+			 {"torid":1, "displayName":1}).sort([('torid',1)])
+
+	@staticmethod
 	def getTrustedContacts():
-		client = pymongo.MongoClient()
-		return client.murmelidb.profiles.find({"status":"trusted"}, {"torid":1, "name":1}).sort([('torid',1)])
+		return DbClient._getProfileTable().find({"status":"trusted"}, {"torid":1, "name":1}).sort([('torid',1)])
 
 	@staticmethod
 	def updateContactList(showList):
