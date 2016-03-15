@@ -81,3 +81,34 @@ class CryptoClient:
 		key = CryptoClient._gpg.gen_key(inputdata)
 		return key
 
+
+	########## Asymmetric encryption ##############
+
+	@staticmethod
+	def encryptAndSign(message, recipient, ownkey):
+		if not recipient:
+			print("Can't encryptAndSign without a recipient!")
+			raise CryptoError()
+		if not ownkey:
+			print("Can't encryptAndSign without an own key!")
+			raise CryptoError()
+		CryptoClient.initGpg()
+		# TODO: Check that message is a Message, don't allow other encryptions?
+		# Try to encrypt and sign, throw exception if it didn't work
+		cryptoResult = CryptoClient._gpg.encrypt(message, recipients=recipient, sign=ownkey,
+			 armor=False, always_trust=True)
+		if not cryptoResult.ok:
+			raise CryptoError()
+		return cryptoResult.data
+
+	@staticmethod
+	def decryptAndCheckSignature(message):
+		'''Returns the decrypted contents if possible, and the signing keyid if recognised, otherwise None'''
+		CryptoClient.initGpg()
+		cryptoResult = CryptoClient._gpg.decrypt(message)
+		# If the signature can't be checked, then cryptoResult.valid will be False
+		# - this is ok for a ContactResponse but not for any other kind of message
+		print("Decrypt and check: ok is ", cryptoResult.ok, " and valid is ", cryptoResult.valid, " and keyid is", cryptoResult.key_id)
+		if cryptoResult.ok:
+			return (cryptoResult.data, cryptoResult.key_id if cryptoResult.valid else None)
+		return (None, None)

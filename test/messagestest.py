@@ -52,6 +52,58 @@ class ContactRequestTest(unittest.TestCase):
 		self.assertEqual(bac.messageType, message.Message.TYPE_CONTACT_RESPONSE, "Message type not right")
 		self.assertEqual(bac.senderId, SENDER, "Sender not right")
 
+	def testMakingContactAccept(self):
+		INTRO = "Jääääää, why näääät?"
+		SENDER = "c5pphe4wckw4j74h"
+		SENDERNAME = "Activity Workshop"
+		KEY_BEGINNING = "-----BEGIN PGP PUBLIC KEY BLOCK-----"
+
+		m = message.ContactResponseMessage(senderId=None, senderName=None, message=INTRO, senderKey=None)
+		unenc = m.createUnencryptedOutput()
+		bac = message.Message.MessageFromReceivedData(unenc, False)
+		self.assertIsNotNone(bac, "couldn't decode the data")
+		self.assertEqual(bac.messageType, message.Message.TYPE_CONTACT_RESPONSE, "Message type not right")
+		print("The sender is", bac.senderId)
+		print(repr(bac))
+		self.assertEqual(bac.senderId, SENDER, "Sender not right")
+		self.assertEqual(bac.introMessage, INTRO, "Message not right")
+		self.assertEqual(bac.senderName, SENDERNAME)
+		self.assertTrue(bac.senderKey.decode('utf-8').startswith(KEY_BEGINNING), "Publickey not right")
+
+	def testMakingContactResponseNoRecpt(self):
+		INTRO = "Jääääää, why näääät?"
+		m = message.ContactResponseMessage(senderId=None, senderName=None, message=INTRO, senderKey=None)
+		self.assertRaises(CryptoError, m.createOutput, None)
+
+	def testMakingContactResponseEmptyRecpt(self):
+		INTRO = "Jääääää, why näääät?"
+		m = message.ContactResponseMessage(senderId=None, senderName=None, message=INTRO, senderKey=None)
+		self.assertRaises(CryptoError, m.createOutput, "")
+
+	def testMakingContactResponseInvalidRecpt(self):
+		INTRO = "Jääääää, why näääät?"
+		m = message.ContactResponseMessage(senderId=None, senderName=None, message=INTRO, senderKey=None)
+		self.assertRaises(CryptoError, m.createOutput, "NOSUCH")
+
+	def testMakingEncryptedContactAccept(self):
+		INTRO = "You really shouldn't be able to read this because it should be encrypted and signed"
+		RECPTKEYID = "36ECAB5DA51C178A"
+
+		m = message.ContactResponseMessage(senderId=None, senderName=None, message=INTRO, senderKey=None)
+		output = m.createOutput(RECPTKEYID)
+		print("This should be encrypted:", output)
+		# Check it's really encrypted by looking for the INTRO string
+		for s in range(len(output)-len(INTRO)):
+			x = ""
+			try:
+				x = output[s : s+len(INTRO)].decode("utf-8")
+				print(x)
+			except Exception: pass
+			self.assertNotEqual(x, INTRO, "Message wasn't encrypted properly")
+		# Test decryption
+		bac = message.Message.MessageFromReceivedData(output)
+		self.assertIsNotNone(bac, "couldn't decode the data")
+
 
 if __name__ == "__main__":
 	unittest.main()

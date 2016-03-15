@@ -15,6 +15,11 @@ Please try out the code and report back any difficulties encountered.  The tool 
 
 	python3 startmurmeli.py
 
+and the tests can be run with (for example):
+
+        export PYTHONPATH=.
+        python3 test/databasetest.py
+
 All feedback and help is very welcome.
 
 ## Known issues

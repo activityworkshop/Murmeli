@@ -250,6 +250,11 @@ class DbClient:
 		profile = {'contactlist' : ''.join(contactlist)}
 		DbClient.updateContact(DbClient.getOwnTorId(), profile)
 
+	@staticmethod
+	def findUserIdFromKeyId(keyid):
+		prof = DbClient._getProfileTable().find_one({'keyid': keyid}, {"torid":1})
+		if prof:
+			return prof.get('torid', None)
 
 	@staticmethod
 	def addMessageToOutbox(message):

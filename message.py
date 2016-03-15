@@ -4,6 +4,7 @@
 
 from dbclient import DbClient
 from cryptoclient import CryptoClient
+from random import SystemRandom
 import hashlib
 import datetime
 
@@ -156,6 +157,8 @@ class Message:
 		message = None
 		if encType == Message.ENCTYPE_NONE:
 			message = UnencryptedMessage.constructFrom(payload)
+		elif encType == Message.ENCTYPE_ASYM:
+			message = AsymmetricMessage.construct(payload, isEncrypted)
 		if message is not None:
 			message.shouldBeRelayed = shouldRelay
 			return message
@@ -282,3 +285,160 @@ class ContactDenyMessage(UnencryptedMessage):
 
 	def getMessageTypeKey(self):
 		return "contactdeny"
+
+
+# Message using asymmetric encryption
+# This is the regular mechanism used by most message types
+class AsymmetricMessage(Message):
+	def __init__(self):
+		Message.__init__(self)
+		self.encryptionType = Message.ENCTYPE_ASYM
+		self.timestamp      = None
+		self.senderId       = None
+		self.shouldBeRelayed = True  # Most should be relayed
+
+	def createRandomToken(self):
+		'''Create a random byte sequence to use as a repeating token'''
+		r = SystemRandom()
+		token = bytearray()
+		numBytes = r.choice([3,4,5,6])
+		for i in range(numBytes):
+			token.append(r.randrange(256))
+		return token
+
+	def _createPayload(self, recipientKeyId):
+		'''Create the encrypted output for the given recipient'''
+		total = self._createUnencryptedPayload()
+		# Encrypt and sign the result
+		ownKeyId = DbClient.getOwnKeyId()
+		return CryptoClient.encryptAndSign(total, recipientKeyId, ownKeyId)
+
+	def _createUnencryptedPayload(self):
+		'''Construct the subpayload according to the subclass's rules and data'''
+		subpayload = self._createSubpayload()
+		timestr = self.makeCurrentTimestamp()
+		# prepend and append payload with our own general tokens
+		token = self.createRandomToken()
+		total = self.packBytesTogether([
+			token, Message.MAGIC_TOKEN, token,
+			self.encodeNumberToBytes(self.messageType, 1),
+			subpayload,
+			timestr])
+		return total
+
+	def _createSubpayload(self):
+		'''Default method with no actual contents - to be overwritten by subclasses'''
+		return "nocontents"
+
+	def acceptUnrecognisedSignature(self):
+		'''Usually we don't accept messages without a recognised signature, except for certain subclasses'''
+		return False
+
+	# Factory constructor using a given payload and extracting the fields
+	@staticmethod
+	def construct(payload, isEncrypted = True):
+		if not payload: return None
+		signatureKey = None
+		if isEncrypted:
+			# Decrypt the payload with our key
+			decrypted, signatureKey = CryptoClient.decryptAndCheckSignature(payload)
+		else: decrypted = payload
+		if decrypted:
+			print("Asymmetric message, length of decrypted is", len(decrypted))
+		else:
+			print("Asymmetric message has no decrypted")
+		# Separate fields of message into common ones and the type-specific payload
+		msgType, subpayload, tstmp = AsymmetricMessage._stripFields(decrypted)
+		print("Recovered timestamp='", tstmp, "' (", len(tstmp), ")")
+
+		# Find a suitable subclass to call using the messageType
+		msg = None
+		if msgType == Message.TYPE_CONTACT_RESPONSE:
+			msg = ContactResponseMessage.construct(subpayload)
+		# Ask the message if it's ok to have no signature
+		if isEncrypted and not signatureKey and msg and not msg.acceptUnrecognisedSignature():
+			msg = None
+		if msg:
+			try:
+				msgTimestamp = tstmp.decode('utf-8')
+			except:
+				msgTimestamp = msg.makeCurrentTimestamp()
+			msg.timestamp = Message.convertTimestampFromString(msgTimestamp)
+			msg.signatureKeyId = signatureKey
+			if signatureKey:
+				print("Asymm setting senderId because I've got a signatureKey: '%s'" % signatureKey)
+				signatureId = DbClient.findUserIdFromKeyId(signatureKey)
+				if signatureId:
+					msg.senderId = signatureId
+		return msg
+
+	@staticmethod
+	def _stripFields(payload):
+		# Try to remove the random tokens from the start of the payload
+		# If successful, return a triplet containing the message type, timestamp and payload
+		if payload:
+			for tokenlen in [3,4,5,6]:
+				r1 = payload[:tokenlen]
+				t1 = payload[tokenlen : tokenlen + len(Message.MAGIC_TOKEN)]
+				r2 = payload[tokenlen + len(Message.MAGIC_TOKEN) : 2*tokenlen + len(Message.MAGIC_TOKEN)]
+				#print("Comparing '%s', '%s', '%s'" % (r1, t1, r2))
+				if len(r1) == tokenlen and r1 == r2 and t1.decode('utf-8') == Message.MAGIC_TOKEN:
+					#print("Found beginning!", r1, t1, r2)
+					startPos = 2*tokenlen + len(Message.MAGIC_TOKEN)
+					return (payload[startPos], payload[startPos+1:-16], payload[-16:])
+		return ("", "", "")
+
+
+class ContactResponseMessage(AsymmetricMessage):
+	'''Message to reply to and accept a contact request, message is optional'''
+	def __init__(self, senderId=None, senderName=None, message=None, senderKey=None):
+		print("Constructing a contact response with senderid %s, sendername %s, message '%s'" % (senderId, senderName, message))
+		AsymmetricMessage.__init__(self)
+		self.senderId = senderId
+		print("ContactResponseMessage constructor: Got a senderId: ", senderId)
+		self.senderName = senderName
+		self.introMessage = "" if message is None else message
+		self.senderKey = senderKey
+		self.messageType = Message.TYPE_CONTACT_RESPONSE
+		self.senderMustBeTrusted = False  # ok if sender unknown
+
+	def _createSubpayload(self):
+		'''Use the stored fields to pack the payload contents together'''
+		if self.senderKey is None: self.senderKey = self.getOwnPublicKey()
+		# Get own torid and name
+		if not self.senderId: self.senderId = DbClient.getOwnTorId()
+		if not self.senderName:
+			self.senderName = DbClient.getProfile(None).get('name', self.senderId)
+		if not self.introMessage: self.introMessage = ""
+		nameAsBytes = self.senderName.encode('utf-8')
+		messageAsBytes = self.introMessage.encode('utf-8')
+		print("Packing contact request with senderId", self.senderId)
+		return self.packBytesTogether([
+			self.senderId,
+			self.encodeNumberToBytes(len(nameAsBytes), 4),
+			nameAsBytes,
+			self.encodeNumberToBytes(len(messageAsBytes), 4),
+			messageAsBytes,
+			self.senderKey])
+
+	def acceptUnrecognisedSignature(self):
+		'''Only for this subclass is it ok for the signature to be unrecognised, because we haven't got their key yet'''
+		return True
+
+	# Factory constructor using a given payload and extracting the fields
+	@staticmethod
+	def construct(payload):
+		if payload:
+			print("ContactResponse with payload:", len(payload))
+		else: print("ContactResponse.construct with an empty payload")
+		chomper = StringChomper(payload)
+		# sender id and name
+		senderId = chomper.getString(16) # Id is always 16 chars
+		print("Got a senderId: ", senderId)
+		senderName = chomper.getStringWithLength(4)
+		introMessage = chomper.getStringWithLength(4)
+		publicKey = chomper.getRest()
+		return ContactResponseMessage(senderId, senderName, introMessage, publicKey)
+
+	def getMessageTypeKey(self):
+		return "contactaccept"
