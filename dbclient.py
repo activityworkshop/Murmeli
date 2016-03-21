@@ -94,9 +94,21 @@ class DbClient:
 
 	@staticmethod
 	def _getProfileTable():
-		'''Only call this method from unit tests, so that different db tables are used'''
+		'''Use a different profiles table for the unit tests so they're independent of the running db'''
 		client = pymongo.MongoClient()
 		return client.murmelidb.testprofiles if DbClient._useTestTables else client.murmelidb.profiles
+
+	@staticmethod
+	def _getInboxTable():
+		'''Use a different inbox table for the unit tests so they're independent of the running db'''
+		client = pymongo.MongoClient()
+		return client.murmelidb.testinbox if DbClient._useTestTables else client.murmelidb.inbox
+
+	@staticmethod
+	def _getOutboxTable():
+		'''Use a different outbox table for the unit tests so they're independent of the running db'''
+		client = pymongo.MongoClient()
+		return client.murmelidb.testoutbox if DbClient._useTestTables else client.murmelidb.outbox
 
 	@staticmethod
 	def getProfile(userid=None, extend=True):
@@ -229,7 +241,7 @@ class DbClient:
 	def getMessageableContacts():
 		'''Get a list of contacts we can send messages to, ie trusted or untrusted'''
 		return DbClient._getProfileTable().find({"status":{"$in" : ["trusted", "untrusted"]}},
-			 {"torid":1, "displayName":1}).sort([('torid',1)])
+			 {"torid":1, "displayName":1, "status":1}).sort([('torid',1)])
 
 	@staticmethod
 	def getTrustedContacts():
@@ -260,7 +272,6 @@ class DbClient:
 	def addMessageToOutbox(message):
 		'''Add the given message to the outbox for sending later'''
 		if message.recipients:
-			client = pymongo.MongoClient()
 			for r in message.recipients:
 				# TODO: Check that len(r) == 16 ?
 				print("Add outgoing message for", r)
@@ -273,8 +284,8 @@ class DbClient:
 				try:
 					# message.output is a bytes() object, so we need to convert to Binary for storage
 					messageToSend = Binary(message.createOutput(encryptKey))
-					client.murmelidb.outbox.insert({"recipient" : r, "message" : messageToSend,
-						 "queue" : message.shouldBeQueued, "msgType" : "unknown"})
+					DbClient._getOutboxTable().insert({"recipient" : r, "relays" : relays, "message" : messageToSend,
+						 "queue" : message.shouldBeQueued, "msgType" : message.getMessageTypeKey()})
 					# Inform all interested listeners that there's been a change in the messages
 					DbMessageNotifier.getInstance().notify()
 
@@ -283,11 +294,17 @@ class DbClient:
 
 	@staticmethod
 	def getOutboxMessages():
-		client = pymongo.MongoClient()
-		return client.murmelidb.outbox.find()
+		return DbClient._getOutboxTable().find()
+
+	@staticmethod
+	def deleteMessageFromOutbox(messageId):
+		DbClient._getOutboxTable().remove({"_id":messageId})
 
 	@staticmethod
 	def getInboxMessages():
-		client = pymongo.MongoClient()
-		return client.murmelidb.inbox.find({"deleted":None}).sort("timestamp", -1)
+		return DbClient._getInboxTable().find({"deleted":None}).sort("timestamp", -1)
 		# TODO: Other sorting/paging options?
+
+	@staticmethod
+	def deleteMessageFromInbox(messageId):
+		DbClient._getInboxTable().update({"_id":ObjectId(messageId)}, {"$set" : {"deleted":True}})
