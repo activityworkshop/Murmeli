@@ -111,6 +111,12 @@ class DbClient:
 		return client.murmelidb.testoutbox if DbClient._useTestTables else client.murmelidb.outbox
 
 	@staticmethod
+	def _getAdminTable():
+		'''Use a different table for the unit tests so they're independent of the running db'''
+		client = pymongo.MongoClient()
+		return client.murmelidb.testadmin if DbClient._useTestTables else client.murmelidb.admin
+
+	@staticmethod
 	def getProfile(userid=None, extend=True):
 		if userid is None:
 			profile = DbClient._getProfileTable().find_one({'ownprofile': True})
@@ -241,11 +247,11 @@ class DbClient:
 	def getMessageableContacts():
 		'''Get a list of contacts we can send messages to, ie trusted or untrusted'''
 		return DbClient._getProfileTable().find({"status":{"$in" : ["trusted", "untrusted"]}},
-			 {"torid":1, "displayName":1, "status":1}).sort([('torid',1)])
+			 {"torid":1, "displayName":1, "status":1, "contactlist":1}).sort([('torid',1)])
 
 	@staticmethod
 	def getTrustedContacts():
-		return DbClient._getProfileTable().find({"status":"trusted"}, {"torid":1, "name":1}).sort([('torid',1)])
+		return DbClient._getProfileTable().find({"status":"trusted"}, {"torid":1, "name":1, "contactlist":1}).sort([('torid',1)])
 
 	@staticmethod
 	def updateContactList(showList):
@@ -258,8 +264,8 @@ class DbClient:
 				name = p['name']
 				if not name: name = p['torid']
 				if name:
-					contactlist.append(p['torid'] + name.replace(',', '.') + ',')
-		profile = {'contactlist' : ''.join(contactlist)}
+					contactlist.append(p['torid'] + name.replace(',', '.'))
+		profile = {'contactlist' : ','.join(contactlist)}
 		DbClient.updateContact(DbClient.getOwnTorId(), profile)
 
 	@staticmethod
@@ -301,6 +307,24 @@ class DbClient:
 		DbClient._getOutboxTable().remove({"_id":messageId})
 
 	@staticmethod
+	def addMessageToInbox(message):
+		'''A message has been received, need to add this to our inbox so it can be read'''
+		# Calculate hash of message's body + timestamp + sender
+		thisHash = DbClient.calculateHash({"body":message['messageBody'], "timestamp":message['timestamp'], "senderId":message['fromId']})
+		# Check id or hash of message to make sure we haven't got it already!
+		inbox = DbClient._getInboxTable()
+		if not inbox.find_one({"messageHash" : thisHash}):
+			message['messageHash'] = thisHash
+			# Either take its parent's conversation id, or generate a new one
+			message['conversationid'] = DbClient.getConversationId(message.get("parentHash", None))
+			# print("Storing message to inbox:", message)
+			inbox.insert(message)
+			# Inform all interested listeners that there's been a change in the messages
+			DbMessageNotifier.getInstance().notify()
+		else:
+			print("Received a message for the inbox with hash '", thisHash, "but I've got that one already")
+
+	@staticmethod
 	def getInboxMessages():
 		return DbClient._getInboxTable().find({"deleted":None}).sort("timestamp", -1)
 		# TODO: Other sorting/paging options?
@@ -308,3 +332,27 @@ class DbClient:
 	@staticmethod
 	def deleteMessageFromInbox(messageId):
 		DbClient._getInboxTable().update({"_id":ObjectId(messageId)}, {"$set" : {"deleted":True}})
+
+	@staticmethod
+	def getConversationId(parentHash):
+		if parentHash:
+			inboxTable = DbClient._getInboxTable()
+			# There should be only one message with thish hash (unless it's been deleted)
+			for m in inboxTable.find({"messageHash" : parentHash}):
+				cid = m.get("conversationid", None)
+				if cid:
+					return cid
+		# No such parent message found, so generate a new conversation id
+		return DbClient.getNewConversationId()
+
+	@staticmethod
+	def getNewConversationId():
+		adminTable = DbClient._getAdminTable()
+		cid = adminTable.find_and_modify(query={"_id":"conversationid"}, update={"$inc":{"value":1}}, new=True)
+		if cid:
+			value = cid.get("value", None)
+			if value:
+				return value
+		# Couldn't get any value, so start from 1
+		adminTable.insert({"_id":"conversationid", "value":1})
+		return 1

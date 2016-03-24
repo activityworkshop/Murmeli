@@ -186,13 +186,13 @@ class ContactsPageSet(PageSet):
 		self.requirePageResources(['avatar-none.jpg', 'status-self.png', 'status-requested.png', 'status-untrusted.png', 'status-trusted.png'])
 		selectedprofile = DbClient.getProfile(userid)
 		if selectedprofile is None:
-			userid = None
 			selectedprofile = DbClient.getProfile()
+		userid = selectedprofile['torid']
+		ownPage = userid == DbClient.getOwnTorId()
 
 		# Build list of contacts
 		userboxes = []
 		for p in DbClient.getContactList():
-			if userid is None: userid = p['torid']
 			box = Bean()
 			box.dispName = p['displayName']
 			box.torid = p['torid']
@@ -207,10 +207,19 @@ class ContactsPageSet(PageSet):
 		if extraParams:
 			pageProps.update(extraParams)
 
+		# See which contacts we have in common with this person
+		(sharedContactIds, possIdsForThem, possIdsForMe, nameMap) = ContactMaker.getSharedAndPossibleContacts(userid)
+		sharedContacts = self._makeIdAndNameBeanList(sharedContactIds, nameMap)
+		pageProps.update({"sharedcontacts" : sharedContacts})
+		possibleContacts = self._makeIdAndNameBeanList(possIdsForThem, nameMap)
+		pageProps.update({"possiblecontactsforthem" : possibleContacts})
+		possibleContacts = self._makeIdAndNameBeanList(possIdsForMe, nameMap)
+		pageProps.update({"possiblecontactsforme" : possibleContacts})
+
 		# Which template to use depends on whether we're just showing or also editing
 		if doEdit:
 			# Use two different details templates, one for self and one for others
-			detailstemplate = self.editowndetailstemplate if userid == DbClient.getOwnTorId() else self.editdetailstemplate
+			detailstemplate = self.editowndetailstemplate if ownPage else self.editdetailstemplate
 			righttext = detailstemplate.getHtml(pageProps)
 		else:
 			detailstemplate = self.detailstemplate  # just show
@@ -221,6 +230,16 @@ class ContactsPageSet(PageSet):
 			'rightColumn' : righttext,
 			'pageFooter' : "<p>Footer</p>"})
 		return contents
+
+	def _makeIdAndNameBeanList(self, cids, nameMap):
+		cList = []
+		if cids:
+			for cid in cids:
+				c = Bean()
+				c.torid = cid
+				c.dispName = nameMap.get(cid, cid)
+				cList.append(c)
+		return cList
 
 
 # Messages page server, for showing list of messages etc

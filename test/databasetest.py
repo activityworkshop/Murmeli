@@ -81,47 +81,79 @@ class DatabaseTest(unittest.TestCase):
 		person1profile = {"name" : "Jeremy Flintstone", "keyid" : "someKeyId", "displayName" : "Uncle Jez",
 					"status" : "trusted"}
 		DbClient.updateContact(person1TorId, person1profile)
-		(shared, possible, _) = ContactMaker.getSharedAndPossibleContacts(person1TorId)
+		(shared, possIdsForThem, possIdsForMe, _) = ContactMaker.getSharedAndPossibleContacts(person1TorId)
 		self.assertFalse(shared, "person1 shouldn't have any shared contacts")
-		self.assertFalse(possible, "person1 shouldn't have any possible contacts")
+		self.assertFalse(possIdsForThem, "person1 shouldn't have any possible contacts")
+		self.assertFalse(possIdsForMe, "I shouldn't have any possible contacts")
 		# Add second friend who lists first one as contact
 		person2TorId = "GHI123JKL456MN78"
 		person2profile = {"name" : "Karen Millhouse", "keyid" : "someKeyId", "displayName" : "Mum",
 					"status" : "trusted", "contactlist":"DEF123GHI456JK78Jeremy,ABC123DEF456GH78Constantin,"}
 		DbClient.updateContact(person2TorId, person2profile)
-		(shared, possible, _) = ContactMaker.getSharedAndPossibleContacts(person1TorId)
+		(shared, possIdsForThem, possIdsForMe, _) = ContactMaker.getSharedAndPossibleContacts(person1TorId)
 		self.assertEqual(len(shared), 1, "person1 should have exactly one shared contact now")
 		self.assertTrue(person2TorId in shared, "person1 should have p2 as shared contact now")
-		self.assertFalse(possible, "person1 shouldn't have any possible contacts")
-		(shared, possible, _) = ContactMaker.getSharedAndPossibleContacts(person2TorId)
+		self.assertFalse(possIdsForThem, "person1 shouldn't have any possible contacts")
+		self.assertFalse(possIdsForMe, "I shouldn't have any possible contacts from p1")
+		(shared, possIdsForThem, possIdsForMe, _) = ContactMaker.getSharedAndPossibleContacts(person2TorId)
 		self.assertEqual(len(shared), 1, "person2 should have exactly one shared contact now")
 		self.assertTrue(person1TorId in shared, "person2 should have p1 as shared contact now")
-		self.assertFalse(possible, "person2 shouldn't have any possible contacts")
+		self.assertFalse(possIdsForThem, "person2 shouldn't have any possible contacts")
+		self.assertFalse(possIdsForMe, "I shouldn't have any possible contacts from p2")
 		# Person 2 gets a new friend
 		DbClient.updateContact(person2TorId, {"contactlist":"DEF123GHI456JK78Jeremy,ABC123DEF456GH78Constantin,MNO123PQR456ST78Scarlet Pimpernel"})
-		(shared, possible, _) = ContactMaker.getSharedAndPossibleContacts(person1TorId)
+		(shared, possIdsForThem, possIdsForMe, _) = ContactMaker.getSharedAndPossibleContacts(person1TorId)
 		self.assertEqual(len(shared), 1, "person1 should still have one shared contact")
 		self.assertTrue(person2TorId in shared, "person1 should have p2 as shared contact")
-		self.assertFalse(possible, "person1 shouldn't have any possible contacts")
-		(shared, possible, _) = ContactMaker.getSharedAndPossibleContacts(person2TorId)
+		self.assertFalse(possIdsForThem, "person1 shouldn't have any possible contacts")
+		(shared, possIdsForThem, possIdsForMe, _) = ContactMaker.getSharedAndPossibleContacts(person2TorId)
 		self.assertEqual(len(shared), 1, "person2 should still have one shared contact")
 		self.assertTrue(person1TorId in shared, "person2 should have p1 as shared contact")
-		self.assertFalse(possible, "person2 shouldn't have any possible contacts")
+		self.assertFalse(possIdsForThem, "person2 shouldn't have any possible contacts")
 		# We now make friends with MNO
 		person3TorId = "MNO123PQR456ST78"
 		person3profile = {"name" : "Scarlet Pimpernel", "keyid" : "someKeyId", "displayName" : "Stranger",
 					"status" : "trusted"}
 		DbClient.updateContact(person3TorId, person3profile)
-		(shared, possible, _) = ContactMaker.getSharedAndPossibleContacts(person1TorId)
+		(shared, possIdsForThem, possIdsForMe, _) = ContactMaker.getSharedAndPossibleContacts(person1TorId)
 		self.assertEqual(len(shared), 1, "person1 should still have one shared contact")
 		self.assertTrue(person2TorId in shared, "person1 should have p2 as shared contact")
-		self.assertEqual(len(possible), 1, "person1 should have one possible contact now")
-		self.assertTrue(person3TorId in possible, "person1 should have p3 as possible contact")
-		(shared, possible, _) = ContactMaker.getSharedAndPossibleContacts(person2TorId)
+		self.assertEqual(len(possIdsForThem), 1, "person1 should have one possible contact now")
+		self.assertTrue(person3TorId in possIdsForThem, "person1 should have p3 as possible contact")
+		(shared, possIdsForThem, possIdsForMe, _) = ContactMaker.getSharedAndPossibleContacts(person2TorId)
 		self.assertEqual(len(shared), 2, "person2 should now have 2 shared contacts")
 		self.assertTrue(person1TorId in shared, "person2 should have p1 as shared contact")
 		self.assertTrue(person3TorId in shared, "person2 should have p3 as shared contact")
-		self.assertFalse(possible, "person2 shouldn't have any possible contacts")
+		self.assertFalse(possIdsForThem, "person2 shouldn't have any possible contacts")
+
+	def testConversationIds(self):
+		'''Check that generating and incrementing conversation ids works using the admin table'''
+		DbClient._getAdminTable().remove()
+		for i in range(1, 2000):
+			nextId = DbClient.getNewConversationId()
+			self.assertEqual(nextId, i, "the conversation id " + str(i) + " should match")
+
+	def testConversationIdsFromParent(self):
+		'''Check that the correct conversation id can be found based on a parent hash'''
+		startId = DbClient.getNewConversationId()
+		# Does it work on an empty inbox?
+		DbClient._getInboxTable().remove()
+		nextId = DbClient.getConversationId("some random hash")
+		self.assertEqual(startId+1, nextId, "Should increment if hash not found in empty inbox")
+		nextId = DbClient.getConversationId(None)
+		self.assertEqual(startId+2, nextId, "Should increment if None hash given")
+		nextId = DbClient.getConversationId("")
+		self.assertEqual(startId+3, nextId, "Should increment if empty string hash given")
+		# Now add a message with a hash
+		rowToStore = {"messageType":"normal", "fromId":"BCD123EFG456HI78", "timestamp":"2012-01-08-13-18",
+			"messageBody":"I do like a day beside the seaside", "recipients":"ABC123DEF456GH78"}
+		DbClient.addMessageToInbox(rowToStore)
+		nextId = DbClient.getConversationId("some random hash")
+		self.assertEqual(startId+5, nextId, "Should increment if hash not found in inbox")
+		nextId = DbClient.getConversationId("7b6dd00818a70515ba560efc5a42aab5")
+		self.assertEqual(startId+4, nextId, "Should take the old id if hash was found in inbox")
+		anotherId = DbClient.getConversationId("7b6dd00818a70515ba560efc5a42aab5")
+		self.assertEqual(anotherId, nextId, "Should reuse the same id if hash was found in inbox")
 
 
 if __name__ == "__main__":

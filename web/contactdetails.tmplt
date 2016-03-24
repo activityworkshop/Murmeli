@@ -30,3 +30,12 @@
 {{if person['status']!='self'}}
 <div style="text-align:right"><a href='' onclick='deleteContact("{{person['torid']}}");return false;' class='reversebutton'>{{langs['button.delete']}}</a> this contact</div>
 {{endif}}
+{{if sharedcontacts}}
+<p>Shared contacts: {{for c in sharedcontacts}}'{{c.dispName}}' &nbsp;{{endfor}}</p>
+{{endif}}
+{{if possiblecontactsforthem}}
+<p>Possible contacts for {{person['displayName']}}: {{for c in possiblecontactsforthem}}'{{c.dispName}}' &nbsp;{{endfor}}</p>
+{{endif}}
+{{if possiblecontactsforme}}
+<p>Possible contacts for me: {{for c in possiblecontactsforme}}'{{c.dispName}}' &nbsp;{{endfor}}</p>
+{{endif}}
