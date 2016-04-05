@@ -24,6 +24,8 @@ class CryptoClient:
 	randgen = SystemRandom()
 	# static variable to hold GPG object
 	_gpg = None
+	# True to use the test keyring instead of the regular one
+	_useTestKeyring = False
 	'''Constant string used for wrapping signed data '''
 	SIGNATURE_WRAP_TEXT = ":murmeli:".encode("utf-8")
 
@@ -36,14 +38,27 @@ class CryptoClient:
 		return found
 
 	@staticmethod
+	def useTestKeyring():
+		'''Only call this method from unit tests, so that a different keyring is used'''
+		CryptoClient._useTestKeyring = True
+		CryptoClient._gpg = None
+
+	@staticmethod
+	def _getKeyringPath():
+		'''Get the path to the keyring, depending on whether we're testing or not'''
+		keyring = Config.getKeyringDir()
+		if CryptoClient._useTestKeyring:
+			keyring += "test"
+		return keyring
+
+	@staticmethod
 	def initGpg():
 		'''init the _gpg object if it's not been done yet'''
 		if CryptoClient._gpg is None:
 			# Get keyring path
-			keyring = Config.getKeyringDir()
-			print("keyring is", keyring)
+			keyring = CryptoClient._getKeyringPath()
 			if keyring is not None and os.path.exists(keyring):
-				print("keyring exists")
+				print("keyring exists at", keyring)
 				try:
 					gpgexe = Config.getProperty(Config.KEY_GPG_EXE)
 					if not gpgexe: gpgexe = "gpg"
@@ -64,6 +79,14 @@ class CryptoClient:
 		found, privKeys = CryptoClient._checkPrivateKeys()
 		return privKeys
 
+	@staticmethod
+	def getPublicKeys():
+		'''Get a list of public keys - only used for testing'''
+		CryptoClient.initGpg()
+		if CryptoClient._gpg is None:
+			return []
+		return CryptoClient._gpg.list_keys(False) # False for just the public keys
+
 	# Get an Ascii version of a public key, either ours or another one
 	@staticmethod
 	def getPublicKey(keyId):
@@ -81,6 +104,22 @@ class CryptoClient:
 		key = CryptoClient._gpg.gen_key(inputdata)
 		return key
 
+	@staticmethod
+	def importPublicKey(strkey):
+		'''If the given string holds a key, then add it to the keyring and return the keyid
+		Otherwise, return None.
+		Usually used to import public keys from contacts, but also used for private keys by tests'''
+		if strkey:
+			CryptoClient.initGpg()
+			res = CryptoClient._gpg.import_keys(strkey)
+			if res.count == 1 and len(set(res.fingerprints)) == 1:
+				# import was successful, we've now added one key
+				fingerprint = res.fingerprints[0]
+				if fingerprint:
+					for key in CryptoClient._gpg.list_keys():
+						if key.get("fingerprint", "") == fingerprint:
+							return key.get("keyid", None)
+		return None
 
 	########## Asymmetric encryption ##############
 
@@ -112,3 +151,26 @@ class CryptoClient:
 		if cryptoResult.ok:
 			return (cryptoResult.data, cryptoResult.key_id if cryptoResult.valid else None)
 		return (None, None)
+
+	########## Signing data without encryption ##############
+
+	@staticmethod
+	def signData(message, ownkey):
+		'''Wrap the given message (given as bytearray or bytes) and sign it with the specified key'''
+		CryptoClient.initGpg()
+		dataToSign = CryptoClient.SIGNATURE_WRAP_TEXT + bytes(message) + CryptoClient.SIGNATURE_WRAP_TEXT
+		return CryptoClient._gpg.sign(dataToSign, keyid=ownkey).data
+
+	@staticmethod
+	def verifySignedData(message):
+		'''Return the data which was signed, and the signing keyid if the signature is valid'''
+		CryptoClient.initGpg()
+		result = CryptoClient._gpg.verify(message)
+		if result.valid:
+			marker1 = message.find(CryptoClient.SIGNATURE_WRAP_TEXT)
+			marker2 = message.rfind(CryptoClient.SIGNATURE_WRAP_TEXT)
+			if marker1 > 0 and marker2 > marker1:
+				return (message[marker1 + len(CryptoClient.SIGNATURE_WRAP_TEXT) : marker2], result.key_id)
+		return (None, None)
+
+	##############################################
