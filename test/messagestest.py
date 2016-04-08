@@ -1,20 +1,25 @@
 import unittest
 import message
 from config import Config
-from cryptoclient import CryptoError
+from cryptoclient import CryptoClient, CryptoError
 from dbclient import DbClient
+from testutils import TestUtils
 
 
 class ContactRequestTest(unittest.TestCase):
 	'''Tests for the contact request messages'''
 	def setUp(self):
 		Config.load()
+		DbClient.useTestTables()
+		CryptoClient.useTestKeyring()
+		TestUtils.setupKeyring(["key1_private", "key2_public"])
+		TestUtils.setupOwnProfile("46944E14D24D711B") # id of key1
 
 	###################################
 	# Tests for encoding, decoding contact request messages
 	def testMakingContactRequest(self):
 		INTRO = "hello, here's a £ and a #~= î höw are you?"
-		SENDER = "c5pphe4wckw4j74h"
+		SENDER = TestUtils._ownTorId
 		KEY_BEGINNING = "-----BEGIN PGP PUBLIC KEY BLOCK-----"
 		m = message.ContactRequestMessage(introMessage=INTRO)
 		output = m.createUnencryptedOutput()
@@ -27,7 +32,6 @@ class ContactRequestTest(unittest.TestCase):
 	def testInvalidContactRequest(self):
 		'''Imagine we've received some kind of invalid content from a stranger,
 		should we throw an exception or just throw it away?  Either way we shouldn't crash!'''
-		print("invalid...")
 		b = bytearray()
 		self.execInvalidContactRequest(b)
 		b += "muuuurmeli".encode("utf-8")
@@ -44,7 +48,7 @@ class ContactRequestTest(unittest.TestCase):
 	###################################
 	# Tests for encoding, decoding contact response messages
 	def testMakingContactDeny(self):
-		SENDER = "c5pphe4wckw4j74h"
+		SENDER = TestUtils._ownTorId
 		m = message.ContactDenyMessage()
 		output = m.createUnencryptedOutput()
 		bac = message.Message.MessageFromReceivedData(output, False)
@@ -54,8 +58,8 @@ class ContactRequestTest(unittest.TestCase):
 
 	def testMakingContactAccept(self):
 		INTRO = "Jääääää, why näääät?"
-		SENDER = "c5pphe4wckw4j74h"
-		SENDERNAME = "Activity Workshop"
+		SENDER = TestUtils._ownTorId
+		SENDERNAME = "Geoffrey Lancaster"
 		KEY_BEGINNING = "-----BEGIN PGP PUBLIC KEY BLOCK-----"
 
 		m = message.ContactResponseMessage(senderId=None, senderName=None, message=INTRO, senderKey=None)
@@ -87,7 +91,7 @@ class ContactRequestTest(unittest.TestCase):
 
 	def testMakingEncryptedContactAccept(self):
 		INTRO = "You really shouldn't be able to read this because it should be encrypted and signed"
-		RECPTKEYID = "36ECAB5DA51C178A"
+		RECPTKEYID = "3B898548F994C536" # id of key2
 
 		m = message.ContactResponseMessage(senderId=None, senderName=None, message=INTRO, senderKey=None)
 		output = m.createOutput(RECPTKEYID)
@@ -102,7 +106,11 @@ class ContactRequestTest(unittest.TestCase):
 			self.assertNotEqual(x, INTRO, "Message wasn't encrypted properly")
 		# Test decryption
 		bac = message.Message.MessageFromReceivedData(output)
-		self.assertIsNotNone(bac, "couldn't decode the data")
+		self.assertIsNone(bac, "shouldn't be able to decode the data")
+		# Now we can cheat and add the private key2 to the keyring, then we should be able to decode it
+		TestUtils.setupKeyring(["key2_private", "key1_public"])
+		bac = message.Message.MessageFromReceivedData(output)
+		self.assertIsNotNone(bac, "should be able to decode the data")
 
 
 if __name__ == "__main__":

@@ -1,13 +1,13 @@
 {{for c in contacts}}
 	<div class='{{c.tilestyle}}'>
-		<img src='file://{{webcachedir}}/avatar-{{c.torid}}.jpg' width='36' height='36' style='float:left; margin:2px'>
-		<img src='file://{{webcachedir}}/status-{{c.status}}.png' width='24' height='24' style='float:right'>
+		<img src='file:///{{webcachedir}}/avatar-{{c.torid}}.jpg' width='36' height='36' style='float:left; margin:2px'>
+		<img src='file:///{{webcachedir}}/status-{{c.status}}.png' width='24' height='24' style='float:right'>
 		<p><b><a href='/contacts/{{c.torid}}'>{{c.dispName}}</a></b><br>
 		{{if c.isonline}}(online){{else}}Maybe last seen, ...{{endif}}<br clear="all"></p>
 	</div>
 {{endfor}}
 <div class="genericbox" style='float:right; width:130px; clear:both; '>
 <div style='float:left;margin-right:5px'><img
- src='file://{{webcachedir}}/button-drawgraph.png' title='{{langs['contacts.link.showstorm']}}'></div>
+ src='file:///{{webcachedir}}/button-drawgraph.png' title='{{langs['contacts.link.showstorm']}}'></div>
 {{langs['contacts.link.showstorm']}}</div>
 <p style='clear:both;'>&nbsp;</p>

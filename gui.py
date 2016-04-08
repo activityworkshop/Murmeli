@@ -4,6 +4,20 @@ from dbnotify import DbResourceNotifier
 # Helper classes for GUI functions
 
 
+class DummyReply(QtNetwork.QNetworkReply):
+	'''An empty reply class to cancel a network request that we want to deal with another way'''
+	def __init__(self, parent):
+		QtNetwork.QNetworkReply.__init__(self, parent)
+		self.content = "<html>This is empty</html>"
+	def abort(self):
+		pass
+	def bytesAvailable(self):
+		return 0
+	def isSequential(self):
+		return True
+	def readData(self, maxSize):
+		pass
+
 # Class for network manager
 class NavigationInterceptor(QtNetwork.QNetworkAccessManager):
 	def __init__(self, parent):
@@ -25,9 +39,10 @@ class NavigationInterceptor(QtNetwork.QNetworkAccessManager):
 			paramd = {k : bytes(QtCore.QByteArray.fromPercentEncoding(v.replace("+", " "))).decode("utf-8") for k,v in paramList}
 		self.parent.navigateTo(path, paramd)
 		# TODO: Check this, shouldn't we be able to return None or something to cancel the form submit??
-		# Replace posted URL with an empty one before forwarding
-		request.setUrl(QtCore.QUrl())
-		return QtNetwork.QNetworkAccessManager.createRequest(self, oper, request, None)
+		# abandon request
+		dummyResponse = DummyReply(self)
+		dummyResponse.abort()
+		return dummyResponse
 
 
 # Class for webpage

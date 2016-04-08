@@ -1,10 +1,10 @@
 <script type="text/javascript">
 	function updateProfilePic(fname) {
-		document.getElementById('nailpic').src = "file://" + fname;
+		document.getElementById('nailpic').src = "file:///" + fname;
 		document.getElementById('profilepicpath').value = fname;
 	}
 </script>
-<div class='genericbox' style='float:left;margin:10px'><img src='file://{{webcachedir}}/avatar-{{person['torid']}}.jpg' width='128' height='128' id='nailpic'><br style='clear:both'>
+<div class='genericbox' style='float:left;margin:10px'><img src='file:///{{webcachedir}}/avatar-{{person['torid']}}.jpg' width='128' height='128' id='nailpic'><br style='clear:both'>
 <a href='/special/selectfile'>{{langs['button.change']}}</a></div>
 
 <h1>{{person['displayName']}}</h1>

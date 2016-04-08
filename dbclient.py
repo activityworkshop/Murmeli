@@ -91,6 +91,7 @@ class DbClient:
 	def useTestTables():
 		'''Only call this method from unit tests, so that different db tables are used'''
 		DbClient._useTestTables = True
+		DbClient._torId = None
 
 	@staticmethod
 	def _getProfileTable():
@@ -139,6 +140,11 @@ class DbClient:
 	def getOwnKeyId():
 		ownprofile = DbClient.getProfile(None, False)
 		return ownprofile['keyid']
+
+	@staticmethod
+	def deleteOwnProfile():
+		if DbClient._useTestTables:
+			DbClient._getProfileTable().remove({"status":"self"})
 
 	# TODO: Make these non-static methods and keep a hold of a MongoClient?  But who keeps hold of the DbClient?
 

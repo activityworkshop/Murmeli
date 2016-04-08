@@ -17,8 +17,9 @@ Please try out the code and report back any difficulties encountered.  The tool 
 
 and the tests can be run with (for example):
 
-        export PYTHONPATH=.
-        python3 test/databasetest.py
+        cd test
+        export PYTHONPATH=..
+        python3 databasetest.py
 
 All feedback and help is very welcome.
 
@@ -27,7 +28,7 @@ All feedback and help is very welcome.
 * The DbClient checks to see if the 'mongod' database server is running or not, to see whether
  it needs to be started.  On Linux it can do this by trying to create a 'MongoClient' object,
  and if the server isn't running, this will fail with a ConnectionFailure: Connection refused.
- From some preliminary tests on Windows, it seems that it behaves differently and the client
+ On Windows, it seems that it behaves differently and the client
  object can be created even if the mongod server isn't even installed!  The result is that the
  DbClient thinks that mongod is already running, and doesn't try to start it.
  (Murmeli could try to query the Mongo server if it thinks it's running on Windows, but unfortunately
