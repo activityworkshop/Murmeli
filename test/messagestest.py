@@ -113,6 +113,32 @@ class ContactRequestTest(unittest.TestCase):
 		self.assertIsNotNone(bac, "should be able to decode the data")
 
 
+class StatusNotifyTest(unittest.TestCase):
+	'''Tests for the status notification messages'''
+	def setUp(self):
+		Config.load()
+		DbClient.useTestTables()
+
+	###################################
+	# Tests for encoding, decoding status notify messages
+	def testStatusComingOnline(self):
+		self.execStatusNotify(True, True)
+	def testStatusGoingOffline(self):
+		self.execStatusNotify(False, True)
+	def testStatusStillOnline(self):
+		self.execStatusNotify(True, False)
+
+	def execStatusNotify(self, online, ping):
+		m = message.StatusNotifyMessage(online=online, ping=ping, profileHash=None)
+		output = m.createUnencryptedOutput()
+		bac = message.Message.MessageFromReceivedData(output, False)
+		self.assertIsNotNone(bac, "couldn't decode the data")
+		self.assertEqual(online, bac.online)
+		self.assertEqual(ping, bac.ping)
+		print("profile hash is now", bac.profileHash)
+		self.assertTrue(bac.profileHash.startswith("bcc42c9d276"))
+
+
 if __name__ == "__main__":
 	unittest.main()
 

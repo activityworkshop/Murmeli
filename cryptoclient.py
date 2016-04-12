@@ -121,6 +121,16 @@ class CryptoClient:
 							return key.get("keyid", None)
 		return None
 
+	@staticmethod
+	def getFingerprint(keyId):
+		'''Get the fingerprint of the key with the given keyId - returns a 40-character string'''
+		if keyId:
+			CryptoClient.initGpg()
+			for key in CryptoClient._gpg.list_keys():
+				if key.get("keyid", "") == keyId:
+					return key.get("fingerprint", None)
+
+
 	########## Asymmetric encryption ##############
 
 	@staticmethod

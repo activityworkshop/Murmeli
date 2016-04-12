@@ -50,9 +50,10 @@ class Message:
 	TYPE_SYMMETRIC_BLOB  = 4
 	TYPE_INFO_REQUEST = 5
 	TYPE_INFO_RESPONSE = 6
-	TYPE_FRIENDINTRO_REQUEST = 7
-	TYPE_ASYM_MESSAGE        = 8
-	TYPE_SYMMETRIC_KEY       = 9
+	TYPE_FRIEND_REFERRAL = 7
+	TYPE_FRIENDREFER_REQUEST = 8
+	TYPE_ASYM_MESSAGE        = 20
+	TYPE_SYMMETRIC_KEY       = 21
 
 	ENCTYPE_NONE = 0
 	ENCTYPE_ASYM = 1
@@ -317,6 +318,7 @@ class AsymmetricMessage(Message):
 		'''Construct the subpayload according to the subclass's rules and data'''
 		subpayload = self._createSubpayload()
 		timestr = self.makeCurrentTimestamp()
+		self.timestamp = Message.convertTimestampFromString(timestr)
 		# prepend and append payload with our own general tokens
 		token = self.createRandomToken()
 		total = self.packBytesTogether([
@@ -355,6 +357,8 @@ class AsymmetricMessage(Message):
 		msg = None
 		if msgType == Message.TYPE_CONTACT_RESPONSE:
 			msg = ContactResponseMessage.construct(subpayload)
+		elif msgType == Message.TYPE_STATUS_NOTIFY:
+			msg = StatusNotifyMessage.construct(subpayload)
 		# Ask the message if it's ok to have no signature
 		if isEncrypted and not signatureKey and msg and not msg.acceptUnrecognisedSignature():
 			msg = None
@@ -442,3 +446,37 @@ class ContactResponseMessage(AsymmetricMessage):
 
 	def getMessageTypeKey(self):
 		return "contactaccept"
+
+
+# Message to send a notification of status, either coming online or about to go offline
+# Includes a hash of the current profile so that receivers can compare with their stored hash
+class StatusNotifyMessage(AsymmetricMessage):
+	def __init__(self, online = True, ping = True, profileHash = None):
+		AsymmetricMessage.__init__(self)
+		self.online = online
+		self.ping = ping
+		self.profileHash = profileHash
+		self.messageType = Message.TYPE_STATUS_NOTIFY
+		self.shouldBeRelayed = False
+		self.shouldBeQueued  = False
+
+	def _createSubpayload(self):
+		'''Use the stored fields to pack the payload contents together'''
+		if self.profileHash is None or self.profileHash == "":
+			self.profileHash = DbClient.calculateHash(DbClient.getProfile())
+		return self.packBytesTogether([
+			self.encodeNumberToBytes(1 if self.online else 0, 1),
+			self.encodeNumberToBytes(1 if self.ping else 0, 1),
+			self.profileHash])
+
+	# Factory constructor using a given payload and extracting the fields
+	@staticmethod
+	def construct(payload):
+		chomper = StringChomper(payload)
+		online = Message.strToInt(chomper.getField(1)) > 0
+		ping   = Message.strToInt(chomper.getField(1)) > 0
+		profileHash = chomper.getRest().decode("utf-8")
+		return StatusNotifyMessage(online, ping, profileHash)
+
+	def getMessageTypeKey(self):
+		return "statusnotify"
