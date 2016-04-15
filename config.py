@@ -1,9 +1,11 @@
-from PyQt4.QtCore import QObject, SIGNAL
+'''Configuration module, including loading and saving to file'''
+
 import configparser
 import os.path
+from PyQt4.QtCore import QObject, SIGNAL
 
-# Class to emit changed signals
 class ConfigTannoy(QObject):
+	'''Class to emit changed signals from the Config class'''
 	def __init__(self):
 		QObject.__init__(self)
 	def connectListener(self, sub):
@@ -12,8 +14,8 @@ class ConfigTannoy(QObject):
 		self.emit(SIGNAL("fireUpdated()"))
 
 
-# Class to store application-wide config
 class Config():
+	'''Class to store application-wide config'''
 	# static tannoy for broadcasting changes
 	tannoy = None
 	# Fixed location of config file
@@ -38,12 +40,14 @@ class Config():
 	def foundConfigFile():
 		'''Return True if the config file was found and is readable, False otherwise'''
 		try:
-			with open(Config.CONFIG_FILE_PATH, 'r') as conffile:
+			with open(Config.CONFIG_FILE_PATH, 'r'):
 				return True
-		except: return False
+		except:
+			return False
 
 	@staticmethod
 	def load():
+		'''Load the configuration from file'''
 		if not Config.tannoy:
 			Config.tannoy = ConfigTannoy()
 		# Clear properties, and set default values
@@ -73,8 +77,9 @@ class Config():
 
 	@staticmethod
 	def _fixBooleanProperty(propName):
+		'''Helper method to fix the loading of string values representing booleans'''
 		value = Config.getProperty(propName)
-		if value and type(value) == str:
+		if value and isinstance(value, str):
 			Config.properties[propName] = (value == "True")
 
 	@staticmethod
@@ -109,7 +114,7 @@ class Config():
 	@staticmethod
 	def save():
 		writer = configparser.RawConfigParser()
-		for p in list(Config.properties.keys()):
+		for p in Config.properties:
 			dotpos = p.find('.')
 			if dotpos > 0:
 				section = p[0:dotpos]
@@ -122,4 +127,3 @@ class Config():
 		except Exception as e:
 			print("*** FAILED to save config!", e)
 			# TODO: Raise exception here or use return code to show failure?
-

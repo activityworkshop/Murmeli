@@ -1,7 +1,7 @@
+'''Helper classes for GUI functions'''
+
 from PyQt4 import QtGui, QtWebKit, QtCore, QtNetwork
 from dbnotify import DbResourceNotifier
-
-# Helper classes for GUI functions
 
 
 class DummyReply(QtNetwork.QNetworkReply):
@@ -18,8 +18,9 @@ class DummyReply(QtNetwork.QNetworkReply):
 	def readData(self, maxSize):
 		pass
 
-# Class for network manager
+
 class NavigationInterceptor(QtNetwork.QNetworkAccessManager):
+	'''Class for network manager, to intercept network calls'''
 	def __init__(self, parent):
 		QtNetwork.QNetworkAccessManager.__init__(self)
 		self.parent = parent
@@ -32,21 +33,20 @@ class NavigationInterceptor(QtNetwork.QNetworkAccessManager):
 				print("Going to createRequest for avatar:", path)
 			return QtNetwork.QNetworkAccessManager.createRequest(self, oper, request, formData)
 		paramd = {}
-		if (formData != None):
+		if formData:
 			paramStrings = bytes(formData.readAll()).decode("utf-8").split("&")
 			paramList = [s.split("=") for s in paramStrings if s]
 			print("paramList is:", paramList)
-			paramd = {k : bytes(QtCore.QByteArray.fromPercentEncoding(v.replace("+", " "))).decode("utf-8") for k,v in paramList}
+			paramd = {k : bytes(QtCore.QByteArray.fromPercentEncoding(v.replace("+", " "))).decode("utf-8") for k, v in paramList}
 		self.parent.navigateTo(path, paramd)
-		# TODO: Check this, shouldn't we be able to return None or something to cancel the form submit??
 		# abandon request
 		dummyResponse = DummyReply(self)
 		dummyResponse.abort()
 		return dummyResponse
 
 
-# Class for webpage
 class Webpage(QtWebKit.QWebPage):
+	'''Class for webpage'''
 	# is this class necessary at all?
 	def acceptNavigationRequest(self, frame, request, navtype):
 		print("accept navigation request:", request.url().toString())
@@ -92,6 +92,7 @@ class GuiWindow(QtGui.QMainWindow):
 		icon = QtGui.QIcon()
 		icon.addPixmap(QtGui.QPixmap("images/window-icon.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
 		self.setWindowIcon(icon)
+		self.pageServer = None
 
 	def setPageServer(self, server):
 		self.pageServer = server

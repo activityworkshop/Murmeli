@@ -1,11 +1,9 @@
-################################
-## Startup Wizard for Murmeli ##
-################################
+'''Startup Wizard for Murmeli'''
 
-from PyQt4 import QtGui, QtCore
 import os
 import time
 import re
+from PyQt4 import QtGui, QtCore
 from i18n import I18nManager
 from config import Config
 from dbclient import DbClient
@@ -14,11 +12,11 @@ from torclient import TorClient
 from murmeli import MainWindow
 
 
-# Class to act as the main startup wizard using Qt
 class StartupWizard(QtGui.QMainWindow):
+	'''Class to act as the main startup wizard using Qt'''
 
-	# Constructor
 	def __init__(self, *args):
+		'''Constructor'''
 		QtGui.QMainWindow.__init__(*(self,) + args)
 		self.setWindowTitle(I18nManager.getText("startupwizard.title"))
 
@@ -55,8 +53,8 @@ class StartupWizard(QtGui.QMainWindow):
 		mainlayout.addWidget(buttonPanel)
 		self.nextButton.setFocus()
 
-	# Called when the 'Back' or 'Exit' buttons are pressed
 	def backButtonClicked(self):
+		'''Called when the 'Back' or 'Exit' buttons are pressed'''
 		#print "back clicked"
 		currIndex = self.cardstack.currentIndex()
 		if currIndex == 0:
@@ -68,9 +66,8 @@ class StartupWizard(QtGui.QMainWindow):
 			self.enableButtons(self.cardPanels[currIndex-1])
 			self.cardstack.setCurrentIndex(currIndex - 1)
 
-	# Called when the 'Next' or 'Finish' buttons are pressed
 	def nextButtonClicked(self):
-		#print "next clicked"
+		'''Called when the 'Next' or 'Finish' buttons are pressed'''
 		currIndex = self.cardstack.currentIndex()
 		currCard = self.cardPanels[currIndex] # TODO: or get this direct from self.cardstack?
 		if currCard.finish():
@@ -88,8 +85,8 @@ class StartupWizard(QtGui.QMainWindow):
 				# close this wizard but keep Tor, Mongo running
 				self.close()
 
-	# ask the card what the button texts and enabled status should be
 	def enableButtons(self, card):
+		'''Ask the card what the button texts and enabled status should be'''
 		backKey, nextKey = card.getButtonKeys()
 		self.backButton.setText(I18nManager.getText("button." + backKey))
 		self.nextButton.setText(I18nManager.getText("button." + nextKey))
@@ -97,8 +94,8 @@ class StartupWizard(QtGui.QMainWindow):
 		self.backButton.setEnabled(backEnabled)
 		self.nextButton.setEnabled(nextEnabled)
 
-	# Change the texts of the back/next buttons and enable them both
 	def redrawButtons(self):
+		'''Change the texts of the back/next buttons and enable them both'''
 		currIndex = self.cardstack.currentIndex()
 		currCard = self.cardPanels[currIndex]
 		self.enableButtons(currCard)
@@ -116,8 +113,8 @@ class WizardPanel:
 	def cancel(self):
 		pass
 
-	# Convenience method for making a bold label for each panel
 	def _makeHeadingLabel(self, token):
+		'''Convenience method for making a bold label for each panel'''
 		label = QtGui.QLabel(I18nManager.getText(token))
 		boldFont = label.font()
 		boldFont.setWeight(QtGui.QFont.Bold)
@@ -125,18 +122,20 @@ class WizardPanel:
 		label.setFont(boldFont)
 		return label
 
-	# Convenience method for making a label bold for headings
 	def _makeLabelHeading(self, label):
+		'''Convenience method for making a label bold for headings'''
 		boldFont = label.font()
 		boldFont.setWeight(QtGui.QFont.Bold)
 		boldFont.setPointSize(boldFont.pointSize() + 1)
 		label.setFont(boldFont)
 
-	def getButtonKeys(self):     return ("back", "next")
-	def getButtonsEnabled(self): return (True, True)
+	def getButtonKeys(self):
+		return ("back", "next")
+	def getButtonsEnabled(self):
+		return (True, True)
 
-	# Reset the texts for all labels if the language changes
 	def redrawLabels(self):
+		'''Reset the texts for all labels if the language changes'''
 		for labelKey in list(self.labels.keys()):
 			textKey = "startupwizard." + self.getName() + "." + labelKey
 			self.labels[labelKey].setText(I18nManager.getText(textKey))
@@ -144,8 +143,8 @@ class WizardPanel:
 
 # ================Intro===================
 
-# First panel for introduction with a logo
 class IntroPanel(WizardPanel):
+	'''First panel for introduction with a logo'''
 	def getName(self):
 		return "intro"
 	def getPanel(self):
@@ -168,7 +167,8 @@ class IntroPanel(WizardPanel):
 		self.languageCombo.addItem("English")
 		self.languageCombo.addItem("Deutsch")
 		self.languageCombo.setCurrentIndex(1 if Config.getProperty(Config.KEY_LANGUAGE) == "de" else 0)
-		self.panel.connect(self.languageCombo, QtCore.SIGNAL("currentIndexChanged(int)"), self.languageChanged)
+		self.panel.connect(self.languageCombo, QtCore.SIGNAL("currentIndexChanged(int)"),
+			self.languageChanged)
 		langLayout.addStretch(1)
 		langLayout.addWidget(self.languageCombo)
 		layout.addWidget(langFrame)
@@ -186,15 +186,16 @@ class IntroPanel(WizardPanel):
 		self.redrawLabels()
 		return self.panel
 
-	# React to a change in the language dropdown
 	def languageChanged(self):
+		'''React to a change in the language dropdown'''
 		selectedLang = ["en", "de"][self.languageCombo.currentIndex()]
 		Config.setProperty(Config.KEY_LANGUAGE, selectedLang)
 		self.redrawLabels()
 		self.panel.emit(QtCore.SIGNAL('redrawNavButtons()'))
 
-	# exit button, not back
-	def getButtonKeys(self):     return ("exit", "next")
+	def getButtonKeys(self):
+		'''exit button, not back'''
+		return ("exit", "next")
 
 # ================Dependencies===================
 
@@ -236,8 +237,8 @@ class DependenciesPanel(WizardPanel):
 		panel1.setLayout(layout)
 		return panel1
 
-	# When going from the intro page to the dependencies page, this needs to be updated
 	def prepare(self):
+		'''When going from the intro page to the dependencies page, this needs to be updated'''
 		depsFound = {'pyqt':True}  # PyQt must be present, otherwise we wouldn't be here!
 		self.allFound = True
 		try:
@@ -306,8 +307,8 @@ class PathsPanel(WizardPanel):
 		self.panel.setLayout(layout)
 		return self.panel
 
-	# Called when leaving the paths page
 	def finish(self):
+		'''Called when leaving the paths page'''
 		datadir = str(self.dataDirectoryField.text())
 		Config.setProperty(Config.KEY_DATA_DIR, datadir)
 		# Make sure all the directories exist, create them if not
@@ -333,6 +334,7 @@ class PathsPanel(WizardPanel):
 # ================Services=====================
 
 class ServicesPanel(WizardPanel):
+	'''Wizard panel for the services page'''
 	def getName(self):
 		return "services"
 	def __init__(self):
@@ -377,8 +379,8 @@ class ServicesPanel(WizardPanel):
 	def getButtonsEnabled(self):
 		return (self.checksDone, self.allOk) # disable navigation until checks done
 
-	# Blank out the services tab ready for starting
 	def prepare(self):
+		'''Blank out the services tab ready for starting'''
 		self.allOk = False
 		self.checksDone = False
 		self.labels["abouttostart"].setVisible(True)
@@ -392,9 +394,8 @@ class ServicesPanel(WizardPanel):
 		self.panel.connect(self.checkerThread, QtCore.SIGNAL("updated()"), self.updatedServiceCheck)
 		self.checkerThread.start()
 
-	# Called when service check has been updated (not yet completed) by the other thread
 	def updatedServiceCheck(self):
-		#print "service check updated", self.checkerThread.successFlags
+		'''Called when service check has been updated (not yet completed) by the other thread'''
 		servicesKeys = ['mongo', 'gpg', 'tor']
 		for i, k in enumerate(servicesKeys):
 			succ = self.checkerThread.successFlags.get(k, None)
@@ -402,8 +403,8 @@ class ServicesPanel(WizardPanel):
 				else self.yesPixmap if succ else self.noPixmap)
 
 
-	# Called when service check has been completed by the other thread
 	def finishedServiceCheck(self):
+		'''Called when service check has been completed by the other thread'''
 		self.updatedServiceCheck()  # make sure all icons are updated
 		self.checksDone = True
 		self.allOk = self.checkerThread.allGood()
@@ -414,13 +415,13 @@ class ServicesPanel(WizardPanel):
 		self.panel.emit(QtCore.SIGNAL('redrawNavButtons()'))
 
 	def cancel(self):
-		# coming back from services start - need to stop them
+		'''Coming back from services start - need to stop them'''
 		DbClient.stopDatabase()
 		TorClient.stopTor()
 
 
-# Separate thread for starting the services and reporting back
 class ServiceStarterThread(QtCore.QThread):
+	'''Separate thread for starting the services and reporting back'''
 	def run(self):
 		# Check each of the services in turn
 		self.successFlags = {}
@@ -440,8 +441,8 @@ class ServiceStarterThread(QtCore.QThread):
 			else: print("Failed to start tor")
 		else: print("startTor returned false :(")
 
-	# Check whether all have been started
 	def allGood(self):
+		'''Check whether all have been started'''
 		return self.successFlags.get('gpg', False) \
 			and self.successFlags.get('mongo', False) \
 			and self.successFlags.get('tor', False)
@@ -449,6 +450,7 @@ class ServiceStarterThread(QtCore.QThread):
 # ================Key generation=====================
 
 class KeygenPanel(WizardPanel):
+	'''Panel for generation of own keypair'''
 	def getName(self):
 		return "keygen"
 	def getPanel(self):
@@ -456,7 +458,8 @@ class KeygenPanel(WizardPanel):
 		self.panel = QtGui.QWidget()
 		layout = QtGui.QVBoxLayout()
 		self.labels = {}
-		for k in ["heading", "introemptykeyring", "introsinglekey", "introselectkey", "param.name", "param.email", "param.comment", "mighttakeawhile"]:
+		for k in ["heading", "introemptykeyring", "introsinglekey", "introselectkey", "param.name",
+		  "param.email", "param.comment", "mighttakeawhile"]:
 			self.labels[k] = QtGui.QLabel()
 		self._makeLabelHeading(self.labels["heading"])
 		layout.addWidget(self.labels["heading"])
@@ -500,8 +503,8 @@ class KeygenPanel(WizardPanel):
 		self.panel.setLayout(layout)
 		return self.panel
 
-	# Called before showing the keypair page
 	def prepare(self):
+		'''Called before showing the keypair page'''
 		self.privateKeys = CryptoClient.getPrivateKeys()
 		numKeys = len(self.privateKeys)
 		self.labels["introemptykeyring"].setVisible(numKeys == 0)
@@ -523,8 +526,8 @@ class KeygenPanel(WizardPanel):
 		# Rewrite button text in case language has changed
 		self.generateButton.setText(I18nManager.getText("button.generate"))
 
-	# Finished the key gen
 	def finish(self):
+		'''Finished the key gen'''
 		# Store key, name in mongo under own profile
 		selectedKey = self.privateKeys[self.keypairListWidget.currentRow()]
 		ownid = TorClient.getOwnId()
@@ -551,8 +554,8 @@ class KeygenPanel(WizardPanel):
 			name = re.sub("\(.+\)", "", name)
 		return name.strip()
 
-	# Called when 'generate' button is clicked to make a new keypair
 	def generateKeyClicked(self):
+		'''Called when 'generate' button is clicked to make a new keypair'''
 		self.generateButton.setEnabled(False)
 		self.generateProgressbar.setVisible(True)
 		self.labels["mighttakeawhile"].setVisible(True)
@@ -571,8 +574,8 @@ class KeygenPanel(WizardPanel):
 		self.panel.connect(self.keygenThread, QtCore.SIGNAL("finished()"), self.finishedKeyGen)
 		self.keygenThread.start()
 
-	# React to finishing a key generation
 	def finishedKeyGen(self):
+		'''React to finishing a key generation'''
 		#print "callback, generated key is ", self.keygenThread.getKey()
 		self.generateButton.setEnabled(True)
 		# Update list with new key
@@ -583,13 +586,14 @@ class KeygenPanel(WizardPanel):
 		return (True, self.keypairListWidget.count() > 0)
 
 
-# Separate thread for calling the key generation and reporting back
 class KeyGenThread(QtCore.QThread):
+	'''Separate thread for calling the key generation and reporting back'''
 	def __init__(self, name, email, comment):
 		QtCore.QThread.__init__(self)
 		self.name = name
 		self.email = email
 		self.comment = comment
+		self.keypair = None
 	def run(self):
 		self.keypair = CryptoClient.generateKeyPair(self.name, self.email, self.comment)
 	def getKey(self):
@@ -598,8 +602,8 @@ class KeyGenThread(QtCore.QThread):
 
 # ================Finished=====================
 
-# Last panel, just to confirm that the wizard is finished
 class FinishedPanel(WizardPanel):
+	'''Last panel, just to confirm that the wizard is finished'''
 	def getName(self):
 		return "finished"
 	def getPanel(self):
@@ -620,8 +624,8 @@ class FinishedPanel(WizardPanel):
 		panel5.setLayout(layout)
 		return panel5
 
-	# Prepare the final panel
 	def prepare(self):
+		'''Prepare the final panel'''
 		text = (I18nManager.getText("startupwizard.finished.yourid") % TorClient.getOwnId())
 		self.youridLabel.setText(text)
 		# TODO: If this is just a label, then it can't be selected and copied- should it be a disabled text field instead?
@@ -643,4 +647,3 @@ if __name__ == "__main__":
 	win.show()
 
 	app.exec_()
-

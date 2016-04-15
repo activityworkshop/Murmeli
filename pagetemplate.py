@@ -1,14 +1,11 @@
-#####################################
-## Page template class for Murmeli ##
-#####################################
+'''Page template class for Murmeli'''
 
-from i18n import I18nManager
-from config import Config
 from tempita import HTMLTemplate
+from i18n import I18nManager
 
-# Class to load a page template from file and i18n it
+
 class PageTemplate:
-	'''Implementation using tempita'''
+	'''Class to load a page template from file and i18n it, implementation using tempita'''
 	# Constructor
 	def __init__(self, pagename):
 		lines = []
@@ -19,7 +16,9 @@ class PageTemplate:
 					lines.append(l[:-1])
 		self.html = HTMLTemplate(''.join(lines))
 
-	def getHtml(self, params={}):
-		'''Use the given dictionary to populate the template'''
+	def getHtml(self, params=None):
+		'''Use the given dictionary (if any) to populate the template'''
+		if params is None:
+			params = {}
 		params["langs"] = I18nManager.texts
 		return self.html.substitute(params)

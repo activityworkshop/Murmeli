@@ -1,5 +1,7 @@
-from PIL import Image
+'''General image functions'''
+
 from io import BytesIO
+from PIL import Image
 
 def makeThumbnailBinary(picpath):
 	'''Load the given picture file and make a binary from the jpeg thumbnail'''

@@ -1,25 +1,27 @@
-##########################################
-## Messages and their types for Murmeli ##
-##########################################
 
-from dbclient import DbClient
-from cryptoclient import CryptoClient
+'''Messages and their types for Murmeli'''
+
 from random import SystemRandom
 import hashlib
 import datetime
+from dbclient import DbClient
+from cryptoclient import CryptoClient
 
 
-# Class for splitting up data strings according to different-sized fields
 class StringChomper:
+	'''Class for splitting up data strings according to different-sized fields'''
 	def __init__(self, data):
 		self.data = data
 		self.pos  = 0
+
 	def getField(self, numBytes):
 		'''Extracts a series of bytes and returns them as a bytes sequence'''
-		if not self.data: return bytes()
+		if not self.data:
+			return bytes()
 		f = self.data[self.pos : self.pos + numBytes]
 		self.pos += numBytes
 		return f
+
 	def getByteValue(self, numBytes):
 		'''Decode the series of bytes into a value, lowest byte first)'''
 		n = 0
@@ -67,16 +69,16 @@ class Message:
 		self.shouldBeQueued = True   # Most should be queued, just certain subtypes not
 		self.senderMustBeTrusted = True  # Most should only be accepted if sender is trusted
 
-	# Make the regular output of the message including encryption if required
 	def createOutput(self, recipientKeyId):
+		'''Make the regular output of the message including encryption if required'''
 		return self._packOutput(self._createPayload(recipientKeyId))
 
-	# Make the UNENCRYPTED output of the message, only used for testing!
 	def createUnencryptedOutput(self):
+		'''Make the UNENCRYPTED output of the message, only used for testing!'''
 		return self._packOutput(self._createUnencryptedPayload())
 
-	# Take the given payload and pack it together with the general Message fields
 	def _packOutput(self, payload):
+		'''Take the given payload and pack it together with the general Message fields'''
 		checksum    = Message.makeChecksum(payload)
 		payloadsize = len(payload)
 		messComponents = [Message.MAGIC_TOKEN,
@@ -110,9 +112,9 @@ class Message:
 			n = int(n/256)
 		return res
 
-	# Hopefully s is a one-character string, we want the character code
 	@staticmethod
 	def strToInt(s):
+		'''Hopefully s is a one-character string, we want the character code'''
 		if s and len(s) == 1:
 			return ord(s)
 		return 0
@@ -186,12 +188,13 @@ class Message:
 		'''Used for looking up description texts to display the message type'''
 		return "unknown"
 
-# Message without symmetric or asymmetric encryption
-# Used only for requesting or rejecting contact, as we haven't got the
-# recipient's public key yet
+
 class UnencryptedMessage(Message):
-	# Constructor using the fields to send
+	'''Message without symmetric or asymmetric encryption
+	   Used only for requesting or rejecting contact, as we haven't got the
+	   recipient's public key yet'''
 	def __init__(self, senderId=None):
+		'''Constructor using the fields to send'''
 		Message.__init__(self)
 		self.encryptionType = Message.ENCTYPE_NONE
 		self.shouldBeRelayed = False # always direct
@@ -209,9 +212,9 @@ class UnencryptedMessage(Message):
 			self.encodeNumberToBytes(self.messageType, 1),
 			self.senderId, self._createSubpayload()])
 
-	# Factory constructor using a given payload and extracting the fields
 	@staticmethod
 	def constructFrom(payload):
+		'''Factory constructor using a given payload and extracting the fields'''
 		chomper = StringChomper(payload)
 		messageType = chomper.getByteValue(1)
 		senderId = chomper.getString(16) # Id is always 16 chars
@@ -227,11 +230,12 @@ class UnencryptedMessage(Message):
 		return m
 
 
-# Message for requesting contact, which has to be unencrypted as we haven't got the
-# recipient's public key yet
 class ContactRequestMessage(UnencryptedMessage):
-	# Constructor using the fields to send
+	'''Message for requesting contact, which has to be unencrypted as we haven't got the
+	   recipient's public key yet'''
+
 	def __init__(self, senderId=None, senderName=None, introMessage=None):
+		'''Constructor using the fields to send'''
 		UnencryptedMessage.__init__(self, senderId)
 		self.messageType = Message.TYPE_CONTACT_REQUEST
 		self.message = "" if introMessage is None else introMessage
@@ -254,9 +258,9 @@ class ContactRequestMessage(UnencryptedMessage):
 			messageAsBytes, myPublicKey])
 		return subpayload
 
-	# Factory constructor using a given subpayload and extracting the fields
 	@staticmethod
 	def constructFrom(subpayload):
+		'''Factory constructor using a given subpayload and extracting the fields'''
 		chomper = StringChomper(subpayload)
 		senderName = chomper.getStringWithLength(4)
 		introMessage = chomper.getStringWithLength(4)
@@ -288,9 +292,9 @@ class ContactDenyMessage(UnencryptedMessage):
 		return "contactdeny"
 
 
-# Message using asymmetric encryption
-# This is the regular mechanism used by most message types
 class AsymmetricMessage(Message):
+	'''Message using asymmetric encryption
+	   This is the regular mechanism used by most message types'''
 	def __init__(self):
 		Message.__init__(self)
 		self.encryptionType = Message.ENCTYPE_ASYM
@@ -302,7 +306,7 @@ class AsymmetricMessage(Message):
 		'''Create a random byte sequence to use as a repeating token'''
 		r = SystemRandom()
 		token = bytearray()
-		numBytes = r.choice([3,4,5,6])
+		numBytes = r.choice([3, 4, 5, 6])
 		for i in range(numBytes):
 			token.append(r.randrange(256))
 		return token
@@ -336,15 +340,17 @@ class AsymmetricMessage(Message):
 		'''Usually we don't accept messages without a recognised signature, except for certain subclasses'''
 		return False
 
-	# Factory constructor using a given payload and extracting the fields
 	@staticmethod
 	def construct(payload, isEncrypted = True):
-		if not payload: return None
+		'''Factory constructor using a given payload and extracting the fields'''
+		if not payload:
+			return None
 		signatureKey = None
 		if isEncrypted:
 			# Decrypt the payload with our key
 			decrypted, signatureKey = CryptoClient.decryptAndCheckSignature(payload)
-		else: decrypted = payload
+		else:
+			decrypted = payload
 		if decrypted:
 			print("Asymmetric message, length of decrypted is", len(decrypted))
 		else:
@@ -378,10 +384,10 @@ class AsymmetricMessage(Message):
 
 	@staticmethod
 	def _stripFields(payload):
-		# Try to remove the random tokens from the start of the payload
-		# If successful, return a triplet containing the message type, timestamp and payload
+		'''Try to remove the random tokens from the start of the payload
+		   If successful, return a triplet containing the message type, timestamp and payload'''
 		if payload:
-			for tokenlen in [3,4,5,6]:
+			for tokenlen in [3, 4, 5, 6]:
 				r1 = payload[:tokenlen]
 				t1 = payload[tokenlen : tokenlen + len(Message.MAGIC_TOKEN)]
 				r2 = payload[tokenlen + len(Message.MAGIC_TOKEN) : 2*tokenlen + len(Message.MAGIC_TOKEN)]
@@ -429,9 +435,9 @@ class ContactResponseMessage(AsymmetricMessage):
 		'''Only for this subclass is it ok for the signature to be unrecognised, because we haven't got their key yet'''
 		return True
 
-	# Factory constructor using a given payload and extracting the fields
 	@staticmethod
 	def construct(payload):
+		'''Factory constructor using a given payload and extracting the fields'''
 		if payload:
 			print("ContactResponse with payload:", len(payload))
 		else: print("ContactResponse.construct with an empty payload")
@@ -448,10 +454,10 @@ class ContactResponseMessage(AsymmetricMessage):
 		return "contactaccept"
 
 
-# Message to send a notification of status, either coming online or about to go offline
-# Includes a hash of the current profile so that receivers can compare with their stored hash
 class StatusNotifyMessage(AsymmetricMessage):
-	def __init__(self, online = True, ping = True, profileHash = None):
+	'''Message to send a notification of status, either coming online or about to go offline
+	   Includes a hash of the current profile so that receivers can compare with their stored hash'''
+	def __init__(self, online=True, ping=True, profileHash=None):
 		AsymmetricMessage.__init__(self)
 		self.online = online
 		self.ping = ping
@@ -469,9 +475,9 @@ class StatusNotifyMessage(AsymmetricMessage):
 			self.encodeNumberToBytes(1 if self.ping else 0, 1),
 			self.profileHash])
 
-	# Factory constructor using a given payload and extracting the fields
 	@staticmethod
 	def construct(payload):
+		'''Factory constructor using a given payload and extracting the fields'''
 		chomper = StringChomper(payload)
 		online = Message.strToInt(chomper.getField(1)) > 0
 		ping   = Message.strToInt(chomper.getField(1)) > 0

@@ -1,7 +1,4 @@
-######################################################
-# Classes to serve notifications about database events
-######################################################
-
+''' Classes to serve notifications about database events'''
 
 class DbNotifierBase:
 	'''Base for the notifiers'''

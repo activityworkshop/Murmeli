@@ -1,7 +1,9 @@
+'''Module for the incoming and outgoing postmen, for handling the mail'''
+
+import threading
+from PyQt4 import QtCore # for timer
 from dbclient import DbClient
 from dbnotify import DbMessageNotifier
-from PyQt4 import QtCore # for timer
-import threading
 
 
 class OutgoingPostman(QtCore.QObject):
@@ -51,7 +53,8 @@ class OutgoingPostman(QtCore.QObject):
 
 	def flushOutboxInSeparateThread(self):
 		'''This can take quite a while to do the flush'''
-		if self._flushing: return
+		if self._flushing:
+			return
 		print("Outgoing postman is flushing the outbox...")
 
 
@@ -82,10 +85,7 @@ class IncomingPostman(threading.Thread):
 
 	def checkInbox(self):
 		'''Look in the inbox for messages'''
-		messagesFound = 0
-		for _ in DbClient.getInboxMessages():
-			messagesFound += 1
-			break
+		messagesFound = DbClient.getInboxMessages().count()
 		self.somethingInInbox = (messagesFound > 0)
 		self.parent.postmanKnock() # only once
 

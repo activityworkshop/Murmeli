@@ -1,6 +1,5 @@
-##############################
-## Start script for Murmeli ##
-##############################
+'''Start script for Murmeli
+   Copyright activityworkshop.net and released under the GPL v2.'''
 
 from i18n import I18nManager
 from murmeli import MainWindow
@@ -12,7 +11,7 @@ foundPyQt = False
 try:
 	from PyQt4 import QtGui, QtCore
 	foundPyQt = True
-except:
+except ImportError:
 	print("ERROR: Can't find PyQt.  Please install both Qt and PyQt.")
 	print("       On linux you may be able to do this by installing a package called 'python3-qt4'.")
 
@@ -27,7 +26,7 @@ if foundPyQt:
 		import pymongo
 		from gnupg import GPG
 		# found them
-	except:
+	except ImportError:
 		canStartMurmeli = False
 
 	# if it all looks ok so far, we need to check in the db for our keypair

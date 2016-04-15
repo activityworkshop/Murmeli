@@ -1,13 +1,13 @@
-###################################################
-#  Murmeli, an encrypted communications platform  #
-#             by activityworkshop                 #
-#  Based on Tor's hidden services and torchat_py  #
-#  Licensed to you under the GPL v3               #
-###################################################
+'''Murmeli, an encrypted communications platform
 
-# This file contains the entry point of the application
-# and the construction of the main Qt window
+   By activityworkshop
+   Based on Tor's hidden services and torchat_py
+   Licensed to you under the GPL v2
 
+   This file contains the entry point of the application
+   and the construction of the main Qt window'''
+
+import signal
 from PyQt4 import QtGui, QtCore
 from gui import GuiWindow
 from i18n import I18nManager
@@ -19,11 +19,10 @@ import postmen
 from log import LogWindow
 
 # Hack to allow Ctrl-C to work
-import signal
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-# Class for main window
 class MainWindow(GuiWindow):
+	'''Class for main window'''
 	def __init__(self, *args):
 		self.logPanel = LogWindow()
 		GuiWindow.__init__(self, lowerItem=self.logPanel)
@@ -73,11 +72,16 @@ class MainWindow(GuiWindow):
 		self.toolbar.actions()[2].setVisible(not highlightMessages)
 		self.toolbar.actions()[3].setVisible(highlightMessages)
 
-	def onHomeClicked(self):     self.navigateTo("/")
-	def onContactsClicked(self): self.navigateTo("/contacts/")
-	def onMessagesClicked(self): self.navigateTo("/messages/")
-	def onCalendarClicked(self): self.navigateTo("/calendar/")
-	def onSettingsClicked(self): self.navigateTo("/settings/")
+	def onHomeClicked(self):
+		self.navigateTo("/")
+	def onContactsClicked(self):
+		self.navigateTo("/contacts/")
+	def onMessagesClicked(self):
+		self.navigateTo("/messages/")
+	def onCalendarClicked(self):
+		self.navigateTo("/calendar/")
+	def onSettingsClicked(self):
+		self.navigateTo("/settings/")
 
 	def configUpdated(self):
 		for a in self.toolbarActions:

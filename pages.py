@@ -1,3 +1,8 @@
+'''Module for the pages provided  by the system'''
+
+import re               # for regular expressions
+import os.path
+from PyQt4 import QtGui # for file selection
 from i18n import I18nManager
 from config import Config
 from dbclient import DbClient
@@ -5,13 +10,11 @@ from contactmgr import ContactMaker
 from pagetemplate import PageTemplate
 import message
 from contacts import Contacts
-from PyQt4 import QtGui # for file selection
-import re               # for regular expressions
-import os.path
 
 
-# Class for interacting with page templates by adding properties
-class Bean: pass
+class Bean:
+	'''Class for interacting with page templates by adding properties'''
+	pass
 
 
 class PageServer:
@@ -41,13 +44,15 @@ class PageServer:
 		if slashpos < 0: return (url[startpos:], '/')
 		return (url[startpos:slashpos], url[slashpos:])
 
-# Superclass of all page servers
+
 class PageSet:
+	'''Superclass of all page servers'''
 	def __init__(self, domain):
 		self.domain = domain
 		self.standardHead = "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"><link href='file:///" + Config.getWebCacheDir() + "/default.css' type='text/css' rel='stylesheet'><script type='text/javascript'>function hideOverlay(){showLayer('overlay',false);showLayer('popup',false)} function showLayer(lname,show){document.getElementById(lname).style.visibility=(show?'visible':'hidden');} function showMessage(mess){document.getElementById('popup').innerHTML=mess; showLayer('overlay',true); showLayer('popup', true);}</script></head>"
 
-	def getDomain(self): return self.domain
+	def getDomain(self):
+		return self.domain
 
 	# TODO: Maybe some images need to be extracted from mongo to the web cache.
 	def requirePageResource(self, resource):
@@ -70,9 +75,9 @@ class PageSet:
 		elif isinstance(resources, str):
 			self.requirePageResource(resources)
 
-	# General page-building method using a standard template
-	# and filling in the gaps using the given dictionary
 	def buildPage(self, params):
+		'''General page-building method using a standard template
+		   and filling in the gaps using the given dictionary'''
 		self.requirePageResource("default.css")
 		return ''.join([self.standardHead,
 			"<body>",
@@ -97,8 +102,9 @@ class PageSet:
 			"</body></html>"]) % params
 
 
-# Default page server, just for home page
+
 class DefaultPageSet(PageSet):
+	'''Default page server, just for home page'''
 	def __init__(self):
 		PageSet.__init__(self, "")
 		self.hometemplate = PageTemplate('home')
@@ -110,10 +116,10 @@ class DefaultPageSet(PageSet):
 		view.setHtml(contents)
 
 
-# Contacts page server, for showing list of contacts etc
 class ContactsPageSet(PageSet):
-	# Constructor
+	'''Contacts page server, for showing list of contacts etc'''
 	def __init__(self):
+		'''Constructor'''
 		PageSet.__init__(self, "contacts")
 		self.listtemplate = PageTemplate('contactlist')
 		self.detailstemplate = PageTemplate('contactdetails')
@@ -242,8 +248,8 @@ class ContactsPageSet(PageSet):
 		return cList
 
 
-# Messages page server, for showing list of messages etc
 class MessagesPageSet(PageSet):
+	'''Messages page server, for showing list of messages etc'''
 	def __init__(self):
 		PageSet.__init__(self, "messages")
 		self.messagestemplate = PageTemplate('messages')
@@ -255,8 +261,8 @@ class MessagesPageSet(PageSet):
 		view.setHtml(contents)
 
 
-# Calendar page server, for showing list of events, reminders etc
 class CalendarPageSet(PageSet):
+	'''Calendar page server, for showing list of events, reminders etc'''
 	def __init__(self):
 		PageSet.__init__(self, "calendar")
 		self.calendartemplate = PageTemplate('calendar')
@@ -268,8 +274,8 @@ class CalendarPageSet(PageSet):
 		view.setHtml(contents)
 
 
-# Settings page server, for showing the current settings
 class SettingsPageSet(PageSet):
+	'''Settings page server, for showing the current settings'''
 	def __init__(self):
 		PageSet.__init__(self, "settings")
 		self.formtemplate = PageTemplate('settingsform')
@@ -311,8 +317,9 @@ class SettingsPageSet(PageSet):
 			view.setHtml(contents)
 
 
-# Not delivering pages, but calling special Qt functions such as select file or wobbly network graph
 class SpecialFunctions(PageSet):
+	'''Not delivering pages, but calling special Qt functions such as select file
+	   or launching the wobbly network graph'''
 	def __init__(self):
 		PageSet.__init__(self, "special")
 

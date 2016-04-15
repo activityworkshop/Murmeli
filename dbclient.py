@@ -1,18 +1,16 @@
-#################################
-## Database client for Murmeli ##
-#################################
+'''Database client for Murmeli
 
-# Only classes inside this file should care about mongo database details
-# (except maybe the startup wizard which can check for pymongo's availability)
+   Only classes inside this file should care about mongo database details
+   (except maybe the startup wizard which can check for pymongo's availability)'''
 
 import os.path
 import shutil
 import subprocess
 import time
+import hashlib # for calculating checksums
 import pymongo
 from bson import ObjectId
 from bson.binary import Binary
-import hashlib # for calculating checksums
 from config import Config
 from cryptoclient import CryptoError
 from dbnotify import DbResourceNotifier, DbMessageNotifier
@@ -26,17 +24,19 @@ class DaemonLauncher:
 		self.exepath = exepath
 		self.dbpath  = dbpath
 		self.daemon  = None
-	# Start subprocess
+
 	def start(self):
+		'''Start subprocess'''
 		print("Starting mongod...")
 		try:
 			self.daemon = subprocess.Popen([self.exepath, "--dbpath", self.dbpath,
 				"--bind_ip", "localhost", "--nohttpinterface", "--noscripting"])
 			print("started db daemon!")
-		except: pass # if it fails, it fails
+		except:
+			pass # if it fails, it fails
 
-	# called if the DbClient wants to stop mongod
 	def terminate(self):
+		'''Called if the DbClient wants to stop mongod'''
 		if self.daemon:
 			self.daemon.terminate()
 			print("called terminate on the db daemon")
@@ -129,6 +129,7 @@ class DbClient:
 
 	@staticmethod
 	def getOwnTorId():
+		'''Return own tor id'''
 		# TODO: Needed?  Can't we just ask the TorClient?
 		if DbClient._torId is None or DbClient._torId == "":
 			ownprofile = DbClient.getProfile(None, False)
@@ -152,9 +153,11 @@ class DbClient:
 	def getContactList(status=None):
 		# Ignore the "profilepic" field, to save data flow
 		if status:
-			profiles = DbClient._getProfileTable().find({"status":status}, {"profilepic":0}).sort([('ownprofile',-1), ('torid',1)])
+			profiles = DbClient._getProfileTable().find({"status":status},
+				{"profilepic":0}).sort([('ownprofile', -1), ('torid', 1)])
 		else:
-			profiles = DbClient._getProfileTable().find({"status":{"$ne":"deleted"}}, {"profilepic":0}).sort([('ownprofile',-1), ('torid',1)])
+			profiles = DbClient._getProfileTable().find({"status":{"$ne":"deleted"}},
+				{"profilepic":0}).sort([('ownprofile', -1), ('torid', 1)])
 		# This sort option insists that our own profile will be the first in the returned set
 		# This isn't what's written in the guide, so may be incompatible with newer/older mongos?
 		return [DbClient.completeProfile(p) for p in profiles]
@@ -187,7 +190,7 @@ class DbClient:
 		if givenprofilepicpath and os.path.exists(givenprofilepicpath):
 			# check if it's the same path as already stored
 			storedProfile = profiles.find_one({'torid': torid}, {"profilepicpath":1})
-			if not storedProfile or storedProfile.get('profilepicpath',"") != givenprofilepicpath:
+			if not storedProfile or storedProfile.get('profilepicpath', "") != givenprofilepicpath:
 				profile['profilepic'] = Binary(imageutils.makeThumbnailBinary(givenprofilepicpath))
 				pic_changed = True
 		elif profile.get('profilepic', None):
@@ -229,7 +232,8 @@ class DbClient:
 	@staticmethod
 	def _writeBsonObjectToFile(bsonfromdb, filename):
 		with open(filename, 'wb') as f:
-			# bsonfromdb is a bson Binary object, but it can be iterated like a bytes object and written directly
+			# bsonfromdb is a bson Binary object, but it can be iterated like a bytes object
+			# and written directly to the file
 			f.write(bsonfromdb)
 
 	@staticmethod
@@ -253,11 +257,12 @@ class DbClient:
 	def getMessageableContacts():
 		'''Get a list of contacts we can send messages to, ie trusted or untrusted'''
 		return DbClient._getProfileTable().find({"status":{"$in" : ["trusted", "untrusted"]}},
-			 {"torid":1, "displayName":1, "status":1, "contactlist":1}).sort([('torid',1)])
+			 {"torid":1, "displayName":1, "status":1, "contactlist":1}).sort([('torid', 1)])
 
 	@staticmethod
 	def getTrustedContacts():
-		return DbClient._getProfileTable().find({"status":"trusted"}, {"torid":1, "name":1, "contactlist":1}).sort([('torid',1)])
+		return DbClient._getProfileTable().find({"status":"trusted"},
+			{"torid":1, "name":1, "contactlist":1}).sort([('torid', 1)])
 
 	@staticmethod
 	def updateContactList(showList):
@@ -296,8 +301,9 @@ class DbClient:
 				try:
 					# message.output is a bytes() object, so we need to convert to Binary for storage
 					messageToSend = Binary(message.createOutput(encryptKey))
-					DbClient._getOutboxTable().insert({"recipient" : r, "relays" : relays, "message" : messageToSend,
-						 "queue" : message.shouldBeQueued, "msgType" : message.getMessageTypeKey()})
+					DbClient._getOutboxTable().insert({"recipient":r, "relays":relays,
+						"message":messageToSend, "queue":message.shouldBeQueued,
+						"msgType":message.getMessageTypeKey()})
 					# Inform all interested listeners that there's been a change in the messages
 					DbMessageNotifier.getInstance().notify()
 
@@ -316,7 +322,8 @@ class DbClient:
 	def addMessageToInbox(message):
 		'''A message has been received, need to add this to our inbox so it can be read'''
 		# Calculate hash of message's body + timestamp + sender
-		thisHash = DbClient.calculateHash({"body":message['messageBody'], "timestamp":message['timestamp'], "senderId":message['fromId']})
+		thisHash = DbClient.calculateHash({"body":message['messageBody'],
+			"timestamp":message['timestamp'], "senderId":message['fromId']})
 		# Check id or hash of message to make sure we haven't got it already!
 		inbox = DbClient._getInboxTable()
 		if not inbox.find_one({"messageHash" : thisHash}):
@@ -328,7 +335,7 @@ class DbClient:
 			# Inform all interested listeners that there's been a change in the messages
 			DbMessageNotifier.getInstance().notify()
 		else:
-			print("Received a message for the inbox with hash '", thisHash, "but I've got that one already")
+			print("Received message with hash '", thisHash, "but I've got that one already")
 
 	@staticmethod
 	def getInboxMessages():
@@ -341,6 +348,7 @@ class DbClient:
 
 	@staticmethod
 	def getConversationId(parentHash):
+		'''Get the conversation id for the given parent hash'''
 		if parentHash:
 			inboxTable = DbClient._getInboxTable()
 			# There should be only one message with thish hash (unless it's been deleted)
@@ -354,7 +362,8 @@ class DbClient:
 	@staticmethod
 	def getNewConversationId():
 		adminTable = DbClient._getAdminTable()
-		cid = adminTable.find_and_modify(query={"_id":"conversationid"}, update={"$inc":{"value":1}}, new=True)
+		cid = adminTable.find_and_modify(query={"_id":"conversationid"},
+			update={"$inc":{"value":1}}, new=True)
 		if cid:
 			value = cid.get("value", None)
 			if value:

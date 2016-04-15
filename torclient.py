@@ -1,13 +1,9 @@
-###################################################
-#  Murmeli, an encrypted communications platform  #
-#             by activityworkshop                 #
-#  Based on Tor's hidden services and torchat_py  #
-#  Licensed to you under the GPL v3               #
-###################################################
-
-# This file contains the interface with the tor network
-# including building up the communications with tor,
-# and managing the incoming and outgoing sockets
+'''Murmeli, an encrypted communications platform by activityworkshop
+   Based on Tor's hidden services and torchat_py
+   Licensed to you under the GPL v2
+   This file contains the interface with the tor network
+   including building up the communications with tor,
+   and managing the incoming and outgoing sockets.'''
 
 import subprocess
 import time
@@ -18,8 +14,8 @@ import re
 from config import Config
 
 
-# The main client for the Tor services.
 class TorClient:
+	'''The main client for the Tor services.'''
 
 	# Daemon referring to tor process
 	_daemon = None
@@ -51,8 +47,9 @@ class TorClient:
 
 	@staticmethod
 	def getOwnId():
+		'''Get our own Torid from the hostname file'''
 		# maybe the id hasn't been written yet, so we'll try a few times and wait
-		for i in range(10):
+		for _ in range(10):
 			try:
 				hiddendir = os.path.join(Config.getTorDir(), "hidden_service")
 				with open(os.path.join(hiddendir, "hostname"), "r") as hostfile:

@@ -1,8 +1,10 @@
+'''Internationalization functions for looking up tokens'''
+
 import configparser
 from config import Config
 
-# Manager for translations
 class I18nManager:
+	'''Manager for translations'''
 	# dictionary of keys and texts
 	texts = {}
 	# currently used language
@@ -16,7 +18,7 @@ class I18nManager:
 		# First load English texts as default values
 		I18nManager._loadLanguage('en')
 		# Now load selected language over the top
-		if len(lang) == 2 and lang != 'en':
+		if lang and len(lang) == 2 and lang != 'en':
 			I18nManager._loadLanguage(lang)
 
 	@staticmethod
@@ -35,7 +37,8 @@ class I18nManager:
 	@staticmethod
 	def instance():
 		'''An instance is needed for listening to the Config changes'''
-		if not I18nManager.singleton: I18nManager.singleton = I18nManager()
+		if not I18nManager.singleton:
+			I18nManager.singleton = I18nManager()
 		return I18nManager.singleton
 
 	def configUpdated(self):

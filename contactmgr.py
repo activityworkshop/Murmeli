@@ -1,3 +1,5 @@
+'''Module for the management of contacts within Murmeli'''
+
 from dbclient import DbClient
 from cryptoclient import CryptoClient
 
@@ -71,6 +73,7 @@ class ContactMaker:
 
 	@staticmethod
 	def _getContactNameFromProfile(profile, torId):
+		'''If the given profile has a contact list, use it to look up the torid'''
 		contactList = profile.get("contactlist", None) if profile else None
 		if contactList:
 			for c in contactList.split(","):

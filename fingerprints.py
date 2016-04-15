@@ -1,4 +1,5 @@
-# Part of Murmeli, copyright activityworkshop.net and released under GPL
+'''Fingerprint module, for calculating codes from key fingerprints.
+   Part of Murmeli, copyright activityworkshop.net and released under the GPL v2.'''
 
 import os
 
@@ -12,6 +13,7 @@ class FingerprintChecker:
 		self.valid = self.finger1 and self.finger2 \
 			and self.finger1 != self.finger2 \
 			and len(self.finger1) == 40 and len(self.finger2) == 40
+		# Check that string only contains hex characters [0-9A-F]
 		if self.valid:
 			for l in (self.finger1 + self.finger2):
 				if l not in "0123456789ABCDEF":
@@ -30,7 +32,7 @@ class FingerprintChecker:
 				codes.append(n1 ^ n2)
 		return codes
 
-	def _getIndexes(self, codes, ownSet = True):
+	def _getIndexes(self, codes, ownSet=True):
 		'''Generate a list of word indexes, either for myself or for the other party'''
 		if not codes:
 			return None
@@ -44,8 +46,8 @@ class FingerprintChecker:
 			return 0
 		return (self.codes[1] + self.codes[3] + self.codes[5] + (1 if self.am_requester else 0)) % 6
 
-	def _getWords(self, indexes, ownSet, lang):
-		'''Return the words for the given set (ours or not) and language (2-letter code)'''
+	def _getWords(self, indexes, lang):
+		'''Return the words for the given indexes and language (2-letter code)'''
 		# Load text file for lang
 		wordFile = os.path.join("lang", "codewords-" + lang + ".txt")
 		if not os.path.exists(wordFile):
@@ -69,7 +71,8 @@ class FingerprintChecker:
 
 	def getCorrectAnswer(self):
 		'''Return the correct answer expected from the check - an index 0, 1 or 2'''
-		if not self.valid: return -1
+		if not self.valid:
+			return -1
 		i = self._getCombinationIndex()
 		return [0, 0, 1, 2, 1, 2][i]
 
@@ -87,17 +90,4 @@ class FingerprintChecker:
 				indexes = self._getIndexes(self.wrongCodes1, ownSet)
 			elif listIndex == 2:
 				indexes = self._getIndexes(self.wrongCodes2, ownSet)
-		return self._getWords(indexes, ownSet, lang)
-
-
-if __name__ == "__main__":
-	fps = ['B0C5D09F03433988892890E236ECAB5DA51C178A', 'C46A68B898C8494A317D1247DA30BB68D00BA823', 'BD0638AF686D27D9D461EE9F07A4D9D622B8562B']
-	for i in fps:
-		for j in fps:
-			if i != j:
-				checker = FingerprintChecker(i, j)
-				print("own:", checker.getCodeWords(True, 0, "en"))
-				print("other0:", checker.getCodeWords(False, 0, "en"))
-				print("other1:", checker.getCodeWords(False, 1, "en"))
-				print("other2:", checker.getCodeWords(False, 2, "en"))
-				print("Correct answer is:", checker.getCorrectAnswer())
+		return self._getWords(indexes, lang)
