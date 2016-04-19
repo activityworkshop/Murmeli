@@ -73,6 +73,16 @@ confirmdelete=Willst du sicher diesen Kontakt löschen?  Ihr werdet nicht mehr m
 
 [messages]
 title=Nachrichten
+contactrequests=Kontakt-Anfragen
+contactresponses=Kontakt-Antworten
+mails=Mails
+from=Von
+sendtime=Gesendet
+to=An
+nomessages=Keine neue Nachrichten.
+sender.unknown=Absender unbekannt
+recpt.unknown=<unbekannt>
+confirm.messagesent=Nachricht geschickt.
 
 [calendar]
 title=Kalender

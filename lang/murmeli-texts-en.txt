@@ -73,6 +73,16 @@ confirmdelete=Are you sure you want to delete this contact?  You won't be able t
 
 [messages]
 title=Messages
+contactrequests=Contact Requests
+contactresponses=Contact Responses
+mails=Mails
+from=From
+sendtime=Sent
+to=To
+nomessages=You do not have any new messages.
+sender.unknown=Unknown sender
+recpt.unknown=<unknown>
+confirm.messagesent=Message sent.
 
 [calendar]
 title=Calendar

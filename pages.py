@@ -2,6 +2,8 @@
 
 import re               # for regular expressions
 import os.path
+import shutil
+import datetime
 from PyQt4 import QtGui # for file selection
 from i18n import I18nManager
 from config import Config
@@ -101,6 +103,26 @@ class PageSet:
 			"<div class='popuppanel' id='popup'>Here's the message</div>",
 			"</body></html>"]) % params
 
+	def makeLocalTimeString(self, tstamp):
+		'''Convert a float (in UTC) to a string (in local timezone) for display'''
+		if not tstamp:
+			return ""
+		try:
+			sendTime = datetime.datetime.fromtimestamp(tstamp)
+			# Check if it's today
+			now = datetime.datetime.now()
+			midnight = datetime.datetime(now.year, now.month, now.day, 0, 0, 0)
+			if sendTime.timestamp() > midnight.timestamp():
+				# today
+				return "%02d:%02d" % (sendTime.hour, sendTime.minute)
+			else:
+				return "%d-%02d-%02d %02d:%02d" % (sendTime.year, sendTime.month, sendTime.day,
+					sendTime.hour, sendTime.minute)
+		except TypeError:
+			print("Expected a float timestamp, found", type(tstamp))
+		if isinstance(tstamp, str):
+			return tstamp
+		return ""
 
 
 class DefaultPageSet(PageSet):
@@ -255,8 +277,43 @@ class MessagesPageSet(PageSet):
 		self.messagestemplate = PageTemplate('messages')
 
 	def servePage(self, view, url, params):
+		# Make dictionary to convert ids to names
+		contactNames = {c['torid']:c['displayName'] for c in DbClient.getContactList()}
+		unknownSender = I18nManager.getText("messages.sender.unknown")
+		unknownRecpt = I18nManager.getText("messages.recpt.unknown")
+		# Get contact requests, responses and mails from inbox
+		conreqs = []
+		conresps = []
+		mails = []
+		for m in DbClient.getInboxMessages():
+			m['msgId'] = str(m.get("_id", ""))
+			if m['messageType'] == "contactrequest":
+				conreqs.append(m)
+			elif m['messageType'] == "contactresponse":
+				if not m.get('accepted', False):
+					m['messageBody'] = I18nManager.getText("messages.contactrequest.refused")
+					m['fromName'] = DbClient.getProfile(m['fromId'], True).get("displayName")
+				elif not m.get('messageBody', False):
+					m['messageBody'] = I18nManager.getText("messages.contactrequest.accepted")
+				conresps.append(m)
+			else:
+				senderId = m.get('fromId', None)
+				if not senderId and m.get('signatureKeyId', None):
+					senderId = DbClient.findUserIdFromKeyId(m['signatureKeyId'])
+				m['senderName'] = contactNames.get(senderId, unknownSender)
+				m['sentTimeStr'] = self.makeLocalTimeString(m['timestamp'])
+				# Split m['recipients'] by commas, and look up each id with contactNames
+				recpts = m.get('recipients', '')
+				if recpts:
+					m['recipients'] = ", ".join([contactNames.get(i, unknownRecpt) for i in recpts.split(",")])
+				else:
+					m['recipients'] = unknownRecpt
+				mails.append(m)
+		bodytext = self.messagestemplate.getHtml({"contactrequests":conreqs, "contactresponses":conresps,
+			"mails":mails, "nummessages":len(conreqs)+len(conresps)+len(mails),
+			"webcachedir" : Config.getWebCacheDir()})
 		contents = self.buildPage({'pageTitle' : I18nManager.getText("messages.title"),
-			'pageBody' : self.messagestemplate.getHtml(),
+			'pageBody' : bodytext,
 			'pageFooter' : "<p>Footer</p>"})
 		view.setHtml(contents)
 
