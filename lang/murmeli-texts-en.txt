@@ -107,3 +107,5 @@ send=Send
 change=Change
 delete=Delete
 
+[gui]
+dialogtitle.error=Error

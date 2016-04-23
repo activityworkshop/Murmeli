@@ -51,8 +51,9 @@ class MainWindow(GuiWindow):
 		self.postmen = [postmen.IncomingPostman(self), postmen.OutgoingPostman(self)]
 		self.connect(self.postmen[1], QtCore.SIGNAL("messageSent"), self.logPanel.notifyLogEvent)
 
-		# TODO: tor should be stopped on exit, but for now we don't need it
-		TorClient.stopTor()
+		# Make sure Tor client is started
+		if not TorClient.isStarted():
+			TorClient.startTor()
 
 	def makeToolbar(self, deflist):
 		'''Given a list of (image, method, tooltip), make a QToolBar with those actions'''

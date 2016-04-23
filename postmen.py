@@ -11,6 +11,10 @@ class OutgoingPostman(QtCore.QObject):
 	dealing with each of the messages in turn, sending them as appropriate'''
 
 	flushSignal = QtCore.pyqtSignal()
+	# Return codes
+	RC_MESSAGE_SENT    = 1
+	RC_MESSAGE_IGNORED = 2
+	RC_MESSAGE_FAILED  = 3
 
 	def __init__(self, parent):
 		'''Constructor'''
@@ -56,6 +60,50 @@ class OutgoingPostman(QtCore.QObject):
 		if self._flushing:
 			return
 		print("Outgoing postman is flushing the outbox...")
+		self._flushing = True
+		# Look in the outbox for messages
+		messagesFound = 0
+		messagesSent  = 0
+		failedRecpts = set()
+		for m in DbClient.getOutboxMessages():
+			messagesFound += 1
+			# Get recipient, timestamp, relays, message
+			message = m['message']
+			sendTimestamp = m.get('timestamp', None) # not used yet
+			# TODO: if the timestamp is too old, then either just delete the message (if it's not to be queued) or move to inbox
+
+			# Some messages have a single recipient (and maybe relays), others only have a recipientList
+			recipient = m.get('recipient', None)
+			if recipient:
+				sendSuccess = self.RC_MESSAGE_FAILED if recipient in failedRecpts else self.sendMessage(message, recipient)
+				if sendSuccess == self.RC_MESSAGE_IGNORED:
+					print("Dealt with message so I should delete it from the db:", m["_id"])
+				elif sendSuccess == self.RC_MESSAGE_SENT:
+					print("Sent message so I should delete it from the db:", m["_id"])
+					messagesSent += 1
+				elif not m.get('queue', False):
+					print("I failed to send a message but it shouldn't be queued, deleting it")
+				else:
+					print("I failed to send but I'll keep the message and try again later")
+					failedRecpts.add(recipient)
+			else:
+				# There isn't a direct recipient, so let's hope there's a recipient list
+				recipientList = m.get('recipientList', None)
+				if recipientList:
+					print("I've got a message to relay to: ", recipientList)
+		# TODO: Does the parent even need to know when a send has worked?
+		if messagesSent > 0:
+			self.parent.postmanKnock() # only once
+		if messagesFound > 0:
+			print("For %d found messages, I managed to send %d copies" % (messagesFound, messagesSent))
+		# We tried to send a message to these recipients but failed - set them to be offline
+		for r in failedRecpts:
+			Contacts.goneOffline(r)
+		self._flushing = False
+
+	def sendMessage(self, message, whoto):
+		# TODO: Send message
+		return self.RC_MESSAGE_FAILED   # it didn't work
 
 
 class IncomingPostman(threading.Thread):

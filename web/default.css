@@ -1,0 +1,97 @@
+.fancyheader {
+	border:2px solid #a87;
+	margin:0px;
+	padding:0px;
+	margin-bottom:10px;
+	background: -webkit-linear-gradient(top left, rgba(204,204,187,0.7), rgba(163,143,116,1.0));
+	border-radius:10px
+}
+.fancyheader p {
+	margin:0px;
+	padding:0px;
+	padding-left:20px;
+	color:#444
+	font-weight:bold;
+	font-size:200%;
+}
+.mainbody {
+	padding:10px;
+	margin:10px;
+	background:#fff
+}
+.genericbox {
+	background:#fff;
+	border:1px solid #a87;
+	border-radius:5px; padding:5px;
+}
+.contacttile, .contacttileselected {
+	border:1px solid #000;
+	margin:3px;
+	padding:1px;
+}
+.contacttileselected {
+	background:#ade;
+}
+.contacttile p, .contacttileselected p {
+	font-size:90%;
+	margin:0px;
+	padding:0px;
+}
+.warningbox {
+	background:#fee;
+	border:1px solid #a87;
+	border-radius:5px; padding:2px 25px;
+}
+a.reversebutton, input.reversebutton {
+	background:#a87;
+	border-radius:4px;
+	padding:4px;
+	font-weight:bold;
+	text-decoration:none;
+	color:#fff;
+}
+.footer {
+	font-size:smaller;
+	border:1px solid #a87;
+	border-radius:10px;
+	background: -webkit-linear-gradient(top left, rgba(204,204,187,0.7), rgba(163,143,116,1.0));
+	padding:0px;
+	padding-left:20px;
+	margin:0px;
+	margin-top:10px;
+	clear:both;
+}
+.footer p {
+	margin:0px;
+	padding:0px;
+	clear:both
+}
+/* Just a half-opaque black layer covering the whole screen */
+.overlay {
+	position:fixed;
+	top:0px;
+	bottom:0px;
+	left:0px;
+	right:0px;
+	overflow:hidden;
+	background-color:#000;
+	opacity:0.5;
+	z-index:999;
+	visibility:hidden;
+}
+/* Panel on top of the overlay for blocking messages */
+.popuppanel {
+	position:fixed;
+	background-color: #eee;
+	top:100px;
+	left:20%;
+	z-index:1000;
+	padding:10px;
+	min-width:400px;
+	max-width:600px;
+	box-shadow:4px 4px 5px #000000;
+	border-radius:5px;
+	border:3px solid #a87;
+	visibility:hidden;
+}
+
