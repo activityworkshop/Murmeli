@@ -1,8 +1,8 @@
 <script>
-	function deleteContact(id)
+	function deleteContact()
 	{
 		showMessage("{{langs['contacts.confirmdelete']}}"
-			+ "<form action='http://murmeli/contacts/" + id + "/delete' method='post'>"
+			+ "<form action='http://murmeli/contacts/{{person['torid']}}/delete' method='post'>"
 			+ "<input type='submit' class='reversebutton' value='{{langs['button.delete']}}'>"
 			+ "</form>");
 	}
@@ -25,11 +25,10 @@
 <p>{{langs['contacts.link.confirmfingerprints']}}</p>
 </div>
 {{endif}}
-<p>&nbsp;</p>
-<div style="text-align:center"><a href="/contacts/{{person['torid']}}/edit" class='reversebutton'>{{langs['button.change']}}</a> these details</div>
 {{if person['status']!='self'}}
-<div style="text-align:right"><a href='' onclick='deleteContact("{{person['torid']}}");return false;' class='reversebutton'>{{langs['button.delete']}}</a> this contact</div>
+<div style="float:right"><a href='' onclick='deleteContact();return false;' class='reversebutton'>{{langs['button.delete']}}</a></div>
 {{endif}}
+<div style="float:center"><a href="/contacts/{{person['torid']}}/edit" class='reversebutton'>{{langs['button.edit']}}</a> these details</div>
 {{if sharedcontacts}}
 <p>Shared contacts: {{for c in sharedcontacts}}'{{c.dispName}}' &nbsp;{{endfor}}</p>
 {{endif}}

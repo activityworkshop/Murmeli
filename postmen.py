@@ -1,9 +1,11 @@
 '''Module for the incoming and outgoing postmen, for handling the mail'''
 
 import threading
+import socks
 from PyQt4 import QtCore # for timer
 from dbclient import DbClient
 from dbnotify import DbMessageNotifier
+from contacts import Contacts
 
 
 class OutgoingPostman(QtCore.QObject):
@@ -102,7 +104,27 @@ class OutgoingPostman(QtCore.QObject):
 		self._flushing = False
 
 	def sendMessage(self, message, whoto):
-		# TODO: Send message
+		# Check status of recipient in profile
+		profile = DbClient.getProfile(whoto, False)
+		status = profile['status'] if profile else "deleted"
+		if status in ['deleted', 'blocked']:
+			return self.RC_MESSAGE_IGNORED
+		print("Trying to send message to '%s'" % whoto)
+		if whoto is not None and len(whoto) == 16:
+			try:
+				s = socks.socksocket()
+				s.setproxy(socks.PROXY_TYPE_SOCKS4, "localhost", 11109)
+				s.connect((whoto + ".onion", 11009))
+				numsent = s.send(message)
+				s.close()
+				if numsent != len(message):
+					print("Oops - num bytes sent:", numsent, "but message has length:", len(message))
+					# For really long messages, maybe need to chunk into 4k blocks or something?
+				else:
+					return self.RC_MESSAGE_SENT
+			except Exception as e:
+				print("Woah, that threw something:", e)
+		print("Bailed from the send attempt, returning failure")
 		return self.RC_MESSAGE_FAILED   # it didn't work
 
 

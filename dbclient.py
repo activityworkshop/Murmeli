@@ -289,6 +289,8 @@ class DbClient:
 	def addMessageToOutbox(message):
 		'''Add the given message to the outbox for sending later'''
 		if message.recipients:
+			# If the message is allowed to be relayed, we need to make a list of all our contacts
+			relays = []
 			for r in message.recipients:
 				# TODO: Check that len(r) == 16 ?
 				print("Add outgoing message for", r)

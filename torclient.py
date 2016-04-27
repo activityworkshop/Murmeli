@@ -22,7 +22,6 @@ class TorClient:
 	_daemon = None
 	# Single instance of client
 	_torClient = None
-	
 
 	# Constructor
 	def __init__(self):

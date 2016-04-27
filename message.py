@@ -132,7 +132,7 @@ class Message:
 				return CryptoClient.getPublicKey(keyid)
 
 	@staticmethod
-	def MessageFromReceivedData(data, isEncrypted = True):
+	def MessageFromReceivedData(data, isEncrypted=True):
 		'''Use the received data to rebuild the contents of the message'''
 		if data is None or len(data) <= 16: return None                # empty or too short
 		chomper = StringChomper(data)
@@ -341,7 +341,7 @@ class AsymmetricMessage(Message):
 		return False
 
 	@staticmethod
-	def construct(payload, isEncrypted = True):
+	def construct(payload, isEncrypted=True):
 		'''Factory constructor using a given payload and extracting the fields'''
 		if not payload:
 			return None
@@ -440,7 +440,8 @@ class ContactResponseMessage(AsymmetricMessage):
 		'''Factory constructor using a given payload and extracting the fields'''
 		if payload:
 			print("ContactResponse with payload:", len(payload))
-		else: print("ContactResponse.construct with an empty payload")
+		else:
+			print("ContactResponse.construct with an empty payload")
 		chomper = StringChomper(payload)
 		# sender id and name
 		senderId = chomper.getString(16) # Id is always 16 chars
