@@ -9,7 +9,7 @@ including explanations of the concepts and ideas, and some screenshots.  Feedbac
 
 Put briefly, the aim is to produce a way of sending encrypted messages from peer to peer, without using a server.  The communication is done by both sides publishing tor hidden services, and the encryption is done using asymmetric PGP once public keys have been exchanged and verified.  Because it runs without a server, peers have to be online at the same time in order to exchange messages.  However, mutual trusted peers can act as blind relays for the encrypted messages, thereby reducing latency.
 
-It uses Python3 and Qt for the desktop application, and it stores the messages inside a local Mongodb database.  It should be cross-platform, but until now it has only been tested on linux (Debian, Raspbian and Mint) with all dependencies available from the standard repositories.
+It uses Python3 and Qt for the desktop application, and it stores the messages inside a local Mongodb database.  It should be cross-platform, but until now it has only been tested on linux (Debian, Raspbian and Mint) with all dependencies available from the standard (stable) repositories.  Testing on Windows is ongoing.
 
 Please try out the code and report back any difficulties encountered.  The tool can be started with:
 
@@ -38,3 +38,4 @@ All feedback and help is very welcome.
  restricted to connections from the same machine, but other users on the same machine can connect
  to the server and read all the contents of the database.  This needs to be fixed at some point.
 * In the startup wizard, it would be nice to be able to select the executable paths with a file dialog.
+* The punch-card now has added punch.
