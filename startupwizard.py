@@ -6,7 +6,7 @@ import re
 from PyQt4 import QtGui, QtCore
 from i18n import I18nManager
 from config import Config
-from dbclient import DbClient
+from dbclient import DbClient, AuthSetterUpper
 from cryptoclient import CryptoClient
 from torclient import TorClient
 from murmeli import MainWindow
@@ -425,15 +425,17 @@ class ServiceStarterThread(QtCore.QThread):
 	def run(self):
 		# Check each of the services in turn
 		self.successFlags = {}
-		self.successFlags['mongo'] = DbClient.startDatabase()
+		# Mongo
+		authSetup = AuthSetterUpper()
+		self.successFlags['mongo'] = authSetup.setup()
 		self.emit(QtCore.SIGNAL('updated()'))
 		time.sleep(1)
+		# Gnupg
 		self.successFlags['gpg'] = CryptoClient.checkGpg()
 		self.emit(QtCore.SIGNAL('updated()'))
 		time.sleep(1)
-		print("About to start tor")
+		# Tor
 		if TorClient.startTor():
-			print("starting tor appeared to work!")
 			torid = TorClient.getOwnId()
 			if torid:
 				print("Started tor, our own id is: ", torid)

@@ -94,6 +94,9 @@ class Config():
 	@staticmethod
 	def getDatabaseDir():
 		return os.path.join(Config.properties.get(Config.KEY_DATA_DIR, ""), "db")
+	@staticmethod
+	def getDatabasePasswordFile():
+		return os.path.join(Config.getDatabaseDir(), "password_file")
 
 	@staticmethod
 	def getWebCacheDir():

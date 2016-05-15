@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import time
 import hashlib # for calculating checksums
+from random import SystemRandom
 import pymongo
 from bson import ObjectId
 from bson.binary import Binary
@@ -16,13 +17,15 @@ from cryptoclient import CryptoError
 from dbnotify import DbResourceNotifier, DbMessageNotifier
 import imageutils
 
-# Separate class to launch the mongod executable, and then
-# shut it down properly when finished
+
 class DaemonLauncher:
+	'''Separate class to launch the mongod executable, and then
+	   shut it down properly when finished.'''
 	# Constructor
-	def __init__(self, exepath, dbpath):
+	def __init__(self, exepath, dbpath, useAuth=True):
 		self.exepath = exepath
 		self.dbpath  = dbpath
+		self.useAuth = useAuth
 		self.daemon  = None
 
 	def start(self):
@@ -30,7 +33,8 @@ class DaemonLauncher:
 		print("Starting mongod...")
 		try:
 			self.daemon = subprocess.Popen([self.exepath, "--dbpath", self.dbpath,
-				"--bind_ip", "localhost", "--nohttpinterface", "--noscripting"])
+				"--bind_ip", "localhost", "--nohttpinterface", "--noscripting",
+				"--auth" if self.useAuth else "--noauth"])
 			print("started db daemon!")
 		except:
 			pass # if it fails, it fails
@@ -49,12 +53,20 @@ class DbClient:
 	_daemonLauncher = None
 	# own torid
 	_torId = None
+	# password for database
+	_dbPassword = None
 	# set to true to use alternative db tables for testing
 	_useTestTables = False
 
+	# Constants for running status of server
+	NOT_RUNNING          = 0
+	RUNNING_WITHOUT_AUTH = 1
+	RUNNING_SECURE       = 2
 
 	@staticmethod
-	def startDatabase():
+	def startDatabase(useAuth=True):
+		'''Try to start the database server either with or without authentication.
+		   Return True if it started properly, otherwise False.'''
 		# get the path to the mongo executable and the mongodb
 		mongoexe = Config.getProperty(Config.KEY_MONGO_EXE)
 		dbpath   = Config.getDatabaseDir()
@@ -66,19 +78,29 @@ class DbClient:
 		if DbClient._daemonLauncher:
 			DbClient._daemonLauncher.terminate()
 		# Start a new launcher to run mongod
-		DbClient._daemonLauncher = DaemonLauncher(mongoexe, dbpath)
+		DbClient._daemonLauncher = DaemonLauncher(mongoexe, dbpath, useAuth)
 		DbClient._daemonLauncher.start()
 		# Wait a couple of seconds and then see if we can access it
 		time.sleep(2)
-		return DbClient.isDatabaseRunning()
+		DbClient._dbPassword = PasswordManager.getStoredPassword()
+		dbStatus = DbClient.getDatabaseRunStatus()
+		if useAuth:
+			return dbStatus == DbClient.RUNNING_SECURE
+		else:
+			return dbStatus == DbClient.RUNNING_WITHOUT_AUTH
 
 	@staticmethod
-	def isDatabaseRunning():
+	def getDatabaseRunStatus():
 		try:
 			testclient = pymongo.MongoClient()
-			return True if testclient else False
-		except: # couldn't connect to server
-			return False
+			# TODO: This will crash on Windows if the server is not running
+			_ = testclient.murmelidb.profiles.count() if testclient else 0
+			# We didn't authenticate but still got a result - must be without auth
+			return DbClient.RUNNING_WITHOUT_AUTH
+		except pymongo.errors.ConnectionFailure: # couldn't connect to server
+			return DbClient.NOT_RUNNING
+		except pymongo.errors.OperationFailure:  # connected but failed to read
+			return DbClient.RUNNING_SECURE
 
 	@staticmethod
 	def stopDatabase():
@@ -88,33 +110,56 @@ class DbClient:
 			DbClient._daemonLauncher = None
 
 	@staticmethod
+	def isPasswordAvailable():
+		return PasswordManager.getStoredPassword() is not None
+
+	@staticmethod
 	def useTestTables():
 		'''Only call this method from unit tests, so that different db tables are used'''
 		DbClient._useTestTables = True
 		DbClient._torId = None
 
 	@staticmethod
+	def setupDatabaseUsers(adminPassword, userPassword):
+		'''Save the root password and the user password in the database'''
+		try:
+			client = pymongo.MongoClient()
+			client.admin.system.users.remove()
+			client.admin.add_user(name="murmeliadmin", password=adminPassword)
+			client.murmelidb.system.users.remove()
+			client.murmelidb.add_user(name="murmeli", password=userPassword)
+		except:
+			print("Failed to setup database users for authentication")
+
+	@staticmethod
+	def _getAuthenticatedClient():
+		client = pymongo.MongoClient()
+		# TODO: What to do if authentication fails?  Catch exception?
+		client.murmelidb.authenticate("murmeli", DbClient._dbPassword)
+		return client
+
+	@staticmethod
 	def _getProfileTable():
 		'''Use a different profiles table for the unit tests so they're independent of the running db'''
-		client = pymongo.MongoClient()
+		client = DbClient._getAuthenticatedClient()
 		return client.murmelidb.testprofiles if DbClient._useTestTables else client.murmelidb.profiles
 
 	@staticmethod
 	def _getInboxTable():
 		'''Use a different inbox table for the unit tests so they're independent of the running db'''
-		client = pymongo.MongoClient()
+		client = DbClient._getAuthenticatedClient()
 		return client.murmelidb.testinbox if DbClient._useTestTables else client.murmelidb.inbox
 
 	@staticmethod
 	def _getOutboxTable():
 		'''Use a different outbox table for the unit tests so they're independent of the running db'''
-		client = pymongo.MongoClient()
+		client = DbClient._getAuthenticatedClient()
 		return client.murmelidb.testoutbox if DbClient._useTestTables else client.murmelidb.outbox
 
 	@staticmethod
 	def _getAdminTable():
 		'''Use a different table for the unit tests so they're independent of the running db'''
-		client = pymongo.MongoClient()
+		client = DbClient._getAuthenticatedClient()
 		return client.murmelidb.testadmin if DbClient._useTestTables else client.murmelidb.admin
 
 	@staticmethod
@@ -257,7 +302,7 @@ class DbClient:
 	def getMessageableContacts():
 		'''Get a list of contacts we can send messages to, ie trusted or untrusted'''
 		return DbClient._getProfileTable().find({"status":{"$in" : ["trusted", "untrusted"]}},
-			 {"torid":1, "displayName":1, "status":1, "contactlist":1}).sort([('torid', 1)])
+			 {"torid":1, "displayName":1, "status":1, "contactlist":1, "keyid":1}).sort([('torid', 1)])
 
 	@staticmethod
 	def getTrustedContacts():
@@ -349,6 +394,12 @@ class DbClient:
 		DbClient._getInboxTable().update({"_id":ObjectId(messageId)}, {"$set" : {"deleted":True}})
 
 	@staticmethod
+	def changeRequestMessagesToRegular(torId):
+		'''Change all contact requests from the given id to be regular messages instead'''
+		DbClient._getInboxTable().update({"fromId":torId, "messageType":"contactrequest"},
+			{"$set" : {"messageType":"normal", "recipients":DbClient.getOwnTorId()}})
+
+	@staticmethod
 	def getConversationId(parentHash):
 		'''Get the conversation id for the given parent hash'''
 		if parentHash:
@@ -373,3 +424,126 @@ class DbClient:
 		# Couldn't get any value, so start from 1
 		adminTable.insert({"_id":"conversationid", "value":1})
 		return 1
+
+# TODO: See if we need to call m.murmelidb.command("getLastError").get("ok") after a write
+#       to check that it worked
+
+
+class PasswordManager:
+	'''Class responsible for the management of the mongo authentication password,
+	including creation, storage and retrieval'''
+	PASSWORD_LENGTH = 20
+
+	@staticmethod
+	def _getPasswordFilePath():
+		'''Get the path to the password file'''
+		return Config.getDatabasePasswordFile()
+
+	@staticmethod
+	def _createPassword():
+		'''Create a new random password and return it'''
+		randgen = SystemRandom()
+		return "".join([randgen.choice("abcdefghijklmnopqrstuvwxyz0123456789_") \
+			for _ in range(PasswordManager.PASSWORD_LENGTH)])
+
+	@staticmethod
+	def getStoredPassword():
+		'''Return the stored password from the file, or None if not found or not valid'''
+		try:
+			foundLine = None
+			with open(PasswordManager._getPasswordFilePath(), "r") as pwFile:
+				for l in pwFile:
+					if foundLine and l:
+						return None
+					foundLine = l
+			if foundLine and len(foundLine) == PasswordManager.PASSWORD_LENGTH:
+				return foundLine
+		except FileNotFoundError:
+			pass
+		except PermissionError:
+			pass
+
+	@staticmethod
+	def createAndStorePassword():
+		'''Create and store a new password, and return it'''
+		password = PasswordManager._createPassword()
+		try:
+			with open(PasswordManager._getPasswordFilePath(), "w") as pwFile:
+				pwFile.write(password)
+		except PermissionError:
+			return None
+		return password
+
+	@staticmethod
+	def deletePassword():
+		try:
+			os.remove(PasswordManager._getPasswordFilePath())
+		except OSError: # file not found, or write-protected
+			pass
+
+
+class AuthSetterUpper():
+	'''Class responsible for setting up the authentication on the database'''
+
+	STATUS_NODB_NOPWD   = 0
+	STATUS_NODB_PWD     = 1
+	STATUS_NOAUTH_NOPWD = 2
+	STATUS_NOAUTH_PWD   = 3
+	STATUS_AUTH_NOPWD   = 4
+	STATUS_AUTH_PWD     = 5
+
+	def _getDbPwdStatus(self):
+		'''Get the current combined status of database and password availability'''
+		dbStatus = DbClient.getDatabaseRunStatus()
+		status = 0 if dbStatus == DbClient.NOT_RUNNING else 2 if dbStatus == DbClient.RUNNING_WITHOUT_AUTH else 4
+		if DbClient.isPasswordAvailable():
+			status += 1
+		return status
+
+	def isPasswordOk(self):
+		'''Assuming the server is running with auth and we have a saved password, does it work?'''
+		try:
+			_ = DbClient.getProfile(userid=None, extend=False)
+			return True
+		except:
+			return False
+
+	def setup(self):
+		'''Try to setup the authentication on the database and return True if succeeded'''
+		previousStatus = -1
+		for step in range(6):
+			currStatus = self._getDbPwdStatus()
+			print("Setting up auth - step", step, ", status=", currStatus)
+			if currStatus == AuthSetterUpper.STATUS_AUTH_PWD:
+				# Check we've got the right password!
+				if self.isPasswordOk():
+					# This is the only good exit point from this method!
+					return True
+				else:
+					# If password is wrong then delete password and stop db
+					PasswordManager.deletePassword()
+					DbClient.stopDatabase()
+			if currStatus == previousStatus:
+				return False # couldn't change state
+			if currStatus == AuthSetterUpper.STATUS_NODB_NOPWD:
+				# We've got no password, so we need to start db without auth
+				DbClient.startDatabase(False)
+			elif currStatus == AuthSetterUpper.STATUS_NODB_PWD:
+				# We've got a password, so we need to start db with auth
+				DbClient.startDatabase(True)
+			elif currStatus == AuthSetterUpper.STATUS_NOAUTH_NOPWD:
+				# Need to setup the new user with a new password
+				adminPassword = PasswordManager.createAndStorePassword()
+				userPassword = PasswordManager.createAndStorePassword()
+				DbClient.setupDatabaseUsers(adminPassword, userPassword)
+				DbClient.stopDatabase()
+			elif currStatus == AuthSetterUpper.STATUS_NOAUTH_PWD \
+			or currStatus == AuthSetterUpper.STATUS_AUTH_NOPWD:
+				# If stopping the database doesn't work, state will remain unchanged
+				DbClient.stopDatabase()
+			previousStatus = currStatus
+			# Wait a couple of seconds for the database to stop or start
+			time.sleep(2)
+		# must be stuck in a cycle if it hasn't returned already by now
+		DbClient.stopDatabase()
+		return False

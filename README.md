@@ -34,8 +34,5 @@ All feedback and help is very welcome.
  (Murmeli could try to query the Mongo server if it thinks it's running on Windows, but unfortunately
   if there's no server then querying fails with a Windows error, not a python exception.)
 * Mongod requires a Windows hotfix to be installed if you're using Windows 7.
-* Murmeli doesn't yet use any kind of authentication for the access to the Mongod server.  It's
- restricted to connections from the same machine, but other users on the same machine can connect
- to the server and read all the contents of the database.  This needs to be fixed at some point.
 * In the startup wizard, it would be nice to be able to select the executable paths with a file dialog.
 * The punch-card now has added punch.

@@ -105,6 +105,7 @@ finish=Fertig
 generate=Generieren
 send=Abschicken
 change=Ändern
+edit=Editieren
 delete=Löschen
 
 [gui]

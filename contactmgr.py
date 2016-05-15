@@ -80,3 +80,17 @@ class ContactMaker:
 				if c and len(c) > 16 and c[0:16] == torId:
 					return c[16:]
 		return torId # not found
+
+	@staticmethod
+	def checkAllContactsKeys():
+		for c in DbClient.getMessageableContacts():
+			torId = c.get("torid", None) if c else None
+			if torId:
+				keyId = c.get("keyid", None)
+				if not keyId:
+					print("No keyid found for torid", torId)
+				elif not CryptoClient.getPublicKey(keyId):
+					print("CryptoClient hasn't got a public key for torid", torId)
+				if not keyId or not CryptoClient.getPublicKey(keyId):
+					# We haven't got their key in our keyring!
+					DbClient.updateContact(torId, {"status":"requested"})

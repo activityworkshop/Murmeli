@@ -17,6 +17,7 @@ from dbclient import DbClient
 from torclient import TorClient
 import postmen
 from log import LogWindow
+from contactmgr import ContactMaker
 
 # Hack to allow Ctrl-C to work
 signal.signal(signal.SIGINT, signal.SIG_DFL)
@@ -54,6 +55,8 @@ class MainWindow(GuiWindow):
 		# Make sure Tor client is started
 		if not TorClient.isStarted():
 			TorClient.startTor()
+		# Make sure the status of the contacts matches our keyring
+		ContactMaker.checkAllContactsKeys()
 
 	def makeToolbar(self, deflist):
 		'''Given a list of (image, method, tooltip), make a QToolBar with those actions'''
@@ -70,6 +73,7 @@ class MainWindow(GuiWindow):
 		return toolbar
 
 	def modifyToolbar(self, highlightMessages):
+		'''Either highlight (if flag True) or not-highlight the new messages toolbar icon'''
 		self.toolbar.actions()[2].setVisible(not highlightMessages)
 		self.toolbar.actions()[3].setVisible(highlightMessages)
 

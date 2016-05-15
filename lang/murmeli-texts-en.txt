@@ -105,6 +105,7 @@ finish=Finish
 generate=Generate
 send=Send
 change=Change
+edit=Edit
 delete=Delete
 
 [gui]
