@@ -7,6 +7,7 @@
    This file contains the entry point of the application
    and the construction of the main Qt window'''
 
+import os, shutil
 import signal
 from PyQt4 import QtGui, QtCore
 from gui import GuiWindow
@@ -27,6 +28,7 @@ class MainWindow(GuiWindow):
 	def __init__(self, *args):
 		self.logPanel = LogWindow()
 		GuiWindow.__init__(self, lowerItem=self.logPanel)
+		self.clearWebCache()
 		self.postmen = None
 		self.toolbar = self.makeToolbar([
 			("images/toolbar-home.png",     self.onHomeClicked,     "mainwindow.toolbar.home"),
@@ -89,6 +91,7 @@ class MainWindow(GuiWindow):
 		self.navigateTo("/settings/")
 
 	def configUpdated(self):
+		'''React to a change in settings by changing tooltips and log panel visibility'''
 		for a in self.toolbarActions:
 			a.setToolTip(I18nManager.getText(a.tooltipkey))
 		# Show/hide log window
@@ -103,6 +106,11 @@ class MainWindow(GuiWindow):
 		print("Calling modify with value", ("yes" if highlightInbox else "no"))
 		self.modifyToolbar(highlightInbox)
 
+	def clearWebCache(self):
+		'''Delete all the files in the web cache'''
+		cacheDir = Config.getWebCacheDir()
+		shutil.rmtree(cacheDir, ignore_errors=True)
+		os.makedirs(cacheDir)
 
 	def closeEvent(self, event):
 		print("Closing Murmeli")
@@ -111,5 +119,5 @@ class MainWindow(GuiWindow):
 			p.stop()
 		DbClient.stopDatabase()
 		TorClient.stopTor()
-		# TODO: Clear cache directory?
+		self.clearWebCache()
 		event.accept()

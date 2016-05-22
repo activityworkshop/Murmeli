@@ -41,7 +41,6 @@ class TorClient:
 			TorClient._daemon = subprocess.Popen([torexe, "-f", rcfile])
 			print("started tor daemon!")
 			started = True
-			time.sleep(12)
 		except:
 			print("failed to start tor daemon - is it already running or did it just fail?")
 			started = False
@@ -80,6 +79,10 @@ class TorClient:
 			TorClient._daemon = None
 		else:
 			print("Can't stop tor because we haven't got a handle on the process")
+		if TorClient._torClient.socketBroker is not None:
+			TorClient._torClient.socketBroker.close()
+			TorClient._torClient.socketBroker = None
+		TorClient._torClient = None
 
 	@staticmethod
 	def writeTorrcFile(rcfile):
@@ -110,6 +113,7 @@ class SocketBroker(threading.Thread):
 		threading.Thread.__init__(self)
 		self.socket = None
 		self.running = False
+		self.setDaemon(True)
 		self.start()
 
 	def run(self):
@@ -118,12 +122,25 @@ class SocketBroker(threading.Thread):
 		# TODO: Get interface and port from config?  Or is it fixed?
 		interface = "localhost"
 		port = 11009
-		try:
-			self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-			self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-			self.socket.bind((interface, port))
-		except Exception as e:
-			print("Failed to open socket for listening!", e)
+
+		# Try a few times to open the socket, we need to wait until tor
+		# has finished starting
+		started = False
+		attempts = 0
+		while not started and attempts < 4:
+			time.sleep(5)
+
+			try:
+				self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+				self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+				self.socket.bind((interface, port))
+				print("Started tor and opened socket on attempt number", attempts)
+				started = True
+			except Exception as e:
+				print("Attempt", attempts, "- failed to open socket for listening!", e)
+				attempts += 1
+		if not started:
+			print("Failed after", attempts, "attempts to start the socket - tor failed to start?")
 			return
 
 		self.socket.listen(5)
