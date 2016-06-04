@@ -5,6 +5,7 @@ import socks
 from PyQt4 import QtCore # for timer
 from dbclient import DbClient
 from dbnotify import DbMessageNotifier
+from message import StatusNotifyMessage
 from contacts import Contacts
 
 
@@ -51,6 +52,14 @@ class OutgoingPostman(QtCore.QObject):
 	def broadcastOnlineStatus(self):
 		'''Queue a status notification message for each of our trusted contacts'''
 		print("Outgoing postman is broadcasting the status...")
+		self._broadcasting = True
+		profileList = DbClient.getContactList("trusted")
+		if profileList:
+			msg = StatusNotifyMessage(online=True, ping=True, profileHash=None)
+			msg.recipients = [c['torid'] for c in profileList]
+			DbClient.addMessageToOutbox(msg)
+		self._broadcasting = False
+		self.flushSignal.emit()
 
 	def flushOutbox(self):
 		'''Trigger the flush in a separate thread so it doesn't block'''
@@ -80,11 +89,18 @@ class OutgoingPostman(QtCore.QObject):
 				sendSuccess = self.RC_MESSAGE_FAILED if recipient in failedRecpts else self.sendMessage(message, recipient)
 				if sendSuccess == self.RC_MESSAGE_IGNORED:
 					print("Dealt with message so I should delete it from the db:", m["_id"])
+					DbClient.deleteMessageFromOutbox(m["_id"])
 				elif sendSuccess == self.RC_MESSAGE_SENT:
 					print("Sent message so I should delete it from the db:", m["_id"])
+					DbClient.deleteMessageFromOutbox(m["_id"])
 					messagesSent += 1
+					testMsg = "Message sent, type was %s and recipient was %s" % (m.get("msgType", "unknown"), recipient)
+					# TODO: Pass these values with the signal as an object, not a string
+					self.emit(QtCore.SIGNAL("messageSent"), testMsg)
 				elif not m.get('queue', False):
 					print("I failed to send a message but it shouldn't be queued, deleting it")
+					DbClient.deleteMessageFromOutbox(m["_id"])
+					failedRecpts.add(recipient)
 				else:
 					print("I failed to send but I'll keep the message and try again later")
 					failedRecpts.add(recipient)
@@ -93,6 +109,8 @@ class OutgoingPostman(QtCore.QObject):
 				recipientList = m.get('recipientList', None)
 				if recipientList:
 					print("I've got a message to relay to: ", recipientList)
+					failedRecipientsForThisMessage = set()
+					# TODO: Try to send to each in the list
 		# TODO: Does the parent even need to know when a send has worked?
 		if messagesSent > 0:
 			self.parent.postmanKnock() # only once
@@ -121,6 +139,7 @@ class OutgoingPostman(QtCore.QObject):
 					print("Oops - num bytes sent:", numsent, "but message has length:", len(message))
 					# For really long messages, maybe need to chunk into 4k blocks or something?
 				else:
+					Contacts.comeOnline(whoto)
 					return self.RC_MESSAGE_SENT
 			except Exception as e:
 				print("Woah, that threw something:", e)

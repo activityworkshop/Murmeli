@@ -150,7 +150,7 @@ class ContactsPageSet(PageSet):
 		self.addtemplate = PageTemplate('addcontact')
 
 	def servePage(self, view, url, params):
-		self.requirePageResources(['button-addperson.png', 'button-drawgraph.png'])
+		self.requirePageResources(['button-addperson.png', 'button-drawgraph.png', 'avatar-none.jpg'])
 		DbClient.exportAvatars(Config.getWebCacheDir())
 		if url == "/add" or url == "/add/":
 			contents = self.generateAddPage()
@@ -277,6 +277,7 @@ class MessagesPageSet(PageSet):
 		self.messagestemplate = PageTemplate('messages')
 
 	def servePage(self, view, url, params):
+		DbClient.exportAvatars(Config.getWebCacheDir())
 		# Make dictionary to convert ids to names
 		contactNames = {c['torid']:c['displayName'] for c in DbClient.getContactList()}
 		unknownSender = I18nManager.getText("messages.sender.unknown")
@@ -381,6 +382,7 @@ class SpecialFunctions(PageSet):
 		PageSet.__init__(self, "special")
 
 	def servePage(self, view, url, params):
+		print("Special function:", url)
 		if url == "/selectfile":
 			# Get home directory for file dialog
 			homedir = os.path.expanduser("~/")

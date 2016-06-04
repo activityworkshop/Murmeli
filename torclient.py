@@ -13,6 +13,7 @@ import os.path
 import re
 from config import Config
 from message import Message
+from messageshuffler import MessageShuffler
 
 
 class TorClient:
@@ -202,7 +203,7 @@ class SocketListener(threading.Thread):
 					# Note: should reply with NACK, but this doesn't seem to work through the proxy
 				else:
 					print("Incoming message!  Sender was '%s'" % m.senderId)
-					# TODO: Deal with this message object somehow
+					MessageShuffler.dealWithMessage(m)
 					# Note: should reply with ACK, but this doesn't seem to work through the proxy
 		# close socket
 		self.conn.close()

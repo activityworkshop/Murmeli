@@ -134,6 +134,8 @@ class DbClient:
 	@staticmethod
 	def _getAuthenticatedClient():
 		client = pymongo.MongoClient()
+		if not DbClient._dbPassword:
+			DbClient._dbPassword = PasswordManager.getStoredPassword()
 		# TODO: What to do if authentication fails?  Catch exception?
 		client.murmelidb.authenticate("murmeli", DbClient._dbPassword)
 		return client

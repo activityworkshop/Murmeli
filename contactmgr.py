@@ -16,7 +16,8 @@ class ContactMaker:
 		# TODO: If row already exists then get status (and name/displayname) and error with it
 		# Add new row in db with id, name and "requested"
 		if torId and torId != DbClient.getOwnTorId():
-			DbClient.updateContact(torId, {'displayName':displayName, 'status':'requested'})
+			DbClient.updateContact(torId, {'displayName':displayName, 'name':displayName,
+			  'status':'requested'})
 
 
 	@staticmethod
