@@ -188,6 +188,10 @@ class Message:
 		'''Used for looking up description texts to display the message type'''
 		return "unknown"
 
+	def isComplete(self):
+		'''Used to tell if all the required fields are present'''
+		return False
+
 
 class UnencryptedMessage(Message):
 	'''Message without symmetric or asymmetric encryption
@@ -271,6 +275,11 @@ class ContactRequestMessage(UnencryptedMessage):
 	def getMessageTypeKey(self):
 		return "contactrequest"
 
+	def isComplete(self):
+		'''The message can be empty but the name and public key are required, otherwise it won't be saved'''
+		return self.senderName is not None and len(self.senderName) > 0 \
+			and self.publicKey is not None and len(self.publicKey) > 80
+
 
 class ContactDenyMessage(UnencryptedMessage):
 	'''Message to deny a contact request - this can't be encrypted because we didn't
@@ -290,6 +299,9 @@ class ContactDenyMessage(UnencryptedMessage):
 
 	def getMessageTypeKey(self):
 		return "contactdeny"
+
+	def isComplete(self):
+		return True
 
 
 class AsymmetricMessage(Message):
@@ -362,9 +374,13 @@ class AsymmetricMessage(Message):
 		# Find a suitable subclass to call using the messageType
 		msg = None
 		if msgType == Message.TYPE_CONTACT_RESPONSE:
-			msg = ContactResponseMessage.construct(subpayload)
+			msg = ContactResponseMessage.constructFrom(subpayload)
 		elif msgType == Message.TYPE_STATUS_NOTIFY:
-			msg = StatusNotifyMessage.construct(subpayload)
+			msg = StatusNotifyMessage.constructFrom(subpayload)
+		elif msgType == Message.TYPE_ASYM_MESSAGE:
+			msg = RegularMessage.constructFrom(subpayload)
+		elif msgType == Message.TYPE_FRIEND_REFERRAL:
+			msg = ContactReferralMessage.constructFrom(subpayload)
 		# Ask the message if it's ok to have no signature
 		if isEncrypted and not signatureKey and msg and not msg.acceptUnrecognisedSignature():
 			msg = None
@@ -436,7 +452,7 @@ class ContactResponseMessage(AsymmetricMessage):
 		return True
 
 	@staticmethod
-	def construct(payload):
+	def constructFrom(payload):
 		'''Factory constructor using a given payload and extracting the fields'''
 		if payload:
 			print("ContactResponse with payload:", len(payload))
@@ -453,6 +469,10 @@ class ContactResponseMessage(AsymmetricMessage):
 
 	def getMessageTypeKey(self):
 		return "contactaccept"
+
+	def isComplete(self):
+		'''The public key is required, otherwise it won't be saved'''
+		return self.senderKey is not None and len(self.senderKey) > 80
 
 
 class StatusNotifyMessage(AsymmetricMessage):
@@ -477,7 +497,7 @@ class StatusNotifyMessage(AsymmetricMessage):
 			self.profileHash])
 
 	@staticmethod
-	def construct(payload):
+	def constructFrom(payload):
 		'''Factory constructor using a given payload and extracting the fields'''
 		chomper = StringChomper(payload)
 		online = Message.strToInt(chomper.getField(1)) > 0
@@ -487,3 +507,95 @@ class StatusNotifyMessage(AsymmetricMessage):
 
 	def getMessageTypeKey(self):
 		return "statusnotify"
+
+	def isComplete(self):
+		return True
+
+
+class RegularMessage(AsymmetricMessage):
+	'''Class for a generic message to one or more contacts'''
+	def __init__(self, sendTo=None, messageBody=None, replyToHash=None):
+		AsymmetricMessage.__init__(self)
+		self.sendTo = sendTo   # TODO: Verify length of this, must be multiple of id length
+		self.messageBody = messageBody   # TODO: throw exception if empty?
+		self.replyToHash = replyToHash if replyToHash else ""
+		self.messageType = Message.TYPE_ASYM_MESSAGE
+		self.shouldBeRelayed = True
+		self.senderMustBeTrusted = False  # sender is allowed to be untrusted
+
+	def _createSubpayload(self):
+		'''Use the stored fields to pack the payload contents together'''
+		messageAsBytes = self.messageBody.encode('utf-8')
+		recipientsAsBytes = self.sendTo.encode('utf-8')
+		replyHashAsBytes = self.replyToHash.encode('utf-8')
+		return self.packBytesTogether([
+			self.encodeNumberToBytes(len(recipientsAsBytes), 4),
+			recipientsAsBytes,
+			self.encodeNumberToBytes(len(replyHashAsBytes), 4),
+			replyHashAsBytes,
+			self.encodeNumberToBytes(len(messageAsBytes), 4),
+			messageAsBytes])
+
+	@staticmethod
+	def constructFrom(payload):
+		'''Construct a message from its payload'''
+		chomper = StringChomper(payload)
+		sendTo = chomper.getStringWithLength(4)
+		replyHash = chomper.getStringWithLength(4)
+		messageBody = chomper.getStringWithLength(4)
+		return RegularMessage(sendTo, messageBody, replyHash)
+
+	def getMessageTypeKey(self):
+		return "regular"
+
+	def isComplete(self):
+		'''The message shouldn't be empty'''
+		return self.messageBody is not None and len(self.messageBody) > 0
+
+
+class ContactReferralMessage(AsymmetricMessage):
+	'''A message type to allow one person to refer a friend to another'''
+	def __init__(self, friendId=None, friendName=None, introMessage=None):
+		'''Constructor'''
+		AsymmetricMessage.__init__(self)
+		self.messageType = Message.TYPE_FRIEND_REFERRAL
+		self.message = "" if introMessage is None else introMessage
+		self.friendId = friendId
+		self.friendName = friendName
+		self.publicKey = None
+
+	def _createSubpayload(self):
+		'''Pack the specific fields into the subpayload'''
+		# Get own name
+		if self.friendName is None:
+			self.friendName = DbClient.getProfile(self.friendId).get('name', self.friendId)
+		publicKey = self.getPublicKey(torid=self.friendId)
+		# TODO: Complain if publicKey is empty
+		messageAsBytes = self.message.encode('utf-8')
+		nameAsBytes = self.friendName.encode('utf-8')
+		subpayload = Message.packBytesTogether([
+			self.friendId,
+			self.encodeNumberToBytes(len(nameAsBytes), 4),
+			nameAsBytes,
+			self.encodeNumberToBytes(len(messageAsBytes), 4),
+			messageAsBytes, publicKey])
+		return subpayload
+
+	@staticmethod
+	def constructFrom(subpayload):
+		'''Factory constructor using a given subpayload and extracting the fields'''
+		chomper = StringChomper(subpayload)
+		friendId = chomper.getString(16) # Id is always 16 chars
+		friendName = chomper.getStringWithLength(4)
+		introMessage = chomper.getStringWithLength(4)
+		m = ContactReferralMessage(friendId=friendId, friendName=friendName, introMessage=introMessage)
+		m.publicKey = chomper.getRest()
+		return m
+
+	def getMessageTypeKey(self):
+		return "contactreferral"
+
+	def isComplete(self):
+		'''The message can be empty but the name and public key are required, otherwise it won't be saved'''
+		return self.friendId is not None and len(self.friendId) > 0 \
+			and self.publicKey is not None and len(self.publicKey) > 80

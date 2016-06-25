@@ -165,6 +165,12 @@ class DbClient:
 		return client.murmelidb.testadmin if DbClient._useTestTables else client.murmelidb.admin
 
 	@staticmethod
+	def _getContactsTable():
+		'''Use a different table for the unit tests so they're independent of the running db'''
+		client = DbClient._getAuthenticatedClient()
+		return client.murmelidb.testcontacts if DbClient._useTestTables else client.murmelidb.contacts
+
+	@staticmethod
 	def getProfile(userid=None, extend=True):
 		if userid is None:
 			profile = DbClient._getProfileTable().find_one({'ownprofile': True})
@@ -426,6 +432,20 @@ class DbClient:
 		# Couldn't get any value, so start from 1
 		adminTable.insert({"_id":"conversationid", "value":1})
 		return 1
+
+	@staticmethod
+	def addMessageToPendingContacts(message):
+		thisHash = DbClient.calculateHash({"body":message['messageBody'],
+			"timestamp":message['timestamp'], "senderId":message['fromId']})
+		# Check id or hash of message to make sure we haven't got it already!
+		pendingTable = DbClient._getContactsTable()
+		if not pendingTable.find_one({"messageHash" : thisHash}):
+			message['messageHash'] = thisHash
+			pendingTable.insert(message)
+
+	@staticmethod
+	def getPendingContactMessages(torId):
+		return DbClient._getContactsTable().find({"fromId":torId})
 
 # TODO: See if we need to call m.murmelidb.command("getLastError").get("ok") after a write
 #       to check that it worked

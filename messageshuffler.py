@@ -3,7 +3,9 @@
 from PyQt4.QtCore import QObject, SIGNAL
 from message import Message
 from dbclient import DbClient
+from contactmgr import ContactMaker
 from contacts import Contacts
+from config import Config
 
 
 class MessageTannoy(QObject):
@@ -47,6 +49,10 @@ class MessageShuffler:
 			if not sender or sender['status'] != "trusted":
 				return # throw message away
 
+		if not message.isComplete():
+			print("A message of type", message.encryptionType, "was received but it's not complete - throwing away")
+			return # throw message away
+
 		# if it's not encrypted, it's for us -> save in inbox
 		if message.encryptionType == Message.ENCTYPE_NONE:
 			MessageShuffler.dealWithUnencryptedMessage(message)
@@ -75,7 +81,31 @@ class MessageShuffler:
 	@staticmethod
 	def dealWithUnencryptedMessage(message):
 		'''Decide what to do with the given unencrypted message'''
-		pass
+		if message.messageType == Message.TYPE_CONTACT_REQUEST:
+			print("Received a contact request from", message.senderId)
+			# Check config to see whether we accept these or not
+			if Config.getProperty(Config.KEY_ALLOW_FRIEND_REQUESTS) \
+			  and MessageShuffler._isProfileStatusOk(message.senderId, [None, 'requested', 'untrusted', 'trusted']):
+				# Call DbClient to store new message in inbox
+				rowToStore = {"messageType":"contactrequest", "fromId":message.senderId,
+					"fromName":message.senderName, "messageBody":message.message,
+					"publicKey":message.publicKey, "timestamp":message.timestamp,
+					"messageRead":False, "messageReplied":False}
+				DbClient.addMessageToInbox(rowToStore)
+		elif message.messageType == Message.TYPE_CONTACT_RESPONSE:
+			print("It's an unencrypted contact response, so it must be a refusal")
+			sender = DbClient.getProfile(message.senderId, False)
+			if MessageShuffler._isProfileStatusOk(message.senderId, ['requested']):
+				senderName = sender.get("displayName") if sender else ""
+				ContactMaker.handleReceiveDeny(message.senderId)
+				# Call DbClient to store new message in inbox
+				rowToStore = {"messageType":"contactresponse", "fromId":message.senderId,
+					"fromName":senderName, "messageBody":"", "accepted":False,
+					"messageRead":False, "messageReplied":False, "timestamp":message.timestamp,
+					"recipients":MessageShuffler.getOwnTorId()}
+				DbClient.addMessageToInbox(rowToStore)
+		else:
+			print("Hä?  It's unencrypted but the message type is", message.messageType)
 
 	@staticmethod
 	def dealWithAsymmetricMessage(message):

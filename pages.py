@@ -290,6 +290,10 @@ class MessagesPageSet(PageSet):
 			m['msgId'] = str(m.get("_id", ""))
 			if m['messageType'] == "contactrequest":
 				conreqs.append(m)
+			elif m['messageType'] == "contactrefer":
+				senderId = m.get('fromId', None)
+				m['senderName'] = contactNames.get(senderId, unknownSender)
+				conreqs.append(m)
 			elif m['messageType'] == "contactresponse":
 				if not m.get('accepted', False):
 					m['messageBody'] = I18nManager.getText("messages.contactrequest.refused")
