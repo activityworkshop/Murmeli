@@ -74,6 +74,8 @@ confirmdelete=Are you sure you want to delete this contact?  You won't be able t
 [messages]
 title=Messages
 contactrequests=Contact Requests
+prompt.contactaccept=Message to accept request from '%s'
+prompt.contactreject=Reject request from '%s'
 contactresponses=Contact Responses
 mails=Mails
 from=From

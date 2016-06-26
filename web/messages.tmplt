@@ -1,6 +1,16 @@
 <script>
+	var _r=function(p,c){return p.replace(/%s/,c);};
 	function respondToContactRequest(id, name, accept)
 	{
+		msgTmp = (accept ? "{{langs["messages.prompt.contactaccept"]}}" : "{{langs["messages.prompt.contactreject"]}}");
+		var msg=[name].reduce(_r, msgTmp);
+		showMessage(msg + ":<form action='http://murmeli/messages/send' method='post'>"
+			+ "<input type='hidden' name='messageType' value='contactresponse'>"
+			+ "<input type='hidden' name='accept' value='" + (accept?"1":"0") + "'>"
+			+ "<input type='hidden' name='sendTo' value='" + id + "'>"
+			+ (accept ? "<input type='text' name='messageBody' value=''>" : "")
+			+ "<input type='submit' class='reversebutton' value='{{langs['button.send']}}'>"
+			+ "</form>");
 	}
 	function deleteResponse(id, name)
 	{
@@ -10,15 +20,30 @@
 
 {{if contactrequests}}
 <h3>{{langs['messages.contactrequests']}}</h3>
-<table border="1" cellpadding="1" cellspacing="0">
-	<tr><td>From</td><td>Message</td></tr>
 	{{for m in contactrequests}}
-		<tr><td>{{m["fromName"]}}</td><td>{{m["messageBody"]}}</td>
-			<td><a href='' onclick='respondToContactRequest("{{m["fromId"]}}", "{{m["fromName"]}}", true);return false' class='reversebutton'>{{langs['button.accept']}}</a>
-				<a href='' onclick='respondToContactRequest("{{m["fromId"]}}", "{{m["fromName"]}}", false);return false' class='reversebutton'>{{langs['button.reject']}}</a></td>
-		</tr>
+		{{if m['messageType'] == 'contactrequest'}}
+			<div class="genericbox" style="float:left;margin-top:10px">
+				<table border="0"><tr>
+					<td><b>{{langs['messages.from']}}</b>: {{m["fromName"]}}</td>
+					<td style="padding-left:30px"><p>{{m["messageBody"]}}</p></td>
+					<td><p><a href='' onclick='respondToContactRequest("{{m["fromId"]}}", "{{m["fromName"]}}", true);return false' class='reversebutton'>{{langs['button.accept']}}</a>
+						<a href='' onclick='respondToContactRequest("{{m["fromId"]}}", "{{m["fromName"]}}", false);return false' class='reversebutton'>{{langs['button.reject']}}</a></p></td>
+				</tr></table>
+			</div><br clear="all">
+		{{elif m['messageType'] == 'contactrefer'}}
+			<div class="genericbox" style="float:left;margin-top:10px">
+				<table border="0"><tr>
+					<td><b>{{langs['messages.from']}}</b>: {{m["senderName"]}}</td>
+					<td><b>recommends</b>: {{m["friendName"]}}</td>
+					<td style="padding-left:30px"><p>{{m["messageBody"]}}</p></td>
+					<td><p><a href='' onclick='respondToContactRequest("{{m["friendId"]}}", "{{m["friendName"]}}", true);return false' class='reversebutton'>{{langs['button.accept']}}</a>
+						<a href='' onclick='respondToContactRequest("{{m["friendId"]}}", "{{m["friendName"]}}", false);return false' class='reversebutton'>{{langs['button.reject']}}</a></p></td>
+				</tr></table>
+			</div><br clear="all">
+		{{else}}
+			<p>Weird - not a request or a refer??</p>
+		{{endif}}
 	{{endfor}}
-</table>
 {{endif}}
 
 {{if contactresponses}}

@@ -6,6 +6,10 @@
 			+ "<input type='submit' class='reversebutton' value='{{langs['button.delete']}}'>"
 			+ "</form>");
 	}
+	function sendRefer(id, referName)
+	{
+		showMessage("TODO: Send referral messages to both '{{person['displayName']}}' and '" + referName + "'</p>");
+	}
 </script>
 <div class='genericbox' style='float:left;margin:10px'><img src='file:///{{webcachedir}}/avatar-{{person['torid']}}.jpg' width='128' height='128'></div>
 <div class="genericbox" style='float:right; width:140px;'>
@@ -30,10 +34,11 @@
 {{endif}}
 <div style="float:center"><a href="/contacts/{{person['torid']}}/edit" class='reversebutton'>{{langs['button.edit']}}</a> these details</div>
 {{if sharedcontacts}}
-<p>Shared contacts: {{for c in sharedcontacts}}'{{c.dispName}}' &nbsp;{{endfor}}</p>
+<p>Shared contacts: {{for c in sharedcontacts}}<img src='file:///{{webcachedir}}/avatar-{{c.torid}}.jpg' width='36' height='36' style='margin:2px' title='{{c.dispName}}'> {{endfor}}</p>
 {{endif}}
 {{if possiblecontactsforthem}}
-<p>Possible contacts for {{person['displayName']}}: {{for c in possiblecontactsforthem}}'{{c.dispName}}' &nbsp;{{endfor}}</p>
+<p>Possible contacts for {{person['displayName']}}: {{for c in possiblecontactsforthem}}<img src='file:///{{webcachedir}}/avatar-{{c.torid}}.jpg' width='36' height='36' style='margin:2px' title='{{c.dispName}}'> 
+ (<a href="" onclick="sendRefer('{{c.torid}}','{{c.dispName}}');return false;">recommend {{c.dispName}}</a>) &nbsp; {{endfor}}</p>
 {{endif}}
 {{if possiblecontactsforme}}
 <p>Possible contacts for me: {{for c in possiblecontactsforme}}'{{c.dispName}}' &nbsp;{{endfor}}</p>

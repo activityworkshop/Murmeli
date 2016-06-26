@@ -74,6 +74,8 @@ confirmdelete=Willst du sicher diesen Kontakt löschen?  Ihr werdet nicht mehr m
 [messages]
 title=Nachrichten
 contactrequests=Kontakt-Anfragen
+prompt.contactaccept=Nachricht, um die Anfrage von '%s' zu akzeptieren
+prompt.contactreject=Anfrage von '%s' ablehnen
 contactresponses=Kontakt-Antworten
 mails=Mails
 from=Von

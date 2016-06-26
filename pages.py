@@ -277,7 +277,10 @@ class MessagesPageSet(PageSet):
 		self.messagestemplate = PageTemplate('messages')
 
 	def servePage(self, view, url, params):
+		self.requirePageResource('avatar-none.jpg')
 		DbClient.exportAvatars(Config.getWebCacheDir())
+		if url == "/send":
+			print("send message of type '%(messageType)s' to id '%(sendTo)s'" % params)
 		# Make dictionary to convert ids to names
 		contactNames = {c['torid']:c['displayName'] for c in DbClient.getContactList()}
 		unknownSender = I18nManager.getText("messages.sender.unknown")
