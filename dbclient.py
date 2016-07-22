@@ -251,6 +251,8 @@ class DbClient:
 		profiles.update({'torid':torid}, {"$set": profile}, True)
 		if pic_changed:
 			DbClient._updateAvatar(torid, Config.getWebCacheDir())
+		if profile.get("status", None) in ["blocked", "deleted", "trusted"]:
+			DbClient.updateContactList(Config.getProperty(Config.KEY_ALLOW_FRIENDS_TO_SEE_FRIENDS))
 
 	@staticmethod
 	def exportAvatars(outputdir):

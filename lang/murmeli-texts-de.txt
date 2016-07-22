@@ -77,6 +77,8 @@ contactrequests=Kontakt-Anfragen
 prompt.contactaccept=Nachricht, um die Anfrage von '%s' zu akzeptieren
 prompt.contactreject=Anfrage von '%s' ablehnen
 contactresponses=Kontakt-Antworten
+contactresponse.delete=Diese Antwort von '%s' löschen?
+delete=Diese Nachricht löschen?
 mails=Mails
 from=Von
 sendtime=Gesendet
@@ -108,6 +110,8 @@ generate=Generieren
 send=Abschicken
 change=Ändern
 edit=Editieren
+accept=Verbinden
+reject=Ablehnen
 delete=Löschen
 
 [gui]

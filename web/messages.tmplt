@@ -14,6 +14,17 @@
 	}
 	function deleteResponse(id, name)
 	{
+		var msg=[name].reduce(_r, "{{langs['messages.contactresponse.delete']}}");
+		deleteMessage(id, msg);
+	}
+	function deleteMessage(id, msg)
+	{
+		if (msg == "") {msg = '{{langs['messages.delete']}}';}
+		showMessage(msg
+			+ "<form action='http://murmeli/messages/delete/' method='post'>"
+			+ "<input type='hidden' name='msgId' value='" + id + "'>"
+			+ "<input type='submit' class='reversebutton' value='{{langs['button.delete']}}'>"
+			+ "</form>");
 	}
 </script>
 
@@ -48,23 +59,34 @@
 
 {{if contactresponses}}
 <h3>{{langs['messages.contactresponses']}}</h3>
-<table border="1" cellpadding="1" cellspacing="0">
-	<tr><td>From</td><td>Message</td></tr>
-	{{for m in contactresponses}}
-		<tr><td>{{m["fromName"]}}</td><td>{{m["messageBody"]}}</td>
-			<td><a href='' onclick='deleteResponse("{{m["msgId"]}}", "{{m["fromName"]}}");return false' class='reversebutton'>{{langs['button.delete']}}</a></td>
-		</tr>
-	{{endfor}}
-</table>
+ {{for m in contactresponses}}
+	<div class="genericbox" style="float:left;margin-top:10px">
+		<table><tr valign="top">
+			<td valign="middle"><img src='file:///{{webcachedir}}/avatar-{{m["fromId"]}}.jpg' width="48" height="48" title="{{m["fromName"]}}"></td>
+			<td nowrap="1" style="font-size:85%">
+				<b>{{langs['messages.from']}}</b>: {{m["fromName"]}}
+			</td>
+			<td style="padding-left:30px">{{m["messageBody"]|html}}</td>
+			<td valign="bottom"><a href='' onclick='deleteResponse("{{m["msgId"]}}", "{{m["fromName"]}}");return false' class='reversebutton'>{{langs['button.delete']}}</a></td>
+			</tr></table>
+	</div><br clear="all">
+ {{endfor}}
 {{endif}}
 
 {{if mails}}
 <h3>{{langs['messages.mails']}}</h3>
 {{for m in mails}}
 	<div class="genericbox" style="float:left;margin-top:10px">
-		<b>{{langs['messages.from']}}</b>: {{m["senderName"]}}<br>
+		<table><tr valign="top">
+			<td valign="middle"><img src='file:///{{webcachedir}}/avatar-{{m["fromId"]}}.jpg' width="48" height="48" title="{{m["senderName"]}}"></td>
+			<td nowrap="1" style="font-size:85%">
+				<b>{{langs['messages.from']}}</b>: {{m["senderName"]}}<br>
 				<b>{{langs['messages.sendtime']}}:</b> {{m["sentTimeStr"]}}<br>
 				<b>{{langs['messages.to']}}:</b> {{m["recipients"]}}
+			</td>
+			<td style="padding-left:30px">{{m["messageBody"]|html}}</td>
+			<td valign="bottom"><a href='' onclick='deleteMessage("{{m["msgId"]}}", "");return false' class='reversebutton'>{{langs['button.delete']}}</a></td>
+			</tr></table>
 	</div><br clear="all">
 {{endfor}}
 {{endif}}

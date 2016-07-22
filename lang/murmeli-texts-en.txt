@@ -77,6 +77,8 @@ contactrequests=Contact Requests
 prompt.contactaccept=Message to accept request from '%s'
 prompt.contactreject=Reject request from '%s'
 contactresponses=Contact Responses
+contactresponse.delete=Delete response from '%s'?
+delete=Delete this message?
 mails=Mails
 from=From
 sendtime=Sent
@@ -108,6 +110,8 @@ generate=Generate
 send=Send
 change=Change
 edit=Edit
+accept=Accept
+reject=Reject
 delete=Delete
 
 [gui]

@@ -56,7 +56,7 @@ class ContactMaker:
 			ourContactIds.add(foundid)
 			if c['status'] == 'trusted' and foundid != torid:
 				trustedContactIds.add(foundid)
-			nameMap[foundid] = c['displayName']
+			nameMap[foundid] = c.get('displayName', c.get('name', None))
 			# Should we check the contact information too?
 			if not foundTheirContacts:
 				foundContacts = c.get('contactlist', None)

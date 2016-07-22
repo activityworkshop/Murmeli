@@ -132,6 +132,7 @@ class DefaultPageSet(PageSet):
 		self.hometemplate = PageTemplate('home')
 
 	def servePage(self, view, url, params):
+		self.requirePageResource('avatar-none.jpg')
 		contents = self.buildPage({'pageTitle' : "Murmeli",
 			'pageBody' : self.hometemplate.getHtml(),
 			'pageFooter' : "<p>Footer</p>"})
@@ -277,7 +278,6 @@ class MessagesPageSet(PageSet):
 		self.messagestemplate = PageTemplate('messages')
 
 	def servePage(self, view, url, params):
-		self.requirePageResource('avatar-none.jpg')
 		DbClient.exportAvatars(Config.getWebCacheDir())
 		if url == "/send":
 			print("send message of type '%(messageType)s' to id '%(sendTo)s'" % params)

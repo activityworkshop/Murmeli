@@ -313,6 +313,7 @@ class AsymmetricMessage(Message):
 		self.timestamp      = None
 		self.senderId       = None
 		self.shouldBeRelayed = True  # Most should be relayed
+		self.encryptedContents = None
 
 	def createRandomToken(self):
 		'''Create a random byte sequence to use as a repeating token'''
@@ -382,8 +383,12 @@ class AsymmetricMessage(Message):
 		elif msgType == Message.TYPE_FRIEND_REFERRAL:
 			msg = ContactReferralMessage.constructFrom(subpayload)
 		# Ask the message if it's ok to have no signature
-		if isEncrypted and not signatureKey and msg and not msg.acceptUnrecognisedSignature():
-			msg = None
+		if isEncrypted and msg:
+			if msg.acceptUnrecognisedSignature():
+				# Save the encrypted contents so we can verify it later
+				msg.encryptedContents = payload
+			elif not signatureKey:
+				msg = None
 		if msg:
 			try:
 				msgTimestamp = tstmp.decode('utf-8')

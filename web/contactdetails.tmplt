@@ -41,5 +41,6 @@
  (<a href="" onclick="sendRefer('{{c.torid}}','{{c.dispName}}');return false;">recommend {{c.dispName}}</a>) &nbsp; {{endfor}}</p>
 {{endif}}
 {{if possiblecontactsforme}}
-<p>Possible contacts for me: {{for c in possiblecontactsforme}}'{{c.dispName}}' &nbsp;{{endfor}}</p>
+<p>Possible contacts for me: {{for c in possiblecontactsforme}}<img src='file:///{{webcachedir}}/avatar-none.jpg' width='36' height='36' style='margin:2px' title='{{c.dispName}}'> 
+ (request contact with {{c.dispName}}) &nbsp; {{endfor}}</p>
 {{endif}}
