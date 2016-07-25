@@ -11,6 +11,7 @@ from dbclient import DbClient
 from contactmgr import ContactMaker
 from pagetemplate import PageTemplate
 import message
+from fingerprints import FingerprintChecker
 from contacts import Contacts
 
 
@@ -149,6 +150,7 @@ class ContactsPageSet(PageSet):
 		self.editowndetailstemplate = PageTemplate('editcontactself')
 		self.editdetailstemplate = PageTemplate('editcontact')
 		self.addtemplate = PageTemplate('addcontact')
+		self.fingerprintstemplate = PageTemplate('fingerprints')
 
 	def servePage(self, view, url, params):
 		self.requirePageResources(['button-addperson.png', 'button-drawgraph.png', 'avatar-none.jpg'])
@@ -195,6 +197,19 @@ class ContactsPageSet(PageSet):
 				elif command[1] == "delete":
 					ContactMaker.handleDeleteContact(userid)
 					userid = None
+				elif command[1] == "checkfingerprint":
+					contents = self.generateFingerprintsPage(userid)
+				elif command[1] == "checkedfingerprint":
+					givenAnswer = int(params.get('answer', -1))
+					fc = self._makeFingerprintChecker(userid)
+					expectedAnswer = fc.getCorrectAnswer()
+					if expectedAnswer == givenAnswer:
+						ContactMaker.keyFingerprintChecked(userid)
+						# Show page again
+						contents = self.generateFingerprintsPage(userid)
+					else:
+						# Add a message to show when the list page is re-generated
+						pageParams['fingerprint_check_failed'] = True
 
 		# If we haven't got any contents yet, then do a show details
 		if not contents:
@@ -210,9 +225,44 @@ class ContactsPageSet(PageSet):
 			'pageBody' : bodytext,
 			'pageFooter' : "<p>Footer</p>"})
 
+	def generateFingerprintsPage(self, userid):
+		'''Build the page for checking the fingerprints of the selected user'''
+		# First, get the name of the user
+		person = DbClient.getProfile(userid, False)
+		dispName = person.get('displayName', '')
+		fullName = person.get('name', '')
+		if not dispName: dispName = fullName
+		if dispName != fullName:
+			fullName = dispName + " (" + fullName + ")"
+		fc = self._makeFingerprintChecker(userid)
+		# check it's ok to generate
+		status = person.get('status', '')
+		if not fc.valid \
+		  or status not in ['untrusted', 'trusted']:
+			print("Not generating fingerprints page because status is", status)
+			return None
+
+		# Get one set of words for us and three sets for them
+		printsAlreadyChecked = (person.get('status', '') == "trusted")
+		bodytext = self.fingerprintstemplate.getHtml(
+			{"mywords":fc.getCodeWords(True, 0, "en"), "theirwords0":fc.getCodeWords(False, 0, "en"),
+			 "theirwords1":fc.getCodeWords(False, 1, "en"), "theirwords2":fc.getCodeWords(False, 2, "en"),
+			 "fullname":fullName, "shortname":dispName, "userid":userid, "alreadychecked":printsAlreadyChecked})
+		return self.buildPage({'pageTitle' : I18nManager.getText("contacts.title"),
+			'pageBody' : bodytext,
+			'pageFooter' : "<p>Footer</p>"})
+
+	def _makeFingerprintChecker(self, userid):
+		'''Use the given userid to make a FingerprintChecker between me and them'''
+		person = DbClient.getProfile(userid, False)
+		ownFingerprint = CryptoClient.getFingerprint(DbClient.getOwnKeyId())
+		usrFingerprint = CryptoClient.getFingerprint(person['keyid'])
+		return FingerprintChecker(ownFingerprint, usrFingerprint)
+
 	# Generate a page for listing all the contacts and showing the details of one of them
 	def generateListPage(self, doEdit=False, userid=None, extraParams=None):
 		self.requirePageResources(['avatar-none.jpg', 'status-self.png', 'status-requested.png', 'status-untrusted.png', 'status-trusted.png'])
+		# List of contacts, and show details for the selected one (or self if userid=None)
 		selectedprofile = DbClient.getProfile(userid)
 		if selectedprofile is None:
 			selectedprofile = DbClient.getProfile()
@@ -281,6 +331,8 @@ class MessagesPageSet(PageSet):
 		DbClient.exportAvatars(Config.getWebCacheDir())
 		if url == "/send":
 			print("send message of type '%(messageType)s' to id '%(sendTo)s'" % params)
+		elif url.startswith("/delete/"):
+			DbClient.deleteMessageFromInbox(params.get("msgId", ""))
 		# Make dictionary to convert ids to names
 		contactNames = {c['torid']:c['displayName'] for c in DbClient.getContactList()}
 		unknownSender = I18nManager.getText("messages.sender.unknown")

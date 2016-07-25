@@ -1,0 +1,23 @@
+<style type="text/css">
+	.answer {font-size:110%; background:#eee; border-radius:5px;}
+	.answer:hover {background:#cb9; font-weight:bold}
+</style>
+<h1>{{fullname}}</h1>
+<p>{{langs['contacts.fingerprintcheck.intro1']}}</p>
+
+<p>{{langs['contacts.fingerprintcheck.intro2']}} &nbsp;
+{{langs['contacts.fingerprintcheck.yourwords'] % shortname}}</p>
+<div class="genericbox" style="text-align:center;padding:2px">
+	<h2>{{mywords}}</h2>
+</div>
+{{if not alreadychecked}}
+	<p>{{langs['contacts.fingerprintcheck.theirwords'] % shortname}}</p>
+	<div class="genericbox" style="text-align:center;padding:2px">
+		<p class="answer"><a href="/contacts/{{userid}}/checkedfingerprint?answer=0">{{theirwords0}}</a></p>
+		<p class="answer"><a href="/contacts/{{userid}}/checkedfingerprint?answer=1">{{theirwords1}}</a></p>
+		<p class="answer"><a href="/contacts/{{userid}}/checkedfingerprint?answer=2">{{theirwords2}}</a></p>
+	</div>
+{{else}}
+	<p>{{langs['contacts.fingerprintcheck.alreadydone'] % shortname}}</p>
+	<p><a href="/contacts/{{userid}}" class="reverseButton">{{langs['button.ok']}}</a></p>
+{{endif}}

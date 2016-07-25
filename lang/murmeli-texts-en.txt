@@ -70,12 +70,22 @@ details.birthday=Birthday
 link.addnewcontact=Add new contact
 link.showstorm=Draw network
 confirmdelete=Are you sure you want to delete this contact?  You won't be able to contact each other again without reconnecting.
+desc.confirmfingerprints=You haven't confirmed yet that this key is correct.  To make sure that nobody has inserted their own key in-between, you need to confirm this.
+link.confirmfingerprints=Check key
+fingerprintcheck.intro1=It's important to check that this is really the right key, even if you're sure that it's the right person!
+fingerprintcheck.intro2=To do this, find another way to contact this person (for example telephone, or meeting in person) and give them the following words for them to check.  You cannot use Murmeli messages for this.
+fingerprintcheck.yourwords=Here are the five words which you should say to '%s'.
+fingerprintcheck.theirwords=And '%s' should say one of these word sets to you.
+fingerprintcheck.alreadydone=You have already verified the words from '%s'.
+error.fingerprintcheckfailed=Those aren't the codewords expected from that key.  Please check again.
 
 [messages]
 title=Messages
 contactrequests=Contact Requests
 prompt.contactaccept=Message to accept request from '%s'
 prompt.contactreject=Reject request from '%s'
+contactrequest.refused=Your request was not accepted.
+contactrequest.accepted=Your request was accepted, but no message was given.
 contactresponses=Contact Responses
 contactresponse.delete=Delete response from '%s'?
 delete=Delete this message?

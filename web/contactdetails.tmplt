@@ -26,13 +26,18 @@
 {{if person['status']=='untrusted'}}
 <div class='warningbox' style='margin-top:5px'>
 <p><img src='file:///{{webcachedir}}/status-untrusted.png' width='24' height='24'> {{langs['contacts.desc.confirmfingerprints']}}</p>
-<p>{{langs['contacts.link.confirmfingerprints']}}</p>
+<p><a href="/contacts/{{person['torid']}}/checkfingerprint">{{langs['contacts.link.confirmfingerprints']}}</a></p>
 </div>
 {{endif}}
 {{if person['status']!='self'}}
 <div style="float:right"><a href='' onclick='deleteContact();return false;' class='reversebutton'>{{langs['button.delete']}}</a></div>
 {{endif}}
 <div style="float:center"><a href="/contacts/{{person['torid']}}/edit" class='reversebutton'>{{langs['button.edit']}}</a> these details</div>
+{{if "fingerprint_check_failed" in locals()}}
+	<script type='text/javascript'>window.alert("{{langs['contacts.error.fingerprintcheckfailed']}}");</script>
+{{elif "message_sent" in locals()}}
+	<script type='text/javascript'>window.alert("{{langs['messages.confirm.messagesent']}}");</script>
+{{endif}}
 {{if sharedcontacts}}
 <p>Shared contacts: {{for c in sharedcontacts}}<img src='file:///{{webcachedir}}/avatar-{{c.torid}}.jpg' width='36' height='36' style='margin:2px' title='{{c.dispName}}'> {{endfor}}</p>
 {{endif}}

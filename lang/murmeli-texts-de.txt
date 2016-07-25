@@ -70,12 +70,22 @@ details.birthday=Geburtstag
 link.addnewcontact=Kontakt hinzufügen
 link.showstorm=Netzwerk skizzieren
 confirmdelete=Willst du sicher diesen Kontakt löschen?  Ihr werdet nicht mehr miteinander kommunizieren, ohne die Verbindung neu aufzubauen.
+desc.confirmfingerprints=Dieser Schlüssel ist noch nicht bestätigt worden.  Um sicherzustellen, dass niemand einen anderen Schlüssel dazwischengefügt hat, musst du dies bestätigen.
+link.confirmfingerprints=Schlüssel bestätigen
+fingerprintcheck.intro1=Es ist ganz wichtig zu prüfen ob dieser Schlüssel der richtige ist, auch dann wenn du sicher bist, dass die Person stimmt!
+fingerprintcheck.intro2=Um das zu machen, brauchst du eine andere Kontaktmöglichkeit, (wie telefonisch, oder persönlich) und gibst der Kontakt die folgenden Wörter.  Das muss unbedingt abseits von Murmeli stattfinden für eine unabhängige Bestätigung.
+fingerprintcheck.yourwords=Hier sind die fünf Wörter die du '%s' mitteilen solltest.
+fingerprintcheck.theirwords=Und '%s' sollte dir einen von diesen Wortreihen geben.
+fingerprintcheck.alreadydone=Du hast die Wörter von '%s' schon bestätigt.
+error.fingerprintcheckfailed=Die sind nicht die erwartete Wörter.  Bitte nochmals prüfen.
 
 [messages]
 title=Nachrichten
 contactrequests=Kontakt-Anfragen
 prompt.contactaccept=Nachricht, um die Anfrage von '%s' zu akzeptieren
 prompt.contactreject=Anfrage von '%s' ablehnen
+contactrequest.refused=Die Anfrage ist nicht akzeptiert worden.
+contactrequest.accepted=Die Anfrage wurde akzeptiert, aber keine Nachricht wurde geschickt.
 contactresponses=Kontakt-Antworten
 contactresponse.delete=Diese Antwort von '%s' löschen?
 delete=Diese Nachricht löschen?
