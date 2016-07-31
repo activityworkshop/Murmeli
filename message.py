@@ -68,6 +68,7 @@ class Message:
 		'''Constructor'''
 		self.shouldBeQueued = True   # Most should be queued, just certain subtypes not
 		self.senderMustBeTrusted = True  # Most should only be accepted if sender is trusted
+		self.timestamp = None
 
 	def createOutput(self, recipientKeyId):
 		'''Make the regular output of the message including encryption if required'''
@@ -380,6 +381,8 @@ class AsymmetricMessage(Message):
 			msg = StatusNotifyMessage.constructFrom(subpayload)
 		elif msgType == Message.TYPE_ASYM_MESSAGE:
 			msg = RegularMessage.constructFrom(subpayload)
+		elif msgType == Message.TYPE_INFO_REQUEST:
+			msg = InfoRequestMessage.constructFrom(subpayload)
 		elif msgType == Message.TYPE_FRIEND_REFERRAL:
 			msg = ContactReferralMessage.constructFrom(subpayload)
 		# Ask the message if it's ok to have no signature
@@ -515,6 +518,41 @@ class StatusNotifyMessage(AsymmetricMessage):
 
 	def isComplete(self):
 		return True
+
+
+class InfoRequestMessage(AsymmetricMessage):
+	'''An info request can be a request for a profile, or for a list of friends'''
+	INFO_PROFILE    = 1
+	# Maybe other types of info request will be needed later?
+
+	def __init__(self, infoType):
+		AsymmetricMessage.__init__(self)
+		self.infoType = infoType
+		self.messageType = Message.TYPE_INFO_REQUEST
+		self.shouldBeRelayed = False
+		self.shouldBeQueued  = False
+
+	def _createSubpayload(self):
+		'''Use the stored fields to pack the payload contents together'''
+		if self.infoType is None: self.infoType = InfoRequestMessage.INFO_PROFILE
+		token = self.createRandomToken()
+		return self.encodeNumberToBytes(self.infoType) + \
+			token + token
+
+	@staticmethod
+	def constructFrom(payload):
+		'''Factory constructor using a given payload and extracting the fields'''
+		chomper = StringChomper(payload)
+		infoType = Message.strToInt(chomper.getField(1))
+		# TODO: Check doubled token (although I guess just zeroes would also match)
+		#       Maybe all such requests should include a token broadcast (encrypted) by the online status notify message?
+		return InfoRequestMessage(infoType)
+
+	def getMessageTypeKey(self):
+		return "inforequest"
+
+	def isComplete(self):
+		return self.infoType > 0
 
 
 class RegularMessage(AsymmetricMessage):

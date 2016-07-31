@@ -110,5 +110,24 @@ class MessageShuffler:
 	@staticmethod
 	def dealWithAsymmetricMessage(message):
 		'''Decide what to do with the given asymmetric message'''
-		pass
-
+		if message.senderId == MessageShuffler.getOwnTorId():
+			print("*** Shouldn't receive a message from myself!")
+			return
+		# Sort message according to type
+		if message.messageType == Message.TYPE_CONTACT_RESPONSE:
+			print("Received a contact accept from", message.senderId, "name", message.senderName)
+		elif message.messageType == Message.TYPE_STATUS_NOTIFY:
+			if message.online:
+				print("One of our contacts has just come online- ", message.senderId,
+					"and hash is", message.profileHash)
+				Contacts.comeOnline(message.senderId)
+			else:
+				print("One of our contacts is going offline -", message.senderId)
+				Contacts.goneOffline(message.senderId)
+		elif message.messageType == Message.TYPE_INFO_REQUEST:
+			print("I've received an info request message for type", message.infoType)
+		elif message.messageType == Message.TYPE_ASYM_MESSAGE:
+			print("It's a general kind of message, this should go in the Inbox, right?")
+		else:
+			# It's another asymmetric message type
+			print("Hä?  What kind of asymmetric message type is that? ", message.messageType)

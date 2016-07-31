@@ -139,6 +139,20 @@ class StatusNotifyTest(unittest.TestCase):
 		self.assertTrue(bac.profileHash.startswith("bcc42c9d276"))
 
 
+class InfoRequestTest(unittest.TestCase):
+	'''Tests for the info request messages'''
+	def setUp(self):
+		Config.load()
+		DbClient.useTestTables()
+
+	def testProfileRequest(self):
+		m = message.InfoRequestMessage(message.InfoRequestMessage.INFO_PROFILE)
+		output = m.createUnencryptedOutput()
+		bac = message.Message.MessageFromReceivedData(output, False)
+		self.assertIsNotNone(bac, "couldn't decode the data")
+		self.assertEqual(message.InfoRequestMessage.INFO_PROFILE, bac.infoType)
+
+
 if __name__ == "__main__":
 	unittest.main()
 

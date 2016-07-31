@@ -27,6 +27,35 @@ class ContactMaker:
 			DbClient.updateContact(torId, {"status" : "deleted"})
 		#       If torId isn't found in profiles table then do nothing
 
+
+	@staticmethod
+	def _getInboxMessage(torId, messageType):
+		for m in DbClient.getInboxMessages():
+			if m["fromId"] == torId and m["messageType"] == messageType:
+				return m
+
+	@staticmethod
+	def getContactRequestDetails(torId):
+		'''Use all the received contact requests for the given id, and summarize the name and public key'''
+		# Set up empty name / publicKey
+		nameList = set()
+		keyList = set()
+		# Loop through all contact requests and contact refers for the given torid
+		for m in DbClient.getInboxMessages():
+			if m["messageType"] == "contactrequest" and m["fromId"] == torId:
+				nameList.add(m.get("fromName", None))
+				keyList.add(m.get("publicKey", None))
+			elif m["messageType"] == "contactrefer" and m["friendId"] == torId:
+				nameList.add(m.get("friendName", None))
+				keyList.add(m.get("publicKey", None))
+		if len(keyList) != 1:
+			return (None, None)	# no keys or more than one key!
+		suppliedKey = keyList.pop()
+		if suppliedKey is None or len(suppliedKey) < 80:
+			return (None, None)	# one key supplied but it's missing or too short
+		suppliedName = nameList.pop() if len(nameList) == 1 else torId
+		return (suppliedName, suppliedKey)
+
 	@staticmethod
 	def getSharedAndPossibleContacts(torid):
 		'''Check which contacts we share with the given torid and which ones we could recommend to each other'''

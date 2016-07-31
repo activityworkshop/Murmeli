@@ -80,7 +80,7 @@ class TorClient:
 			TorClient._daemon = None
 		else:
 			print("Can't stop tor because we haven't got a handle on the process")
-		if TorClient._torClient.socketBroker is not None:
+		if TorClient._torClient and TorClient._torClient.socketBroker:
 			TorClient._torClient.socketBroker.close()
 			TorClient._torClient.socketBroker = None
 		TorClient._torClient = None
