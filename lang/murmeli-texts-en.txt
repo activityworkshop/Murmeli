@@ -69,6 +69,7 @@ details.interests=Interests
 details.birthday=Birthday
 link.addnewcontact=Add new contact
 link.showstorm=Draw network
+storm.title=Murmeli Network
 confirmdelete=Are you sure you want to delete this contact?  You won't be able to contact each other again without reconnecting.
 desc.confirmfingerprints=You haven't confirmed yet that this key is correct.  To make sure that nobody has inserted their own key in-between, you need to confirm this.
 link.confirmfingerprints=Check key

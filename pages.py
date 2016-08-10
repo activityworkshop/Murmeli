@@ -10,6 +10,8 @@ from config import Config
 from dbclient import DbClient
 from contactmgr import ContactMaker
 from pagetemplate import PageTemplate
+from brainstorm import Brainstorm
+from brainstormdata import Storm, Node
 import message
 from fingerprints import FingerprintChecker
 from contacts import Contacts
@@ -449,3 +451,43 @@ class SpecialFunctions(PageSet):
 			fname = QtGui.QFileDialog.getOpenFileName(view, "Open Image", homedir, "Image files (*.jpg)")
 			if fname:
 				view.page().mainFrame().evaluateJavaScript("updateProfilePic('" + fname + "');")
+		elif url == "/friendstorm":
+			if not DbClient.hasFriends():
+				view.page().mainFrame().evaluateJavaScript("window.alert('No friends :(');")
+				return
+			# Launch a storm
+			self.bs = Brainstorm(I18nManager.getText("contacts.storm.title"))
+			self.bs.show()
+			storm = Storm()
+			# Build up Nodes and Edges using our contact list and if possible our friends' contact lists
+			myTorId = DbClient.getOwnTorId()
+			friends = {}
+			friendsOfFriends = {}
+			for c in DbClient.getContactList():
+				#print("Contact:", c['torid'], "'", c['displayName'], "'")
+				nodeid = storm.getUnusedNodeId()
+				torid = c['torid']
+				friends[torid] = nodeid
+				storm.addNode(Node(None, nodeid, c['displayName']))
+				friendsOfFriends[torid] = c.get('contactlist', "")
+			for torid in friends:
+				if torid != myTorId:
+					storm.addEdge(friends[torid], friends[myTorId])
+			for torid in friendsOfFriends:
+				if torid != myTorId:
+					ffList = friendsOfFriends[torid]
+					if ffList:
+						for ff in ffList.split(","):
+							if ff and len(ff) > 16:
+								ffTorid = ff[:16]
+								ffName = ff[16:]
+								if ffTorid != myTorId:
+									if not friends.get(ffTorid, None):
+										# Friend's friend is not in the list yet - add it
+										nodeid = storm.getUnusedNodeId()
+										friends[ffTorid] = nodeid
+										storm.addNode(Node(None, nodeid, ffName))
+									# Add edge from torid to ffTorid
+									storm.addEdge(friends[torid], friends[ffTorid])
+
+			self.bs.setStorm(storm)

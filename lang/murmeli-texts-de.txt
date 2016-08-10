@@ -69,6 +69,7 @@ details.interests=Interessen
 details.birthday=Geburtstag
 link.addnewcontact=Kontakt hinzufügen
 link.showstorm=Netzwerk skizzieren
+storm.title=Murmeli Netzwerk
 confirmdelete=Willst du sicher diesen Kontakt löschen?  Ihr werdet nicht mehr miteinander kommunizieren, ohne die Verbindung neu aufzubauen.
 desc.confirmfingerprints=Dieser Schlüssel ist noch nicht bestätigt worden.  Um sicherzustellen, dass niemand einen anderen Schlüssel dazwischengefügt hat, musst du dies bestätigen.
 link.confirmfingerprints=Schlüssel bestätigen
