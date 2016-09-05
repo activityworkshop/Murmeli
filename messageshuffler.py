@@ -116,18 +116,59 @@ class MessageShuffler:
 		# Sort message according to type
 		if message.messageType == Message.TYPE_CONTACT_RESPONSE:
 			print("Received a contact accept from", message.senderId, "name", message.senderName)
+			if MessageShuffler._isProfileStatusOk(message.senderId, ['pending', 'requested', 'untrusted']):
+				print(message.senderName, "'s public key is", message.senderKey)
+				ContactMaker.handleReceiveAccept(message.senderId, message.senderName, message.senderKey)
+				# Call DbClient to store new message in inbox
+				rowToStore = {"messageType":"contactresponse", "fromId":message.senderId,
+					"fromName":message.senderName, "messageBody":message.introMessage, "accepted":True,
+					"messageRead":False, "messageReplied":False, "timestamp":message.timestamp,
+					"recipients":MessageShuffler.getOwnTorId()}
+				DbClient.addMessageToInbox(rowToStore)
+			elif MessageShuffler._isProfileStatusOk(message.senderId, [None, 'blocked']):
+				print("Received a contact response but I didn't send them a request!")
+				print("Encrypted contents are:", message.encryptedContents)
+				rowToStore = {"messageType":"contactresponse", "fromId":message.senderId,
+					"fromName":message.senderName, "messageBody":message.introMessage, "accepted":True,
+					"timestamp":message.timestamp, "encryptedMsg":message.encryptedContents}
+				DbClient.addMessageToPendingContacts(rowToStore)
 		elif message.messageType == Message.TYPE_STATUS_NOTIFY:
 			if message.online:
 				print("One of our contacts has just come online- ", message.senderId,
 					"and hash is", message.profileHash)
+				prof = DbClient.getProfile(userid=message.senderId, extend=False)
+				if prof:
+					storedHash = prof.get("profileHash", "empty")
+					if message.profileHash != storedHash:
+						reply = InfoRequestMessage(infoType=InfoRequestMessage.INFO_PROFILE)
+						reply.recipients = [message.senderId]
+						DbClient.addMessageToOutbox(reply)
+					if message.ping:
+						print("Now sending back a pong, too")
+						reply = StatusNotifyMessage(online=True, ping=False, profileHash=None)
+						reply.recipients = [message.senderId]
+						DbClient.addMessageToOutbox(reply)
+					else:
+						print("It's already a pong so I won't reply")
 				Contacts.comeOnline(message.senderId)
 			else:
 				print("One of our contacts is going offline -", message.senderId)
 				Contacts.goneOffline(message.senderId)
 		elif message.messageType == Message.TYPE_INFO_REQUEST:
 			print("I've received an info request message for type", message.infoType)
+			if MessageShuffler._isProfileStatusOk(message.senderId, ['trusted']):
+				reply = InfoResponseMessage(message.messageType)
+				reply.recipients = [message.senderId]
+				DbClient.addMessageToOutbox(reply)
+		elif message.messageType == Message.TYPE_INFO_RESPONSE:
+			if message.profile and MessageShuffler._isProfileStatusOk(message.senderId, ['trusted', 'untrusted']):
+				if message.profileHash:
+					message.profile['profileHash'] = message.profileHash
+				DbClient.updateContact(message.senderId, message.profile)
 		elif message.messageType == Message.TYPE_ASYM_MESSAGE:
 			print("It's a general kind of message, this should go in the Inbox, right?")
+			if MessageShuffler._isProfileStatusOk(message.senderId, ['trusted', 'untrusted']):
+				Contacts.comeOnline(message.senderId)
 		else:
 			# It's another asymmetric message type
 			print("Hä?  What kind of asymmetric message type is that? ", message.messageType)

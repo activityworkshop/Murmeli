@@ -153,6 +153,21 @@ class InfoRequestTest(unittest.TestCase):
 		self.assertEqual(message.InfoRequestMessage.INFO_PROFILE, bac.infoType)
 
 
+class InfoResponseTest(unittest.TestCase):
+	'''Tests for the info response messages'''
+	def setUp(self):
+		Config.load()
+
+	def testProfileResponse(self):
+		m = message.InfoResponseMessage(message.InfoRequestMessage.INFO_PROFILE)
+		output = m.createUnencryptedOutput()
+		bac = message.Message.MessageFromReceivedData(output, False)
+		self.assertIsNotNone(bac, "couldn't decode the data")
+		self.assertEqual(message.InfoRequestMessage.INFO_PROFILE, bac.infoType)
+		mydescription = DbClient.getProfile()['description']
+		bacProfile = bac.profile
+		self.assertEqual(mydescription, bacProfile['description'])
+
+
 if __name__ == "__main__":
 	unittest.main()
-

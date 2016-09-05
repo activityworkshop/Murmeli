@@ -383,6 +383,8 @@ class AsymmetricMessage(Message):
 			msg = RegularMessage.constructFrom(subpayload)
 		elif msgType == Message.TYPE_INFO_REQUEST:
 			msg = InfoRequestMessage.constructFrom(subpayload)
+		elif msgType == Message.TYPE_INFO_RESPONSE:
+			msg = InfoResponseMessage.constructFrom(subpayload)
 		elif msgType == Message.TYPE_FRIEND_REFERRAL:
 			msg = ContactReferralMessage.constructFrom(subpayload)
 		# Ask the message if it's ok to have no signature
@@ -553,6 +555,52 @@ class InfoRequestMessage(AsymmetricMessage):
 
 	def isComplete(self):
 		return self.infoType > 0
+
+
+class InfoResponseMessage(AsymmetricMessage):
+	'''An info response is sent to answer an info request, either returning a profile,
+	   or maybe something else'''
+
+	def __init__(self, infoType):
+		AsymmetricMessage.__init__(self)
+		self.infoType = infoType
+		self.profileString = None
+		self.profile = None
+		self.profileHash = None
+		self.messageType = Message.TYPE_INFO_RESPONSE
+		self.shouldBeRelayed = False
+		self.shouldBeQueued  = False
+
+	def _createSubpayload(self):
+		'''Use the stored fields to pack the payload contents together'''
+		if self.infoType is None:
+			self.infoType = InfoRequestMessage.INFO_PROFILE
+		if self.profileString is None:
+			self.profileString = dbutils.getOwnProfileAsString()
+		self.profileHash = DbClient.calculateHash(DbClient.getProfile())
+		return self.packBytesTogether([
+			self.encodeNumberToBytes(self.infoType),
+			self.encodeNumberToBytes(len(self.profileString), 4),
+			self.profileString,
+			self.encodeNumberToBytes(len(self.profileHash), 4),
+			self.profileHash])
+
+	@staticmethod
+	def constructFrom(payload):
+		'''Factory constructor using a given payload and extracting the fields'''
+		chomper = StringChomper(payload)
+		infoType = Message.strToInt(chomper.getField(1))
+		msg = InfoResponseMessage(infoType)
+		msg.profileString = chomper.getStringWithLength(4)
+		msg.profile = dbutils.convertStringToDictionary(msg.profileString)
+		msg.profileHash = chomper.getStringWithLength(4)
+		return msg
+
+	def getMessageTypeKey(self):
+		return "inforesponse"
+
+	def isComplete(self):
+		return True
 
 
 class RegularMessage(AsymmetricMessage):

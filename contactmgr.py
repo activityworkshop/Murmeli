@@ -2,6 +2,7 @@
 
 from dbclient import DbClient
 from cryptoclient import CryptoClient
+from message import StatusNotifyMessage
 
 
 class ContactMaker:
@@ -19,6 +20,26 @@ class ContactMaker:
 			DbClient.updateContact(torId, {'displayName':displayName, 'name':displayName,
 			  'status':'requested'})
 
+	@staticmethod
+	def handleReceiveDeny(torId):
+		'''We have requested contact with another id, but this has been denied.
+		So we need to update their status accordingly'''
+		if torId and torId != DbClient.getOwnTorId():
+			DbClient.updateContact(torId, {"status" : "deleted"})
+		# TODO: If profile not found, or status isn't requested then error
+
+	@staticmethod
+	def keyFingerprintChecked(torId):
+		'''The fingerprint of this contact's public key has been checked (over a separate channel)'''
+		# Check that userid exists and that status is currently "untrusted" (trusted also doesn't hurt)
+		profile = DbClient.getProfile(torId, False)
+		if profile and profile.get("status", "nostatus") in ["untrusted", "trusted"]:
+			# Update the user's status to trusted
+			DbClient.updateContact(torId, {"status" : "trusted"})
+			# Trigger a StatusNotify to tell them we're online
+			notify = StatusNotifyMessage(online=True, ping=True, profileHash=None)
+			notify.recipients = [torId]
+			DbClient.addMessageToOutbox(notify)
 
 	@staticmethod
 	def handleDeleteContact(torId):
