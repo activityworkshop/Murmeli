@@ -1,0 +1,22 @@
+<style>
+	#editpane {font-size:75%; padding:0px}
+	.dontshow {display:none}
+</style>
+<form id="dummyForm">
+	{{langs['composemessage.to']}}: <input id="dummysendto" placeholder=" {{langs['composemessage.to.helptext']}}" onFocus="this.blur()" style="width:400px">
+</form>
+
+<div class="genericbox">
+<div id="messagebody" style="border:2px solid #ccc; padding:20px" contenteditable="true">
+<p>{{langs['composemessage.messagegoeshere']}}</p>
+</div>
+</div>
+
+<p style="align:right"><a class='reversebutton' href="/closewindow">{{langs['button.cancel']}}</a> 
+or <a class='reversebutton' href="javascript:send()">{{langs['button.send']}}</a></p>
+
+<form id="sendForm" action="http://murmeli/compose/send" method="post">
+	<input type="hidden" name="sendto" value="">
+	<input type="hidden" name="messagebody" value="">
+	<input type="hidden" name="parenthash" value="{{parenthash}}">
+</form>

@@ -12,6 +12,7 @@ from contactmgr import ContactMaker
 from pagetemplate import PageTemplate
 from brainstorm import Brainstorm
 from brainstormdata import Storm, Node
+from compose import ComposeWindow
 import message
 from fingerprints import FingerprintChecker
 from contacts import Contacts
@@ -31,6 +32,7 @@ class PageServer:
 		self.addPageSet(MessagesPageSet())
 		self.addPageSet(CalendarPageSet())
 		self.addPageSet(SettingsPageSet())
+		self.addPageSet(ComposePageSet())
 		self.addPageSet(SpecialFunctions())
 
 	def addPageSet(self, ps):
@@ -38,6 +40,14 @@ class PageServer:
 
 	def servePage(self, view, url, params):
 		domain, path = self.getDomainAndPath(url)
+		# Do I need to intercept this to create a new window?
+		if domain == "new":
+			cw = ComposeWindow(I18nManager.getText("composemessage.title"))
+			cw.setPageServer(self)
+			cw.showPage("<html></html>")
+			cw.navigateTo(path, params)
+			return
+
 		server = self.pageSets.get(domain)
 		if not server: server = self.pageSets.get("")
 		server.servePage(view, path, params)
@@ -491,3 +501,54 @@ class SpecialFunctions(PageSet):
 									storm.addEdge(friends[torid], friends[ffTorid])
 
 			self.bs.setStorm(storm)
+
+
+class ComposePageSet(PageSet):
+	'''Functions for composing a new message'''
+	def __init__(self):
+		PageSet.__init__(self, "compose")
+		self.composetemplate = PageTemplate('composemessage')
+		self.closingtemplate = PageTemplate('windowclosing')
+
+	def servePage(self, view, url, params):
+		print("Compose: %s, params %s" % (url, ",".join(params)))
+		if url == "/start":
+			self.requirePageResources(['default.css'])
+			parentHash = params.get("reply", None)
+			recpts = params.get("sendto", None)
+			# Build list of contacts to whom we can send
+			userboxes = []
+			for p in DbClient.getMessageableContacts():
+				box = Bean()
+				box.dispName = p['displayName']
+				box.torid = p['torid']
+				userboxes.append(box)
+			pageParams = {"contactlist":userboxes, "parenthash" : parentHash if parentHash else "",
+						 "webcachedir":Config.getWebCacheDir(), "recipientids":recpts}
+			contents = self.buildPage({'pageTitle' : I18nManager.getText("composemessage.title"),
+				'pageBody' : self.composetemplate.getHtml(pageParams),
+				'pageFooter' : "<p>Footer</p>"})
+			view.setHtml(contents)
+			# If we've got no friends, then warn, can't send to anyone
+			if not DbClient.hasFriends():
+				view.page().mainFrame().evaluateJavaScript("window.alert('No friends :(');")
+
+		elif url == "/send":
+			print("Submit new message with params:", params)
+			msgBody = params['messagebody']  # TODO: check body isn't empty, throw an exception?
+			parentHash = params.get("parenthash", None)
+			recpts = params['sendto']
+			# Make a corresponding message object and pass it on
+			msg = message.RegularMessage(sendTo=recpts, messageBody=msgBody, replyToHash=parentHash)
+			msg.recipients = recpts.split(",")
+			DbClient.addMessageToOutbox(msg)
+			# Save a copy of the sent message
+			sentMessage = {"messageType":"normal", "fromId":DbClient.getOwnTorId(),
+				"messageBody":msgBody, "timestamp":msg.timestamp, "messageRead":True,
+				"messageReplied":False, "recipients":recpts, "parentHash":parentHash}
+			DbClient.addMessageToInbox(sentMessage)
+			# Close window after successful send
+			contents = self.buildPage({'pageTitle' : I18nManager.getText("messages.title"),
+				'pageBody' : self.closingtemplate.getHtml(),
+				'pageFooter' : "<p>Footer</p>"})
+			view.setHtml(contents)

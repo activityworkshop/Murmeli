@@ -99,6 +99,12 @@ sender.unknown=Absender unbekannt
 recpt.unknown=<unbekannt>
 confirm.messagesent=Nachricht geschickt.
 
+[composemessage]
+title=Neue Nachricht
+to=An
+to.helptext=Antippen um die Empfänger auszuwählen
+messagegoeshere=Hier die Nachricht
+
 [calendar]
 title=Kalender
 
