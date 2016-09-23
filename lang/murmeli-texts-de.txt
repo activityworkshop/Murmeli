@@ -104,6 +104,8 @@ title=Neue Nachricht
 to=An
 to.helptext=Antippen um die Empfänger auszuwählen
 messagegoeshere=Hier die Nachricht
+norecipients=Bitte das 'An:' Feld antippen um die Empfänger auszuwählen
+nomessagebody=Bitte eine Nachricht eingeben
 
 [calendar]
 title=Kalender
@@ -127,9 +129,14 @@ generate=Generieren
 send=Abschicken
 change=Ändern
 edit=Editieren
+bold=Fett
+italic=Cursiv
+underline=Unterstrichen
 accept=Verbinden
 reject=Ablehnen
 delete=Löschen
 
 [gui]
 dialogtitle.error=Fehler
+dialogtitle.openimage=Bilddatei Öffnen
+fileselection.filetypes.jpg=Bilddateien (*.jpg)

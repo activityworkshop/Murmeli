@@ -2,11 +2,36 @@
 	#editpane {font-size:75%; padding:0px}
 	.dontshow {display:none}
 </style>
+<script>
+function makeBold() {document.execCommand("Bold", false, null);}
+function makeItalic() {document.execCommand("Italic", false, null);}
+function makeUnderline() {document.execCommand("Underline", false, null);}
+function selectWhoTo() {
+		window.alert("TODO: select one or more of your trusted or untrusted friends");
+}
+function send() {
+	whatTheyEntered = document.getElementById("messagebody");
+	sendForm = document.getElementById("sendForm");
+	var emptyBody = whatTheyEntered.length == 0 || whatTheyEntered.innerHTML == "<p>{{langs['composemessage.messagegoeshere']}}</p>";
+	torids = [];
+	if (whatTheyEntered && sendForm && !emptyBody) {
+		sendForm.sendto.value = torids.join(",");
+		sendForm.messagebody.value = whatTheyEntered.innerHTML;
+		window.alert("TODO: submit this message");
+	}
+	else if (!whatTheyEntered) {window.alert("no message body?");}
+	else if (!sendForm) {window.alert("no sendForm?");}
+	else if (emptyBody) {window.alert("{{langs['composemessage.nomessagebody']}}");};
+}
+</script>
 <form id="dummyForm">
-	{{langs['composemessage.to']}}: <input id="dummysendto" placeholder=" {{langs['composemessage.to.helptext']}}" onFocus="this.blur()" style="width:400px">
+	{{langs['composemessage.to']}}: <input id="dummysendto" placeholder=" {{langs['composemessage.to.helptext']}}" onClick="selectWhoTo()" onFocus="this.blur()" style="width:400px">
 </form>
 
 <div class="genericbox">
+<div id="editpane"><a class='reversebutton' style='text-weight:bold' href='javascript:makeBold()'>{{langs['button.bold']}}</a>
+&nbsp; <a class='reversebutton' href='javascript:makeItalic()'><i>{{langs['button.italic']}}</i></a>
+&nbsp; <a class='reversebutton' href='javascript:makeUnderline()'><u>{{langs['button.underline']}}</u></a></div>
 <div id="messagebody" style="border:2px solid #ccc; padding:20px" contenteditable="true">
 <p>{{langs['composemessage.messagegoeshere']}}</p>
 </div>

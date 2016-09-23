@@ -454,11 +454,11 @@ class SpecialFunctions(PageSet):
 
 	def servePage(self, view, url, params):
 		print("Special function:", url)
-		if url == "/selectfile":
+		if url == "/selectprofilepic":
 			# Get home directory for file dialog
 			homedir = os.path.expanduser("~/")
-			# TODO: I18n for "open image" and "image files(*.jpg)"
-			fname = QtGui.QFileDialog.getOpenFileName(view, "Open Image", homedir, "Image files (*.jpg)")
+			fname = QtGui.QFileDialog.getOpenFileName(view, I18nManager.getText("gui.dialogtitle.openimage"),
+				homedir, I18nManager.getText("gui.fileselection.filetypes.jpg"))
 			if fname:
 				view.page().mainFrame().evaluateJavaScript("updateProfilePic('" + fname + "');")
 		elif url == "/friendstorm":

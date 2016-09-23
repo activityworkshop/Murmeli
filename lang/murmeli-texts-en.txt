@@ -104,6 +104,8 @@ title=New message
 to=To
 to.helptext=Click to select recipients
 messagegoeshere=Enter your message here
+norecipients=Please select who to send this message to by clicking on the 'To:' field
+nomessagebody=Please enter a message to send
 
 [calendar]
 title=Calendar
@@ -127,9 +129,14 @@ generate=Generate
 send=Send
 change=Change
 edit=Edit
+bold=Bold
+italic=Italic
+underline=Underline
 accept=Accept
 reject=Reject
 delete=Delete
 
 [gui]
 dialogtitle.error=Error
+dialogtitle.openimage=Open Image
+fileselection.filetypes.jpg=Image files (*.jpg)
