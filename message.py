@@ -4,6 +4,7 @@
 from random import SystemRandom
 import hashlib
 import datetime
+import dbutils
 from dbclient import DbClient
 from cryptoclient import CryptoClient
 
@@ -163,6 +164,8 @@ class Message:
 			message = UnencryptedMessage.constructFrom(payload)
 		elif encType == Message.ENCTYPE_ASYM:
 			message = AsymmetricMessage.construct(payload, isEncrypted)
+		elif encType == Message.ENCTYPE_RELAY:
+			message = RelayingMessage.construct(payload, isEncrypted)
 		if message is not None:
 			message.shouldBeRelayed = shouldRelay
 			return message
@@ -690,3 +693,62 @@ class ContactReferralMessage(AsymmetricMessage):
 		'''The message can be empty but the name and public key are required, otherwise it won't be saved'''
 		return self.friendId is not None and len(self.friendId) > 0 \
 			and self.publicKey is not None and len(self.publicKey) > 80
+
+
+class RelayingMessage(Message):
+	'''A relaying message is some (unknown) kind of asymmetrically-encrypted message
+	   which we cannot decrypt but we will just store it and relay it on to our contacts'''
+
+	def __init__(self, parcelBytes=None, rcvdBytes=None):
+		'''Constructor giving either the bytes of an outgoing message which we want to wrap,
+		or the received bytes from an incoming message'''
+		Message.__init__(self)
+		self.encryptionType = Message.ENCTYPE_RELAY
+		self.origParcel = parcelBytes
+		self.payload = rcvdBytes
+		self.shouldBeRelayed = True
+
+	@staticmethod
+	def construct(payload, isEncrypted):
+		'''Construct a message from its payload'''
+		originalPayload, signKey = CryptoClient.verifySignedData(payload) if isEncrypted else (payload, None)
+		if originalPayload:
+			# The payload could be verified and extracted, but we still don't know
+			# if the contents are for me or for somebody else (probably for somebody else!)
+			messageForMe = Message.MessageFromReceivedData(originalPayload, isEncrypted)
+			if messageForMe:
+				return messageForMe
+			else:
+				msg = RelayingMessage(rcvdBytes=originalPayload)
+				msg.senderId = DbClient.findUserIdFromKeyId(signKey)
+				return msg
+
+	def _createPayload(self, recipientKeyId):
+		'''Get the original message, and then sign it with our key'''
+		if self.origParcel:
+			ownKeyId = DbClient.getOwnKeyId()
+			return CryptoClient.signData(self.origParcel, ownKeyId)
+		# or maybe we received the message as bytes, in which case we shouldn't come here
+
+	def _createUnencryptedPayload(self):
+		'''Only makes sense for testing, if provided with original message'''
+		if self.origParcel:
+			return self.origParcel
+		# or maybe we received the message as bytes, in which case we shouldn't come here
+
+	# Override the regular header packing if we've got the wrapped message
+	def createOutput(self, recipientKeyId):
+		if self.payload:
+			return self.payload
+		return Message.createOutput(self, recipientKeyId)
+
+	def createUnencryptedOutput(self):
+		'''Make the UNENCRYPTED output of the message, only used for testing!'''
+		if self.payload:
+			return self.payload
+		return Message.createUnencryptedOutput(self)
+
+	def isComplete(self):
+		'''Either a parcel or a payload is required'''
+		return (self.origParcel is not None and len(self.origParcel) > 0) \
+			or (self.payload is not None and len(self.payload) > 0)

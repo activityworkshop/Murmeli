@@ -58,7 +58,8 @@ if canStartMurmeli:
 				canStartMurmeli = False
 			else:
 				print("I think I got a profile and a keyid: '", ownprofile.get("keyid", ""), "' so I'm going to start Murmeli")
-		except Exception:
+		except Exception as e:
+			print("Exception thrown trying to get profile, so I can't start Murmeli:", e)
 			canStartMurmeli = False # maybe authentication failed?
 
 if not canStartMurmeli:

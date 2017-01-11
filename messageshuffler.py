@@ -64,6 +64,9 @@ class MessageShuffler:
 		elif message.encryptionType == Message.ENCTYPE_ASYM:
 			MessageShuffler.dealWithAsymmetricMessage(message)
 
+		elif message.encryptionType == Message.ENCTYPE_RELAY:
+			print("I've received a message to relay - what should I do?")
+
 		else:
 			print("Hä?  What kind of encryption type is that? ", message.encryptionType)
 
@@ -71,6 +74,7 @@ class MessageShuffler:
 		if message.encryptionType in [Message.ENCTYPE_NONE, Message.ENCTYPE_ASYM]:
 			logMessage = "Message of type: %s received from %s" % (message.getMessageTypeKey(), message.senderId)
 			MessageShuffler.getTannoy().shout(logMessage)
+
 
 	@staticmethod
 	def _isProfileStatusOk(torId, allowedStatuses):

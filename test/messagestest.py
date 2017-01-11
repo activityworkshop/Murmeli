@@ -169,5 +169,43 @@ class InfoResponseTest(unittest.TestCase):
 		self.assertEqual(mydescription, bacProfile['description'])
 
 
+class RelayTest(unittest.TestCase):
+	'''Tests for the relay messages'''
+	def setUp(self):
+		Config.load()
+		DbClient.useTestTables()
+		TestUtils.setupKeyring(["key1_private", "key2_public"])
+
+	def testMakeUnencryptedRelayMessage(self):
+		BODY = "Hey dude, have you got any €uros because I heard they were harsh to ünicode?  Oh, and &ampersands and <tags> too :)"
+		RECIPIENT = "1234567890123456"
+		m = message.RegularMessage(sendTo=RECIPIENT, messageBody=BODY)
+		relaymsg = message.RelayingMessage(parcelBytes=m.createUnencryptedOutput())
+		output = relaymsg.createUnencryptedOutput()
+		bac = message.Message.MessageFromReceivedData(output, False)
+		self.assertIsNotNone(bac, "couldn't decode the data")
+		self.assertEqual(bac.messageType, message.Message.TYPE_ASYM_MESSAGE, "Message type not right")
+		self.assertEqual(bac.sendTo, RECIPIENT, "Recipient not right")
+		self.assertEqual(bac.messageBody, BODY, "Message not right")
+
+	def testMakeEncryptedRelayMessage(self):
+		BODY = "Hey dude, have you got any €uros because I heard they were harsh to ünicode?  Oh, and &ampersands and <tags> too :)"
+		SENDERID = TestUtils._ownTorId
+		RECPTKEYID = "3B898548F994C536" # keyid of eventual target of the message (key2)
+		m = message.RegularMessage(sendTo=RECPTKEYID, messageBody=BODY)
+		relaymsg = message.RelayingMessage(m.createOutput(RECPTKEYID))
+		output = relaymsg.createOutput(recipientKeyId=None)
+		bac = message.Message.MessageFromReceivedData(output, True)
+		self.assertIsNotNone(bac, "couldn't decode the data")
+		self.assertEqual(bac.encryptionType, message.Message.ENCTYPE_RELAY, "Encryption type not right")
+		self.assertIsNotNone(bac.payload, "Message should have a payload")
+		self.assertEqual(bac.senderId, SENDERID, "Sender id not right")
+		# Now fiddle with keys to let us decode it
+		TestUtils.setupKeyring(["key2_private", "key1_public"])
+		bac = message.Message.MessageFromReceivedData(output, True)
+		self.assertIsNotNone(bac, "couldn't decode the data")
+		self.assertEqual(bac.sendTo, RECPTKEYID, "Recipient not right")
+		self.assertEqual(bac.messageBody, BODY, "Message not right")
+
 if __name__ == "__main__":
 	unittest.main()
