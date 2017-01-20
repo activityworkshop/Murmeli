@@ -1,7 +1,8 @@
 '''Module for shuffling messages around when received'''
 
 from PyQt4.QtCore import QObject, SIGNAL
-from message import Message
+from message import Message, StatusNotifyMessage, InfoRequestMessage,\
+	InfoResponseMessage
 from dbclient import DbClient
 from contactmgr import ContactMaker
 from contacts import Contacts
@@ -65,8 +66,11 @@ class MessageShuffler:
 			MessageShuffler.dealWithAsymmetricMessage(message)
 
 		elif message.encryptionType == Message.ENCTYPE_RELAY:
-			print("I've received a message to relay - what should I do?")
-
+			# Get received bytes of message, and add to Outbox, send to everybody EXCEPT the sender
+			bytesToSend = message.createOutput(None)
+			if bytesToSend:
+				# add to outbox, but don't send it back to message.senderId
+				DbClient.addRelayMessageToOutbox(bytesToSend, message.senderId)
 		else:
 			print("Hä?  What kind of encryption type is that? ", message.encryptionType)
 
@@ -172,6 +176,11 @@ class MessageShuffler:
 		elif message.messageType == Message.TYPE_ASYM_MESSAGE:
 			print("It's a general kind of message, this should go in the Inbox, right?")
 			if MessageShuffler._isProfileStatusOk(message.senderId, ['trusted', 'untrusted']):
+				rowToStore = {"messageType":"normal", "fromId":message.senderId,
+					"messageBody":message.messageBody, "timestamp":message.timestamp,
+					"messageRead":False, "messageReplied":False,
+					"recipients":message.sendTo, "parentHash":message.replyToHash}
+				DbClient.addMessageToInbox(rowToStore)
 				Contacts.comeOnline(message.senderId)
 		else:
 			# It's another asymmetric message type

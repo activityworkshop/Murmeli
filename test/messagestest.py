@@ -113,6 +113,25 @@ class ContactRequestTest(unittest.TestCase):
 		self.assertIsNotNone(bac, "should be able to decode the data")
 
 
+class RegularMessageTest(unittest.TestCase):
+	'''Tests for the regular messages'''
+	def setUp(self):
+		Config.load()
+
+	###################################
+	# Tests for parsing regular messages
+	def testMessageSingleRecipient(self):
+		BODY = "Hey dude, have you got any €uros because I heard they were harsh to unicode?  Oh, and &ampersands and <tags> too :)"
+		RECIPIENT = "1234567890123456"
+		m = message.RegularMessage(sendTo=RECIPIENT, messageBody=BODY)
+		output = m.createUnencryptedOutput()
+		bac = message.Message.MessageFromReceivedData(output, False)
+		self.assertIsNotNone(bac, "couldn't decode the data")
+		self.assertEqual(bac.messageType, message.Message.TYPE_ASYM_MESSAGE, "Message type not right")
+		self.assertEqual(bac.sendTo, RECIPIENT, "Recipient not right")
+		self.assertEqual(bac.messageBody, BODY, "Message not right")
+
+
 class StatusNotifyTest(unittest.TestCase):
 	'''Tests for the status notification messages'''
 	def setUp(self):
@@ -206,6 +225,33 @@ class RelayTest(unittest.TestCase):
 		self.assertIsNotNone(bac, "couldn't decode the data")
 		self.assertEqual(bac.sendTo, RECPTKEYID, "Recipient not right")
 		self.assertEqual(bac.messageBody, BODY, "Message not right")
+
+
+class ContactReferralTest(unittest.TestCase):
+	'''Tests for the contact referral messages'''
+	def setUp(self):
+		Config.load()
+		DbClient.useTestTables()
+		self.FRIEND_TORID = "zo7quhgn1nq1uppt"
+		FRIEND_KEYID = "3B898548F994C536"
+		DbClient.updateContact(self.FRIEND_TORID, {"status":"trusted",
+			"keyid":FRIEND_KEYID, "name":"Norbert Jones", "displayName":"Uncle Norbert"})
+		TestUtils.setupKeyring(["key1_private", "key2_public"])
+
+	def testMakingContactReferral(self):
+		INTRO = "hello, there's a \"friend\" I'd like you to meet"
+		FRIENDNAME = "Norbert Meddwl"
+		KEY_BEGINNING = "-----BEGIN PGP PUBLIC KEY BLOCK-----"
+		m = message.ContactReferralMessage(friendId=self.FRIEND_TORID, friendName=FRIENDNAME, introMessage=INTRO)
+		output = m.createUnencryptedOutput()
+		bac = message.Message.MessageFromReceivedData(output, isEncrypted=False)
+		self.assertIsNotNone(bac, "couldn't decode the data")
+		#self.assertEqual(bac.senderId, SENDER, "Sender not right")
+		self.assertEqual(bac.friendId, self.FRIEND_TORID, "Friend id not right")
+		self.assertEqual(bac.friendName, FRIENDNAME, "Friend name not right")
+		self.assertEqual(bac.message, INTRO, "Message not right")
+		self.assertTrue(bac.publicKey.decode('utf-8').startswith(KEY_BEGINNING), "Publickey not right")
+
 
 if __name__ == "__main__":
 	unittest.main()

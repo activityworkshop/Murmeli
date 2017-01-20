@@ -21,6 +21,41 @@ class ContactMaker:
 			  'status':'requested'})
 
 	@staticmethod
+	def handleAccept(torId):
+		'''We want to accept a contact request, so we need to find the request(s),
+		and use it/them to update our keyring and our database entry'''
+
+		# Get this person's current status from the db, if available
+		profile = DbClient.getProfile(torId, None)
+		status = profile.get("status", None) if profile else None
+
+		# Look for the contact request(s) in the inbox, and extract the name and publicKey
+		senderName, senderKeystr = ContactMaker.getContactRequestDetails(torId)
+		keyValid = senderKeystr and len(senderKeystr) > 20
+
+		if keyValid:
+			if status is None:
+				# add key to keyring
+				keyId = CryptoClient.importPublicKey(senderKeystr)
+				# add profile, set status to pending
+				DbClient.updateContact(torId, {"status" : "pending", "keyid" : keyId, "name" : senderName})
+			elif status == "requested":
+				# add key to keyring
+				keyId = CryptoClient.importPublicKey(senderKeystr)
+				# we have name already, just update status to untrusted
+				DbClient.updateContact(torId, {"status" : "untrusted", "keyid" : keyId})
+			elif status == "pending":
+				print("Request already pending, nothing to do")
+			elif status in ["untrusted", "trusted"]:
+				# set status to untrusted?  Send response?
+				print("Trying to handle an accept but status is already", status)
+			# Move all corresponding requests to be regular messages instead
+			DbClient.changeRequestMessagesToRegular(torId)
+		else:
+			print("Trying to handle an accept but key isn't valid")
+			# TODO: Delete all requests?
+
+	@staticmethod
 	def handleReceiveDeny(torId):
 		'''We have requested contact with another id, but this has been denied.
 		So we need to update their status accordingly'''
