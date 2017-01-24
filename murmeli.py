@@ -113,6 +113,7 @@ class MainWindow(GuiWindow):
 		os.makedirs(cacheDir)
 
 	def closeEvent(self, event):
+		'''Clean up before closing by stopping all services'''
 		print("Closing Murmeli")
 		# Tell postmen to stop working
 		for p in self.postmen:

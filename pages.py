@@ -343,6 +343,17 @@ class MessagesPageSet(PageSet):
 		DbClient.exportAvatars(Config.getWebCacheDir())
 		if url == "/send":
 			print("send message of type '%(messageType)s' to id '%(sendTo)s'" % params)
+			if params['messageType'] == "contactresponse":
+				torId = params['sendTo']
+				if params.get("accept", "0") == "1":
+					ContactMaker.handleAccept(torId)
+					outmsg = message.ContactResponseMessage(message=params['messageBody'])
+				else:
+					ContactMaker.handleDeny(torId)
+					outmsg = message.ContactDenyMessage()
+				# Construct a ContactResponse message object for sending
+				outmsg.recipients = [params['sendTo']]
+				DbClient.addMessageToOutbox(outmsg)
 		elif url.startswith("/delete/"):
 			DbClient.deleteMessageFromInbox(params.get("msgId", ""))
 		# Make dictionary to convert ids to names

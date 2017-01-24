@@ -56,6 +56,26 @@ class ContactMaker:
 			# TODO: Delete all requests?
 
 	@staticmethod
+	def handleDeny(torId):
+		'''We want to deny a contact request - remember that this id is blocked'''
+		DbClient.updateContact(torId, {"status" : "blocked"})
+		# Delete request from Inbox
+		message = ContactMaker._getInboxMessage(torId, "contactrequest")
+		DbClient.deleteMessageFromInbox(message.get("_id"))
+		# TODO: Delete all requests, not just this one
+
+	@staticmethod
+	def handleReceiveAccept(torId, name, keyStr):
+		'''We have requested contact with another id, and this has now been accepted.
+		So we can import their public key into our keyring and update their status
+		from "requested" to "untrusted"'''
+		# Use keyStr to update keyring and get the keyId
+		keyId = CryptoClient.importPublicKey(keyStr)
+		# Store the keyId and name in their existing row, and update status to "untrusted"
+		DbClient.updateContact(torId, {"name" : name, "status" : "untrusted", "keyid" : keyId})
+		# TODO: What to do if key import fails or status not what we expect?
+
+	@staticmethod
 	def handleReceiveDeny(torId):
 		'''We have requested contact with another id, but this has been denied.
 		So we need to update their status accordingly'''

@@ -368,6 +368,24 @@ class DbClient:
 					print("Something has thrown a CryptoError :(  can't add message to Outbox!", e)
 
 	@staticmethod
+	def addRelayMessageToOutbox(messageBytes, dontSendTo):
+		'''Add the given messagebytes to the outbox for sending later'''
+		messageRecipients = [p['torid'] for p in DbClient.getTrustedContacts()]
+		print("Total list of trusted contacts:", messageRecipients)
+		if dontSendTo:
+			messageRecipients = [i for i in messageRecipients if i != dontSendTo]
+		if messageRecipients:
+			print("After removing sender, list of contacts to relay to:", messageRecipients)
+			# message output is a bytes() object, so we need to convert to Binary for storage
+			messageToSend = Binary(messageBytes)
+			DbClient._getOutboxTable().insert({"recipientList":messageRecipients, "relays":None,
+				"message":messageToSend, "queue" : True, "msgType" : "unknown"})
+			# Inform all interested listeners that there's been a change in the messages
+			DbMessageNotifier.getInstance().notify()
+		else:
+			print("After removing sender, there's noone left! - Throwing away message")
+
+	@staticmethod
 	def getOutboxMessages():
 		return DbClient._getOutboxTable().find()
 
