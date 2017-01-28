@@ -2,6 +2,7 @@
 	#editpane {font-size:75%; padding:0px}
 	.dontshow {display:none}
 </style>
+<script src="file:///{{webcachedir}}/jquery-1.11.3.js"></script>
 <script>
 function makeBold() {document.execCommand("Bold", false, null);}
 function makeItalic() {document.execCommand("Italic", false, null);}
@@ -45,3 +46,7 @@ or <a class='reversebutton' href="javascript:send()">{{langs['button.send']}}</a
 	<input type="hidden" name="messagebody" value="">
 	<input type="hidden" name="parenthash" value="{{parenthash}}">
 </form>
+{{if parenthash}}
+	<p>In case you're interested, the parent hash is '{{parenthash}}'.</p>
+{{endif}}
+

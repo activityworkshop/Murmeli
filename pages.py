@@ -412,6 +412,7 @@ class CalendarPageSet(PageSet):
 			'pageBody' : self.calendartemplate.getHtml(),
 			'pageFooter' : "<p>Footer</p>"})
 		view.setHtml(contents)
+		# obviously this will do things with the url eventually too ;)
 
 
 class SettingsPageSet(PageSet):
@@ -524,7 +525,7 @@ class ComposePageSet(PageSet):
 	def servePage(self, view, url, params):
 		print("Compose: %s, params %s" % (url, ",".join(params)))
 		if url == "/start":
-			self.requirePageResources(['default.css'])
+			self.requirePageResources(['default.css', 'jquery-1.11.3.js'])
 			parentHash = params.get("reply", None)
 			recpts = params.get("sendto", None)
 			# Build list of contacts to whom we can send
