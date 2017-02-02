@@ -525,7 +525,7 @@ class ComposePageSet(PageSet):
 	def servePage(self, view, url, params):
 		print("Compose: %s, params %s" % (url, ",".join(params)))
 		if url == "/start":
-			self.requirePageResources(['default.css', 'jquery-1.11.3.js'])
+			self.requirePageResources(['default.css', 'jquery-3.1.1.js'])
 			parentHash = params.get("reply", None)
 			recpts = params.get("sendto", None)
 			# Build list of contacts to whom we can send

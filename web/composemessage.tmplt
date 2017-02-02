@@ -2,7 +2,7 @@
 	#editpane {font-size:75%; padding:0px}
 	.dontshow {display:none}
 </style>
-<script src="file:///{{webcachedir}}/jquery-1.11.3.js"></script>
+<script src="file:///{{webcachedir}}/jquery-3.1.1.js"></script>
 <script>
 function makeBold() {document.execCommand("Bold", false, null);}
 function makeItalic() {document.execCommand("Italic", false, null);}
@@ -10,6 +10,10 @@ function makeUnderline() {document.execCommand("Underline", false, null);}
 function selectWhoTo() {
 		window.alert("TODO: select one or more of your trusted or untrusted friends");
 }
+function addAllRecipients() {}
+function addRecipient(recpNum) {}
+function removeAllRecipients() {}
+function removeRecipient(recpNum) {}
 function send() {
 	whatTheyEntered = document.getElementById("messagebody");
 	sendForm = document.getElementById("sendForm");
@@ -49,4 +53,5 @@ or <a class='reversebutton' href="javascript:send()">{{langs['button.send']}}</a
 {{if parenthash}}
 	<p>In case you're interested, the parent hash is '{{parenthash}}'.</p>
 {{endif}}
+<script>document.write("<p><small>(Using JQuery: " + $.fn.jquery + ")</small></p>");</script>
 
