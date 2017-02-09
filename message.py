@@ -109,7 +109,7 @@ class Message:
 		'''Pack the given number into a series of bytes'''
 		res = bytearray()
 		n = num
-		for i in range(numBytes):
+		for _ in range(numBytes):
 			res.append(n % 256)
 			n = int(n/256)
 		return res
@@ -324,7 +324,7 @@ class AsymmetricMessage(Message):
 		r = SystemRandom()
 		token = bytearray()
 		numBytes = r.choice([3, 4, 5, 6])
-		for i in range(numBytes):
+		for _ in range(numBytes):
 			token.append(r.randrange(256))
 		return token
 
@@ -390,6 +390,8 @@ class AsymmetricMessage(Message):
 			msg = InfoResponseMessage.constructFrom(subpayload)
 		elif msgType == Message.TYPE_FRIEND_REFERRAL:
 			msg = ContactReferralMessage.constructFrom(subpayload)
+		elif msgType == Message.TYPE_FRIENDREFER_REQUEST:
+			msg = ContactReferRequestMessage.constructFrom(subpayload)
 		# Ask the message if it's ok to have no signature
 		if isEncrypted and msg:
 			if msg.acceptUnrecognisedSignature():
@@ -693,6 +695,40 @@ class ContactReferralMessage(AsymmetricMessage):
 		'''The message can be empty but the name and public key are required, otherwise it won't be saved'''
 		return self.friendId is not None and len(self.friendId) > 0 \
 			and self.publicKey is not None and len(self.publicKey) > 80
+
+
+class ContactReferRequestMessage(ContactReferralMessage):
+	'''A message type to allow one person to request a friend referral from another'''
+	def __init__(self, friendId=None, introMessage=None):
+		'''Constructor'''
+		AsymmetricMessage.__init__(self)
+		self.messageType = Message.TYPE_FRIENDREFER_REQUEST
+		self.message = "" if introMessage is None else introMessage
+		self.friendId = friendId
+
+	def _createSubpayload(self):
+		'''Pack the specific fields into the subpayload'''
+		messageAsBytes = self.message.encode('utf-8')
+		subpayload = Message.packBytesTogether([
+			self.friendId,
+			self.encodeNumberToBytes(len(messageAsBytes), 4),
+			messageAsBytes])
+		return subpayload
+
+	@staticmethod
+	def constructFrom(subpayload):
+		chomper = StringChomper(subpayload)
+		friendId = chomper.getString(16) # Id is always 16 chars
+		introMessage = chomper.getStringWithLength(4)
+		m = ContactReferRequestMessage(friendId=friendId, introMessage=introMessage)
+		return m
+
+	def getMessageTypeKey(self):
+		return "contactreferrequest"
+
+	def isComplete(self):
+		'''The id shouldn't be empty'''
+		return self.friendId is not None and len(self.friendId) > 0
 
 
 class RelayingMessage(Message):

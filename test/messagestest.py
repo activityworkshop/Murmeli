@@ -253,5 +253,21 @@ class ContactReferralTest(unittest.TestCase):
 		self.assertTrue(bac.publicKey.decode('utf-8').startswith(KEY_BEGINNING), "Publickey not right")
 
 
+class ContactReferRequestTest(unittest.TestCase):
+	'''Tests for the contact referral request messages'''
+	def setUp(self):
+		Config.load()
+
+	def testMakingReferRequest(self):
+		INTRO = "hello, you have a \"friend\" I'd like you to introduce me to, please!"
+		FRIENDID = "HIJ123KLM456NO78"
+		m = message.ContactReferRequestMessage(friendId=FRIENDID, introMessage=INTRO)
+		output = m.createUnencryptedOutput()
+		bac = message.Message.MessageFromReceivedData(output, isEncrypted=False)
+		self.assertIsNotNone(bac, "couldn't decode the data")
+		self.assertEqual(bac.friendId, FRIENDID, "Friend id not right")
+		self.assertEqual(bac.message, INTRO, "Message not right")
+
+
 if __name__ == "__main__":
 	unittest.main()
