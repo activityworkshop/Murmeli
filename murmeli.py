@@ -17,6 +17,7 @@ from pages import PageServer
 from dbclient import DbClient
 from torclient import TorClient
 import postmen
+from messageshuffler import MessageShuffler
 from log import LogWindow
 from contactmgr import ContactMaker
 
@@ -53,7 +54,7 @@ class MainWindow(GuiWindow):
 		Config.registerSubscriber(self)
 		self.postmen = [postmen.IncomingPostman(self), postmen.OutgoingPostman(self)]
 		self.connect(self.postmen[1], QtCore.SIGNAL("messageSent"), self.logPanel.notifyLogEvent)
-
+		self.connect(MessageShuffler.getTannoy(), QtCore.SIGNAL("messageReceived"), self.logPanel.notifyLogEvent)
 		# Make sure Tor client is started
 		if not TorClient.isStarted():
 			TorClient.startTor()

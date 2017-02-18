@@ -346,6 +346,12 @@ class DbClient:
 		if message.recipients:
 			# If the message is allowed to be relayed, we need to make a list of all our contacts
 			relays = []
+			if message.shouldBeRelayed:
+				# We want torids for all our (trusted) contacts, but not ourself
+				allids = DbClient._getProfileTable().find({'ownprofile':None, "status":"trusted"},
+					{"torid":1})
+				relays = [p['torid'] for p in allids]
+			# TODO: Save (unencrypted) copy in inbox too as a sent message
 			for r in message.recipients:
 				# TODO: Check that len(r) == 16 ?
 				print("Add outgoing message for", r)
@@ -425,6 +431,8 @@ class DbClient:
 	def changeRequestMessagesToRegular(torId):
 		'''Change all contact requests from the given id to be regular messages instead'''
 		DbClient._getInboxTable().update({"fromId":torId, "messageType":"contactrequest"},
+			{"$set" : {"messageType":"normal", "recipients":DbClient.getOwnTorId()}})
+		DbClient._getInboxTable().update({"friendId":torId, "messageType":"contactrefer"},
 			{"$set" : {"messageType":"normal", "recipients":DbClient.getOwnTorId()}})
 
 	@staticmethod

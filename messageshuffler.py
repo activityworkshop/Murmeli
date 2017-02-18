@@ -173,6 +173,24 @@ class MessageShuffler:
 				if message.profileHash:
 					message.profile['profileHash'] = message.profileHash
 				DbClient.updateContact(message.senderId, message.profile)
+		elif message.messageType == Message.TYPE_FRIEND_REFERRAL:
+			print("I've received a friend referral message from:", message.senderId, "for:", message.friendName)
+			if MessageShuffler._isProfileStatusOk(message.senderId, ['trusted']):
+				# Store new referral message in inbox
+				rowToStore = {"messageType":"contactrefer", "fromId":message.senderId,
+					"friendId":message.friendId, "friendName":message.friendName,
+					"messageBody":message.message, "publicKey":message.publicKey,
+					"timestamp":message.timestamp, "messageRead":False, "messageReplied":False}
+				DbClient.addMessageToInbox(rowToStore)
+		elif message.messageType == Message.TYPE_FRIENDREFER_REQUEST:
+			print("I've received a friend referral request from:", message.senderId, "who wants me to refer:", message.friendId)
+			if MessageShuffler._isProfileStatusOk(message.senderId, ['trusted']):
+				# Store message in the inbox
+				rowToStore = {"messageType":"referrequest", "fromId":message.senderId,
+					"friendId":message.friendId, "friendName":message.friendName,
+					"messageBody":message.message, "publicKey":message.publicKey,
+					"timestamp":message.timestamp, "messageRead":False, "messageReplied":False}
+				DbClient.addMessageToInbox(rowToStore)
 		elif message.messageType == Message.TYPE_ASYM_MESSAGE:
 			print("It's a general kind of message, this should go in the Inbox, right?")
 			if MessageShuffler._isProfileStatusOk(message.senderId, ['trusted', 'untrusted']):
