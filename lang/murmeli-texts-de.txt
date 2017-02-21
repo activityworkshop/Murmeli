@@ -135,6 +135,8 @@ underline=Unterstrichen
 accept=Verbinden
 reject=Ablehnen
 delete=Löschen
+addall=+ Alle
+removeall=- Alle
 
 [gui]
 dialogtitle.error=Fehler

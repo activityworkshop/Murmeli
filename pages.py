@@ -526,6 +526,7 @@ class ComposePageSet(PageSet):
 		print("Compose: %s, params %s" % (url, ",".join(params)))
 		if url == "/start":
 			self.requirePageResources(['default.css', 'jquery-3.1.1.js'])
+			DbClient.exportAvatars(Config.getWebCacheDir())
 			parentHash = params.get("reply", None)
 			recpts = params.get("sendto", None)
 			# Build list of contacts to whom we can send

@@ -7,25 +7,57 @@
 function makeBold() {document.execCommand("Bold", false, null);}
 function makeItalic() {document.execCommand("Italic", false, null);}
 function makeUnderline() {document.execCommand("Underline", false, null);}
+var recptIndexes = [];
+var contactList = [
+{{for c in contactlist}}
+	{name:"{{c.dispName}}", torid:"{{c.torid}}"},
+{{endfor}}
+];
 function selectWhoTo() {
-		window.alert("TODO: select one or more of your trusted or untrusted friends");
+	var selectPage = "<div style='margin:20px;background:#fff'>This is where the instructions go:<br><div style='float:left;width:40%;border:2px solid #222;margin:10px;padding:5px;height:200px;overflow-y:scroll'>";
+	for (i=0; i<contactList.length; i++)
+		selectPage += "<div id='leftList" + i + "' style='border:1px solid #222;margin:2px' onclick='addRecipient(" + i + ")'><img src='file:///{{webcachedir}}/avatar-" + contactList[i].torid + ".jpg' width='36' height='36' style='float:right; margin:2px'>Add \"" + contactList[i].name + "\"<br clear='all'></div>";
+	selectPage += "</div><div id='sendToDivList' style='float:right;width:40%;border:2px solid #222;margin:10px;padding:5px;height:200px;overflow-y:scroll'>";
+	for (i=0; i<contactList.length; i++)
+		selectPage += "<div id='rightList" + i + "' class='dontshow' style='border:1px solid #222;margin:2px' pername='" + contactList[i].name + "' perindex='" + i + "' onclick='removeRecipient(" + i + ")'><img src='file:///{{webcachedir}}/avatar-" + contactList[i].torid + ".jpg' width='36' height='36' style='float:right; margin:2px'>Remove \"" + contactList[i].name + "\"<br clear='all'></div>";
+	selectPage += "</div><div style='clear:both'><div style='float:right'><a class='reversebutton' onclick='removeAllRecipients()'>{{langs['button.removeall']}}</a></div><div style='float:left'><a class='reversebutton' onclick='addAllRecipients()'>{{langs['button.addall']}}</a></div></div><p style='clear:both'>This is where the button goes: <a class='reversebutton' onclick='finishSelect()'>{{langs['button.ok']}}</a></p></div>";
+	showMessage(selectPage);
+	for (i=0; i<recptIndexes.length; i++) {addRecipient(recptIndexes[i]);} 
 }
-function addAllRecipients() {}
-function addRecipient(recpNum) {}
-function removeAllRecipients() {}
-function removeRecipient(recpNum) {}
+function addAllRecipients() {for (i=0; i<contactList.length; i++) {addRecipient(i);} }
+function addRecipient(recpNum) {
+	$('#leftList' + recpNum).addClass('dontshow');
+	$('#rightList' + recpNum).removeClass('dontshow');
+}
+function removeAllRecipients() {for (i=0; i<contactList.length; i++) {removeRecipient(i);} }
+function removeRecipient(recpNum) {
+	$('#rightList' + recpNum).addClass('dontshow');
+	$('#leftList' + recpNum).removeClass('dontshow');
+}
+function finishSelect() {
+	recptIndexes = [];
+	recptNames = [];
+	$.each($('#sendToDivList').children('div').not('.dontshow'), function(i, v) {
+		recptIndexes.push($(v).attr("perindex"));
+		recptNames.push($(v).attr("pername"));
+	});
+	hideOverlay();
+	$("#dummysendto").val(recptNames.join(", "));
+}
 function send() {
 	whatTheyEntered = document.getElementById("messagebody");
 	sendForm = document.getElementById("sendForm");
 	var emptyBody = whatTheyEntered.length == 0 || whatTheyEntered.innerHTML == "<p>{{langs['composemessage.messagegoeshere']}}</p>";
 	torids = [];
-	if (whatTheyEntered && sendForm && !emptyBody) {
+	for (i=0; i<recptIndexes.length; i++) {torids.push(contactList[recptIndexes[i]].torid);}
+	if (whatTheyEntered && sendForm && recptIndexes.length > 0 && !emptyBody) {
 		sendForm.sendto.value = torids.join(",");
 		sendForm.messagebody.value = whatTheyEntered.innerHTML;
-		window.alert("TODO: submit this message");
+		sendForm.submit();
 	}
 	else if (!whatTheyEntered) {window.alert("no message body?");}
 	else if (!sendForm) {window.alert("no sendForm?");}
+	else if (recptIndexes.length == 0) {window.alert("{{langs['composemessage.norecipients']}}");}
 	else if (emptyBody) {window.alert("{{langs['composemessage.nomessagebody']}}");};
 }
 </script>
@@ -55,3 +87,17 @@ or <a class='reversebutton' href="javascript:send()">{{langs['button.send']}}</a
 {{endif}}
 <script>document.write("<p><small>(Using JQuery: " + $.fn.jquery + ")</small></p>");</script>
 
+{{if recipientids}}
+<script>
+	recptNames = [];
+	{{for torid in recipientids.split(",")}}
+		{{for loop, c in looper(contactlist)}}
+			{{if c.torid == torid}}
+				recptIndexes.push({{loop.index}});
+				recptNames.push('{{c.dispName}}');
+			{{endif}}
+		{{endfor}}
+	{{endfor}}
+	$("#dummysendto").val(recptNames.join(", "));
+</script>
+{{endif}}

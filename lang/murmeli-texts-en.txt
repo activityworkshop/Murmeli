@@ -135,6 +135,8 @@ underline=Underline
 accept=Accept
 reject=Reject
 delete=Delete
+addall=+ All
+removeall=- All
 
 [gui]
 dialogtitle.error=Error
