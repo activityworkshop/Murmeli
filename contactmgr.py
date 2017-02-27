@@ -2,7 +2,8 @@
 
 from dbclient import DbClient
 from cryptoclient import CryptoClient
-from message import StatusNotifyMessage
+from message import StatusNotifyMessage, ContactReferralMessage,\
+	ContactReferRequestMessage
 
 
 class ContactMaker:
@@ -39,6 +40,7 @@ class ContactMaker:
 				keyId = CryptoClient.importPublicKey(senderKeystr)
 				# add profile, set status to pending
 				DbClient.updateContact(torId, {"status" : "pending", "keyid" : keyId, "name" : senderName})
+				ContactMaker.processPendingContacts(torId)
 			elif status == "requested":
 				# add key to keyring
 				keyId = CryptoClient.importPublicKey(senderKeystr)
@@ -54,6 +56,31 @@ class ContactMaker:
 		else:
 			print("Trying to handle an accept but key isn't valid")
 			# TODO: Delete all requests?
+
+	@staticmethod
+	def processPendingContacts(torId):
+		print("Process pending contact accept responses from:", torId)
+		foundReq = False
+		for resp in DbClient.getPendingContactMessages(torId):
+			name = resp.get("fromName", None)
+			if not name:
+				profile = DbClient.getProfile(torId, True)
+				name = profile.get("displayName", torId)
+			print("Found pending contact accept request from: ", name)
+			# Check signature using keyring
+			_, signatureKey = CryptoClient.decryptAndCheckSignature(resp.get("encryptedMsg", None))
+			if signatureKey:
+				foundReq = True
+				# Insert new message into inbox with message contents
+				rowToStore = {"messageType":"contactresponse", "fromId":resp.get("fromId", None),
+					"fromName":name, "accepted":True, "messageBody":resp.get("messageBody",""),
+					"timestamp":resp.get("timestamp",None), "messageRead":True, "messageReplied":True, 
+					"recipients":DbClient.getOwnTorId()}
+				DbClient.addMessageToInbox(rowToStore)
+		if foundReq:
+			DbClient.updateContact(torId, {"status" : "untrusted"})
+			# Delete all pending contact responses from this torId
+			DbClient.deletePendingContactMessages(torId)
 
 	@staticmethod
 	def handleDeny(torId):
@@ -176,6 +203,33 @@ class ContactMaker:
 
 		# Some or all of these sets may be empty, but we still return the map so we can look up names
 		return (sharedContactIds, suggestionsForThem, possibleForMe, nameMap)
+
+	@staticmethod
+	def sendReferralMessages(friendId1, friendId2, intro):
+		'''Send messages to both friendId1 and friendId2, to recommend they become friends with each other'''
+		friend1Profile = DbClient.getProfile(friendId1, False)
+		friend2Profile = DbClient.getProfile(friendId2, False)
+		if friend1Profile and friend1Profile.get("status", "nostatus") == "trusted" \
+		  and friend2Profile and friend2Profile.get("status", "nostatus") == "trusted":
+			print("Send message to", friendId1, "referring the details of", friendId2)
+			notify = ContactReferralMessage(friendId=friendId2, friendName=None, introMessage=intro)
+			notify.recipients = [friendId1]
+			DbClient.addMessageToOutbox(notify)
+			print("Send message to", friendId2, "referring the details of", friendId1)
+			notify = ContactReferralMessage(friendId=friendId1, friendName=None, introMessage=intro)
+			notify.recipients = [friendId2]
+			DbClient.addMessageToOutbox(notify)
+
+	@staticmethod
+	def sendReferRequestMessage(sendToId, requestedId, intro):
+		'''Send a message to sendToId, to ask that they recommend you to requestedId'''
+		sendToProfile = DbClient.getProfile(sendToId, False)
+		if sendToProfile and sendToProfile.get("status", "nostatus") == "trusted" \
+		  and requestedId != DbClient.getOwnTorId():
+			print("Send message to", sendToId, "requesting referral of", requestedId)
+			notify = ContactReferRequestMessage(friendId=requestedId, introMessage=intro)
+			notify.recipients = [sendToId]
+			DbClient.addMessageToOutbox(notify)
 
 	@staticmethod
 	def _getContactNameFromProfile(profile, torId):

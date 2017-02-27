@@ -8,6 +8,7 @@ from PyQt4 import QtGui # for file selection
 from i18n import I18nManager
 from config import Config
 from dbclient import DbClient
+from cryptoclient import CryptoClient
 from contactmgr import ContactMaker
 from pagetemplate import PageTemplate
 from brainstorm import Brainstorm
@@ -222,6 +223,16 @@ class ContactsPageSet(PageSet):
 					else:
 						# Add a message to show when the list page is re-generated
 						pageParams['fingerprint_check_failed'] = True
+			elif len(command) == 3 and command[1] == "refer" and len(command[2]) == 16:
+				intro = str(params.get('introMessage', ""))
+				ContactMaker.sendReferralMessages(command[0], command[2], intro)
+				pageParams['message_sent'] = True
+				# go back to details page
+			elif len(command) == 3 and command[1] == "requestrefer" and len(command[2]) == 16:
+				intro = str(params.get('introMessage', ""))
+				ContactMaker.sendReferRequestMessage(command[0], command[2], intro)
+				pageParams['message_sent'] = True
+				# go back to details page
 
 		# If we haven't got any contents yet, then do a show details
 		if not contents:
