@@ -31,21 +31,20 @@ class ContactMaker:
 		status = profile.get("status", None) if profile else None
 
 		# Look for the contact request(s) in the inbox, and extract the name and publicKey
-		senderName, senderKeystr = ContactMaker.getContactRequestDetails(torId)
+		senderName, senderKeystr, directRequest = ContactMaker.getContactRequestDetails(torId)
 		keyValid = senderKeystr and len(senderKeystr) > 20
 
 		if keyValid:
-			if status is None:
+			if status in [None, "requested"]:
 				# add key to keyring
 				keyId = CryptoClient.importPublicKey(senderKeystr)
-				# add profile, set status to pending
-				DbClient.updateContact(torId, {"status" : "pending", "keyid" : keyId, "name" : senderName})
+				# work out what name and status to stores
+				storedSenderName = profile.get("name", None) if profile else None
+				nameToStore = storedSenderName if storedSenderName else senderName
+				statusToStore = "untrusted" if directRequest else "pending"
+				# add or update the profile
+				DbClient.updateContact(torId, {"status" : statusToStore, "keyid" : keyId, "name" : nameToStore})
 				ContactMaker.processPendingContacts(torId)
-			elif status == "requested":
-				# add key to keyring
-				keyId = CryptoClient.importPublicKey(senderKeystr)
-				# we have name already, just update status to untrusted
-				DbClient.updateContact(torId, {"status" : "untrusted", "keyid" : keyId})
 			elif status == "pending":
 				print("Request already pending, nothing to do")
 			elif status in ["untrusted", "trusted"]:
@@ -143,11 +142,13 @@ class ContactMaker:
 		# Set up empty name / publicKey
 		nameList = set()
 		keyList = set()
+		directRequest = False
 		# Loop through all contact requests and contact refers for the given torid
 		for m in DbClient.getInboxMessages():
 			if m["messageType"] == "contactrequest" and m["fromId"] == torId:
 				nameList.add(m.get("fromName", None))
 				keyList.add(m.get("publicKey", None))
+				directRequest = True
 			elif m["messageType"] == "contactrefer" and m["friendId"] == torId:
 				nameList.add(m.get("friendName", None))
 				keyList.add(m.get("publicKey", None))
@@ -157,7 +158,7 @@ class ContactMaker:
 		if suppliedKey is None or len(suppliedKey) < 80:
 			return (None, None)	# one key supplied but it's missing or too short
 		suppliedName = nameList.pop() if len(nameList) == 1 else torId
-		return (suppliedName, suppliedKey)
+		return (suppliedName, suppliedKey, directRequest)
 
 	@staticmethod
 	def getSharedAndPossibleContacts(torid):
