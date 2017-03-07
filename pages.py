@@ -284,7 +284,8 @@ class ContactsPageSet(PageSet):
 
 	# Generate a page for listing all the contacts and showing the details of one of them
 	def generateListPage(self, doEdit=False, userid=None, extraParams=None):
-		self.requirePageResources(['avatar-none.jpg', 'status-self.png', 'status-requested.png', 'status-untrusted.png', 'status-trusted.png'])
+		self.requirePageResources(['avatar-none.jpg', 'status-self.png', 'status-requested.png', 'status-untrusted.png',
+			'status-trusted.png', 'status-pending.png'])
 		# List of contacts, and show details for the selected one (or self if userid=None)
 		selectedprofile = DbClient.getProfile(userid)
 		if selectedprofile is None:
@@ -351,6 +352,7 @@ class MessagesPageSet(PageSet):
 		self.messagestemplate = PageTemplate('messages')
 
 	def servePage(self, view, url, params):
+		self.requirePageResources(['button-compose.png'])
 		DbClient.exportAvatars(Config.getWebCacheDir())
 		if url == "/send":
 			print("send message of type '%(messageType)s' to id '%(sendTo)s'" % params)
@@ -358,6 +360,8 @@ class MessagesPageSet(PageSet):
 				torId = params['sendTo']
 				if params.get("accept", "0") == "1":
 					ContactMaker.handleAccept(torId)
+					# Make sure this new contact has an empty avatar
+					DbClient.exportAvatars(Config.getWebCacheDir())
 					outmsg = message.ContactResponseMessage(message=params['messageBody'])
 				else:
 					ContactMaker.handleDeny(torId)

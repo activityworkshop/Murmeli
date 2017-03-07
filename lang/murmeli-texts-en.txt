@@ -82,6 +82,7 @@ error.fingerprintcheckfailed=Those aren't the codewords expected from that key. 
 
 [messages]
 title=Messages
+createnew=Create new message
 contactrequests=Contact Requests
 prompt.contactaccept=Message to accept request from '%s'
 prompt.contactreject=Reject request from '%s'

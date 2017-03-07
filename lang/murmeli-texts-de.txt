@@ -82,6 +82,7 @@ error.fingerprintcheckfailed=Die sind nicht die erwartete Wörter.  Bitte nochma
 
 [messages]
 title=Nachrichten
+createnew=Neue Nachricht schreiben
 contactrequests=Kontakt-Anfragen
 prompt.contactaccept=Nachricht, um die Anfrage von '%s' zu akzeptieren
 prompt.contactreject=Anfrage von '%s' ablehnen
