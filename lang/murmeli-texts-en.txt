@@ -55,6 +55,9 @@ toolbar.settings=Settings
 
 [contacts]
 title=Contacts
+online=online
+onlinesince=online since %s
+offlinesince=offline since %s
 adduser.intro=Enter the id of the user to request contact with, and a message so they can tell it's from you.
 adduser.checkuserid=The user id should be 16 characters long, and alphanumeric, like yours.
 adduser.notownuserid=The user id you want to contact should be different from your own.

@@ -55,6 +55,9 @@ toolbar.settings=Einstellungen
 
 [contacts]
 title=Kontakte
+online=online
+onlinesince=seit %s online
+offlinesince=seit %s abwesend
 adduser.intro=Gib bitte die Id des Benutzers ein, und eine Nachricht um dich vorzustellen.
 adduser.checkuserid=Die Benutzerid sollte 16 Character lang und alphanumerisch sein.
 adduser.notownuserid=Die Benutzerid sollte nicht identisch sein wie deiner.

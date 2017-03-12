@@ -295,13 +295,22 @@ class ContactsPageSet(PageSet):
 
 		# Build list of contacts
 		userboxes = []
+		currTime = datetime.datetime.now()
 		for p in DbClient.getContactList():
 			box = Bean()
 			box.dispName = p['displayName']
 			box.torid = p['torid']
 			box.tilestyle = "contacttile" + ("selected" if p['torid'] == userid else "")
 			box.status = p['status']
-			box.isonline = Contacts.isOnline(box.torid)
+			isonline = Contacts.isOnline(box.torid)
+			lastSeen = Contacts.lastSeen(box.torid)
+			lastSeenTime = str(lastSeen.timetz())[:5] if lastSeen and (currTime-lastSeen).total_seconds() < 18000 else None
+			if lastSeenTime:
+				box.lastSeen = I18nManager.getText("contacts.onlinesince" if isonline else "contacts.offlinesince") % lastSeenTime
+			elif isonline:
+				box.lastSeen = I18nManager.getText("contacts.online")
+			else:
+				box.lastSeen = None
 			userboxes.append(box)
 		# expand templates using current details
 		lefttext = self.listtemplate.getHtml({'webcachedir' : Config.getWebCacheDir(), 'contacts' : userboxes})
@@ -548,7 +557,7 @@ class ComposePageSet(PageSet):
 			userboxes = []
 			for p in DbClient.getMessageableContacts():
 				box = Bean()
-				box.dispName = p['displayName']
+				box.dispName = p.get('displayName', p.get('name', p.get('torid')))
 				box.torid = p['torid']
 				userboxes.append(box)
 			pageParams = {"contactlist":userboxes, "parenthash" : parentHash if parentHash else "",
