@@ -302,8 +302,8 @@ class ContactsPageSet(PageSet):
 			box.torid = p['torid']
 			box.tilestyle = "contacttile" + ("selected" if p['torid'] == userid else "")
 			box.status = p['status']
-			isonline = Contacts.isOnline(box.torid)
-			lastSeen = Contacts.lastSeen(box.torid)
+			isonline = Contacts.instance().isOnline(box.torid)
+			lastSeen = Contacts.instance().lastSeen(box.torid)
 			lastSeenTime = str(lastSeen.timetz())[:5] if lastSeen and (currTime-lastSeen).total_seconds() < 18000 else None
 			if lastSeenTime:
 				box.lastSeen = I18nManager.getText("contacts.onlinesince" if isonline else "contacts.offlinesince") % lastSeenTime

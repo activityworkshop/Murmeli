@@ -43,7 +43,7 @@ class MessageShuffler:
 		'''Examine the received message and decide what to do with it'''
 		print("Hmm, the MessageShuffler has been given some kind of message")
 		# We must be online if we've received a message
-		Contacts.comeOnline(MessageShuffler.getOwnTorId())
+		Contacts.instance().comeOnline(MessageShuffler.getOwnTorId())
 
 		if message.senderMustBeTrusted:
 			sender = DbClient.getProfile(message.senderId, False)
@@ -158,10 +158,10 @@ class MessageShuffler:
 						DbClient.addMessageToOutbox(reply)
 					else:
 						print("It's already a pong so I won't reply")
-				Contacts.comeOnline(message.senderId)
+				Contacts.instance().comeOnline(message.senderId)
 			else:
 				print("One of our contacts is going offline -", message.senderId)
-				Contacts.goneOffline(message.senderId)
+				Contacts.instance().goneOffline(message.senderId)
 		elif message.messageType == Message.TYPE_INFO_REQUEST:
 			print("I've received an info request message for type", message.infoType)
 			if MessageShuffler._isProfileStatusOk(message.senderId, ['trusted']):
@@ -199,7 +199,7 @@ class MessageShuffler:
 					"messageRead":False, "messageReplied":False,
 					"recipients":message.sendTo, "parentHash":message.replyToHash}
 				DbClient.addMessageToInbox(rowToStore)
-				Contacts.comeOnline(message.senderId)
+				Contacts.instance().comeOnline(message.senderId)
 		else:
 			# It's another asymmetric message type
 			print("Hä?  What kind of asymmetric message type is that? ", message.messageType)

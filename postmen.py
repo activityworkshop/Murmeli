@@ -118,7 +118,7 @@ class OutgoingPostman(QtCore.QObject):
 			print("For %d found messages, I managed to send %d copies" % (messagesFound, messagesSent))
 		# We tried to send a message to these recipients but failed - set them to be offline
 		for r in failedRecpts:
-			Contacts.goneOffline(r)
+			Contacts.instance().goneOffline(r)
 		self._flushing = False
 
 	def sendMessage(self, message, whoto):
@@ -139,7 +139,7 @@ class OutgoingPostman(QtCore.QObject):
 					print("Oops - num bytes sent:", numsent, "but message has length:", len(message))
 					# For really long messages, maybe need to chunk into 4k blocks or something?
 				else:
-					Contacts.comeOnline(whoto)
+					Contacts.instance().comeOnline(whoto)
 					return self.RC_MESSAGE_SENT
 			except Exception as e:
 				print("Woah, that threw something:", e)
@@ -170,7 +170,6 @@ class IncomingPostman(threading.Thread):
 	def notifyMessagesChanged(self):
 		'''Called from Message notifier'''
 		self.checkInbox()
-		# TODO: Also need to react when all the messages in the inbox have been deleted (or read)
 
 	def checkInbox(self):
 		'''Look in the inbox for messages'''

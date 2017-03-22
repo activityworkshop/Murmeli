@@ -3,33 +3,39 @@ import datetime
 
 class Contacts:
 	'''Class to manage the set of which of our contacts are currently online'''
-	_online_list = set()
-	_last_times = {}
+	_instance = None
+
+	def __init__(self):
+		'''Constructor'''
+		self._online_list = set()
+		self._last_times = {}
 
 	@staticmethod
-	def comeOnline(torId):
+	def instance():
+		if not Contacts._instance:
+			Contacts._instance = Contacts()
+		return Contacts._instance
+
+	def comeOnline(self, torId):
 		'''The given tor id has announced it is online'''
-		if not Contacts.isOnline(torId):
-			Contacts._last_times[torId] = datetime.datetime.now()
-		Contacts._online_list.add(torId)
-		#print("Contacts just informed that", torId, "is online.  Set is now", Contacts._online_list)
+		if not self.isOnline(torId):
+			self._last_times[torId] = datetime.datetime.now()
+		self._online_list.add(torId)
+		#print("Contacts just informed that", torId, "is online.  Set is now", self._online_list)
 
-	@staticmethod
-	def goneOffline(torId):
+	def goneOffline(self, torId):
 		'''The given tor id has announced it is offline (or we failed to send to it)'''
-		if Contacts.isOnline(torId):
-			Contacts._online_list.remove(torId)
-			Contacts._last_times[torId] = datetime.datetime.now()
-		#print("Contacts just informed that", torId, "is offline.  Set is now", Contacts._online_list)
+		if self.isOnline(torId):
+			self._online_list.remove(torId)
+			self._last_times[torId] = datetime.datetime.now()
+		#print("Contacts just informed that", torId, "is offline.  Set is now", self._online_list)
 
-	@staticmethod
-	def isOnline(torId):
+	def isOnline(self, torId):
 		'''Check whether the given tor id is currently online (as far as we know)'''
-		#print("Contact list asked about", torId, ", answer is", (torId in Contacts._online_list))
-		return torId in Contacts._online_list
+		#print("Contact list asked about", torId, ", answer is", (torId in self._online_list))
+		return torId in self._online_list
 
-	@staticmethod
-	def lastSeen(torId):
+	def lastSeen(self, torId):
 		'''Get the last time this contact went on- or offline'''
-		return Contacts._last_times.get(torId, None)
+		return self._last_times.get(torId, None)
 
