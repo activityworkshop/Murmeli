@@ -86,6 +86,8 @@ error.fingerprintcheckfailed=Die sind nicht die erwartete Wörter.  Bitte nochma
 [messages]
 title=Nachrichten
 createnew=Neue Nachricht schreiben
+search=Nachrichten durchsuchen
+searchfor=Suche nach
 contactrequests=Kontakt-Anfragen
 prompt.contactaccept=Nachricht, um die Anfrage von '%s' zu akzeptieren
 prompt.contactreject=Anfrage von '%s' ablehnen
@@ -141,6 +143,7 @@ reject=Ablehnen
 delete=Löschen
 addall=+ Alle
 removeall=- Alle
+search=Suchen
 
 [gui]
 dialogtitle.error=Fehler

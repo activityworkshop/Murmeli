@@ -361,7 +361,7 @@ class MessagesPageSet(PageSet):
 		self.messagestemplate = PageTemplate('messages')
 
 	def servePage(self, view, url, params):
-		self.requirePageResources(['button-compose.png'])
+		self.requirePageResources(['button-compose.png', 'default.css', 'jquery-3.1.1.js'])
 		DbClient.exportAvatars(Config.getWebCacheDir())
 		if url == "/send":
 			print("send message of type '%(messageType)s' to id '%(sendTo)s'" % params)
@@ -380,6 +380,12 @@ class MessagesPageSet(PageSet):
 				DbClient.addMessageToOutbox(outmsg)
 		elif url.startswith("/delete/"):
 			DbClient.deleteMessageFromInbox(params.get("msgId", ""))
+		elif url in ["/search", "/search/"]:
+			print("Search!")
+			print("Search term is: ", params.get("searchTerm"))
+			view.setHtml("<!DOCTYPE html><html><body><p>This is where the search results will go.</p><p>You searched for: \"" + params.get("searchTerm") + "\".</p></body></html>")
+			return
+
 		# Make dictionary to convert ids to names
 		contactNames = {c['torid']:c['displayName'] for c in DbClient.getContactList()}
 		unknownSender = I18nManager.getText("messages.sender.unknown")
