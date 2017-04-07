@@ -312,7 +312,7 @@ class DbClient:
 	def getMessageableContacts():
 		'''Get a list of contacts we can send messages to, ie trusted or untrusted'''
 		return DbClient._getProfileTable().find({"status":{"$in" : ["trusted", "untrusted"]}},
-			 {"torid":1, "displayName":1, "status":1, "contactlist":1, "keyid":1}).sort([('torid', 1)])
+			 {"torid":1, "displayName":1, "name":1, "status":1, "contactlist":1, "keyid":1}).sort([('torid', 1)])
 
 	@staticmethod
 	def getTrustedContacts():
@@ -426,6 +426,7 @@ class DbClient:
 	@staticmethod
 	def deleteMessageFromInbox(messageId):
 		DbClient._getInboxTable().update({"_id":ObjectId(messageId)}, {"$set" : {"deleted":True}})
+		DbMessageNotifier.getInstance().notify()
 
 	@staticmethod
 	def changeRequestMessagesToRegular(torId):
@@ -474,6 +475,10 @@ class DbClient:
 	@staticmethod
 	def getPendingContactMessages(torId):
 		return DbClient._getContactsTable().find({"fromId":torId})
+
+	@staticmethod
+	def deletePendingContactMessages(torId):
+		DbClient._getContactsTable().remove({"fromId":torId})
 
 # TODO: See if we need to call m.murmelidb.command("getLastError").get("ok") after a write
 #       to check that it worked

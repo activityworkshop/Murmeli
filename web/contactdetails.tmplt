@@ -8,11 +8,17 @@
 	}
 	function sendRefer(id, referName)
 	{
-		showMessage("TODO: Send referral messages to both '{{person['displayName']}}' and '" + referName + "'</p>");
+		showMessage("<form action='http://murmeli/contacts/{{person['torid']}}/refer/" + id + "' method='post'>"
+			+ "<p>Send referral messages to both '{{person['displayName']}}' and '" + referName + "'</p>"
+			+ "<input type='text' name='introMessage' value=''>"
+			+ "<input type='submit' class='reversebutton' value='{{langs['button.send']}}'></form>");
 	}
 	function requestRefer(id, referName)
 	{
-		showMessage("TODO: Send referral request message to '{{person['displayName']}}' about '" + referName + "'</p>");
+		showMessage("<form action='http://murmeli/contacts/{{person['torid']}}/requestrefer/" + id + "' method='post'>"
+			+ "<p>Request contact with '" + referName + "' from {{person['displayName']}}</p>"
+			+ "<input type='text' name='introMessage' value=''>"
+			+ "<input type='submit' class='reversebutton' value='{{langs['button.send']}}'></form>");
 	}
 </script>
 <div class='genericbox' style='float:left;margin:10px'><img src='file:///{{webcachedir}}/avatar-{{person['torid']}}.jpg' width='128' height='128'></div>

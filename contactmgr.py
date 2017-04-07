@@ -43,7 +43,8 @@ class ContactMaker:
 				nameToStore = storedSenderName if storedSenderName else senderName
 				statusToStore = "untrusted" if directRequest else "pending"
 				# add or update the profile
-				DbClient.updateContact(torId, {"status" : statusToStore, "keyid" : keyId, "name" : nameToStore})
+				DbClient.updateContact(torId, {"status" : statusToStore, "keyid" : keyId,
+				  "name" : nameToStore, "displayName" : nameToStore})
 				ContactMaker.processPendingContacts(torId)
 			elif status == "pending":
 				print("Request already pending, nothing to do")
