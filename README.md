@@ -1,11 +1,11 @@
 # Murmeli
 An encrypted, serverless friend-to-friend messaging service.
 
-The tool is very much still under development.  The code published here currently just covers the startup wizard and a few simple components of the Murmeli application itself.  This includes the step-by-step tool to check dependencies, set up the database, connect to tor and create the unique keypair for encryption; also the basic settings page and the contacts list.  The rest of the code will follow as it becomes more stable, but feedback is welcome on the code published so far.
+The tool is very much still under development.  The code published here currently covers the startup wizard and some components of the Murmeli application itself.  This includes the step-by-step tool to check dependencies, set up the database, connect to tor and create the unique keypair for encryption; also the basic management of the contacts list and sending and receiving messages.  The rest of the code will follow as it becomes more stable, but feedback is welcome on the code published so far.
 
 More information about Murmeli is published online here:
     http://activityworkshop.net/software/murmeli/
-including explanations of the concepts and ideas, and some screenshots.  Feedback, criticism and review of these proposals are very welcome.
+including explanations of the concepts and ideas, some screenshots and a youtube video.  Feedback, criticism and review of these proposals are very welcome.
 
 Put briefly, the aim is to produce a way of sending encrypted messages from peer to peer, without using a server.  The communication is done by both sides publishing tor hidden services, and the encryption is done using asymmetric PGP once public keys have been exchanged and verified.  Because it runs without a server, peers have to be online at the same time in order to exchange messages.  However, mutual trusted peers can act as blind relays for the encrypted messages, thereby reducing latency.
 
@@ -34,5 +34,6 @@ All feedback and help is very welcome.
  (Murmeli could try to query the Mongo server if it thinks it's running on Windows, but unfortunately
   if there's no server then querying fails with a Windows error, not a python exception.)
 * Mongod requires a Windows hotfix to be installed if you're using Windows 7.
+* Mongod appears to create several hundred megabytes of pre-allocated space under /var/lib/mongodb/journal which can raise issues on platforms with limited space (eg a pi).
 * In the startup wizard, it would be nice to be able to select the executable paths with a file dialog.
 * The punch-card now has added punch.

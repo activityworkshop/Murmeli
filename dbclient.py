@@ -21,8 +21,9 @@ import imageutils
 class DaemonLauncher:
 	'''Separate class to launch the mongod executable, and then
 	   shut it down properly when finished.'''
-	# Constructor
+
 	def __init__(self, exepath, dbpath, useAuth=True):
+		'''Constructor'''
 		self.exepath = exepath
 		self.dbpath  = dbpath
 		self.useAuth = useAuth
@@ -34,6 +35,7 @@ class DaemonLauncher:
 		try:
 			self.daemon = subprocess.Popen([self.exepath, "--dbpath", self.dbpath,
 				"--bind_ip", "localhost", "--nohttpinterface", "--noscripting",
+				"--setParameter", "textSearchEnabled=true",
 				"--auth" if self.useAuth else "--noauth"])
 			print("started db daemon!")
 		except:

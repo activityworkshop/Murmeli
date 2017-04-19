@@ -418,9 +418,13 @@ class MessagesPageSet(PageSet):
 				# Split m['recipients'] by commas, and look up each id with contactNames
 				recpts = m.get('recipients', '')
 				if recpts:
-					m['recipients'] = ", ".join([contactNames.get(i, unknownRecpt) for i in recpts.split(",")])
+					replyAll = recpts.split(",")
+					m['recipients'] = ", ".join([contactNames.get(i, unknownRecpt) for i in replyAll])
+					replyAll.append(senderId)
+					m['replyAll'] = ",".join(replyAll)
 				else:
 					m['recipients'] = unknownRecpt
+					m['replyAll'] = ""
 				mails.append(m)
 		bodytext = self.messagestemplate.getHtml({"contactrequests":conreqs, "contactresponses":conresps,
 			"mails":mails, "nummessages":len(conreqs)+len(conresps)+len(mails),
