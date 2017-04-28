@@ -363,6 +363,8 @@ class MessagesPageSet(PageSet):
 	def servePage(self, view, url, params):
 		self.requirePageResources(['button-compose.png', 'default.css', 'jquery-3.1.1.js'])
 		DbClient.exportAvatars(Config.getWebCacheDir())
+
+		messageList = None
 		if url == "/send":
 			print("send message of type '%(messageType)s' to id '%(sendTo)s'" % params)
 			if params['messageType'] == "contactresponse":
@@ -383,8 +385,7 @@ class MessagesPageSet(PageSet):
 		elif url in ["/search", "/search/"]:
 			print("Search!")
 			print("Search term is: ", params.get("searchTerm"))
-			view.setHtml("<!DOCTYPE html><html><body><p>This is where the search results will go.</p><p>You searched for: \"" + params.get("searchTerm") + "\".</p></body></html>")
-			return
+			messageList = DbClient.searchInboxMessages(params.get("searchTerm"))
 
 		# Make dictionary to convert ids to names
 		contactNames = {c['torid']:c['displayName'] for c in DbClient.getContactList()}
@@ -394,7 +395,9 @@ class MessagesPageSet(PageSet):
 		conreqs = []
 		conresps = []
 		mails = []
-		for m in DbClient.getInboxMessages():
+		if messageList is None:
+			messageList = DbClient.getInboxMessages()
+		for m in messageList:
 			m['msgId'] = str(m.get("_id", ""))
 			if m['messageType'] == "contactrequest":
 				conreqs.append(m)

@@ -110,7 +110,19 @@ class OutgoingPostman(QtCore.QObject):
 				if recipientList:
 					print("I've got a message to relay to: ", recipientList)
 					failedRecipientsForThisMessage = set()
-					# TODO: Try to send to each in the list
+					# Try to send to each in the list
+					for rRecipient in recipientList:
+						if rRecipient in failedRecpts or self.sendMessage(message, rRecipient) == self.RC_MESSAGE_FAILED:
+							# Couldn't send to this recipient
+							failedRecipientsForThisMessage.add(rRecipient)
+					if failedRecipientsForThisMessage:
+						# Update m with the recipientList = failedRecipientsForThisMessage
+						DbClient.updateOutboxMessage(m["_id"], {"recipientList" : list(failedRecipientsForThisMessage)})
+						print("I failed to send a relay to:", failedRecipientsForThisMessage)
+					else:
+						print("I managed to relay everything, now deleting relay message")
+						DbClient.deleteMessageFromOutbox(m["_id"])
+
 		# TODO: Does the parent even need to know when a send has worked?
 		if messagesSent > 0:
 			self.parent.postmanKnock() # only once
