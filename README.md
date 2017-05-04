@@ -37,3 +37,8 @@ All feedback and help is very welcome.
 * Mongod appears to create several hundred megabytes of pre-allocated space under /var/lib/mongodb/journal which can raise issues on platforms with limited space (eg a pi).
 * In the startup wizard, it would be nice to be able to select the executable paths with a file dialog.
 * The punch-card now has added punch.
+
+Given the problems which are being caused by the use of Mongo as a database, it will perhaps be necessary
+to replace this with a different, simpler solution.  This may not provide all the power of Mongo's
+functionality (in particular its search), but it would avoid may of the authentication issues,
+service starting/stopping issues, cross-platform incompatibilities and resource usage.
