@@ -149,3 +149,6 @@ search=Search
 dialogtitle.error=Error
 dialogtitle.openimage=Open Image
 fileselection.filetypes.jpg=Image files (*.jpg)
+
+[warning]
+keysnotfoundfor=Keyring hasn't got keys for:

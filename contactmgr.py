@@ -245,14 +245,19 @@ class ContactMaker:
 
 	@staticmethod
 	def checkAllContactsKeys():
+		'''Return a list of names for which the key can't be found'''
+		nameList = []
 		for c in DbClient.getMessageableContacts():
 			torId = c.get("torid", None) if c else None
 			if torId:
 				keyId = c.get("keyid", None)
 				if not keyId:
 					print("No keyid found for torid", torId)
+					nameList.append(c['displayName'])
 				elif not CryptoClient.getPublicKey(keyId):
 					print("CryptoClient hasn't got a public key for torid", torId)
+					nameList.append(c['displayName'])
 				if not keyId or not CryptoClient.getPublicKey(keyId):
 					# We haven't got their key in our keyring!
 					DbClient.updateContact(torId, {"status":"requested"})
+		return nameList

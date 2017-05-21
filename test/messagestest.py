@@ -117,6 +117,7 @@ class RegularMessageTest(unittest.TestCase):
 	'''Tests for the regular messages'''
 	def setUp(self):
 		Config.load()
+		CryptoClient.useTestKeyring()
 
 	###################################
 	# Tests for parsing regular messages
@@ -136,6 +137,7 @@ class StatusNotifyTest(unittest.TestCase):
 	'''Tests for the status notification messages'''
 	def setUp(self):
 		Config.load()
+		CryptoClient.useTestKeyring()
 		DbClient.useTestTables()
 
 	###################################
@@ -162,6 +164,7 @@ class InfoRequestTest(unittest.TestCase):
 	'''Tests for the info request messages'''
 	def setUp(self):
 		Config.load()
+		CryptoClient.useTestKeyring()
 		DbClient.useTestTables()
 
 	def testProfileRequest(self):
@@ -176,6 +179,7 @@ class InfoResponseTest(unittest.TestCase):
 	'''Tests for the info response messages'''
 	def setUp(self):
 		Config.load()
+		CryptoClient.useTestKeyring()
 
 	def testProfileResponse(self):
 		m = message.InfoResponseMessage(message.InfoRequestMessage.INFO_PROFILE)
@@ -192,6 +196,7 @@ class RelayTest(unittest.TestCase):
 	'''Tests for the relay messages'''
 	def setUp(self):
 		Config.load()
+		CryptoClient.useTestKeyring()
 		DbClient.useTestTables()
 		TestUtils.setupKeyring(["key1_private", "key2_public"])
 
@@ -231,6 +236,7 @@ class ContactReferralTest(unittest.TestCase):
 	'''Tests for the contact referral messages'''
 	def setUp(self):
 		Config.load()
+		CryptoClient.useTestKeyring()
 		DbClient.useTestTables()
 		self.FRIEND_TORID = "zo7quhgn1nq1uppt"
 		FRIEND_KEYID = "3B898548F994C536"
@@ -257,6 +263,7 @@ class ContactReferRequestTest(unittest.TestCase):
 	'''Tests for the contact referral request messages'''
 	def setUp(self):
 		Config.load()
+		CryptoClient.useTestKeyring()
 
 	def testMakingReferRequest(self):
 		INTRO = "hello, you have a \"friend\" I'd like you to introduce me to, please!"

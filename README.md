@@ -33,6 +33,8 @@ All feedback and help is very welcome.
  DbClient thinks that mongod is already running, and doesn't try to start it.
  (Murmeli could try to query the Mongo server if it thinks it's running on Windows, but unfortunately
   if there's no server then querying fails with a Windows error, not a python exception.)
+* Occasionally, if Mongod needs a particularly long time to start, Murmeli thinks that the database
+isn't there, and launches the startup wizard, when it should just wait a little longer.
 * Mongod requires a Windows hotfix to be installed if you're using Windows 7.
 * Mongod appears to create several hundred megabytes of pre-allocated space under /var/lib/mongodb/journal which can raise issues on platforms with limited space (eg a pi).
 * In the startup wizard, it would be nice to be able to select the executable paths with a file dialog.

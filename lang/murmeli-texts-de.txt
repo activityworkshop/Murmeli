@@ -149,3 +149,6 @@ search=Suchen
 dialogtitle.error=Fehler
 dialogtitle.openimage=Bilddatei Öffnen
 fileselection.filetypes.jpg=Bilddateien (*.jpg)
+
+[warning]
+keysnotfoundfor=Schlüsselbund hat keine Schlüssel für:

@@ -59,7 +59,10 @@ class MainWindow(GuiWindow):
 		if not TorClient.isStarted():
 			TorClient.startTor()
 		# Make sure the status of the contacts matches our keyring
-		ContactMaker.checkAllContactsKeys()
+		missingKeyNames = ContactMaker.checkAllContactsKeys()
+		if missingKeyNames:
+			warningTexts = [I18nManager.getText("warning.keysnotfoundfor")] + missingKeyNames
+			QtGui.QMessageBox.warning(self, "Murmeli", "\n   ".join(warningTexts))
 
 	def makeToolbar(self, deflist):
 		'''Given a list of (image, method, tooltip), make a QToolBar with those actions'''
