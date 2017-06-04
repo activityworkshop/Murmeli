@@ -5,7 +5,7 @@ The tool is very much still under development.  The code published here currentl
 
 More information about Murmeli is published online here:
     http://activityworkshop.net/software/murmeli/
-including explanations of the concepts and ideas, some screenshots and a youtube video.  Feedback, criticism and review of these proposals are very welcome.
+including explanations of the concepts and ideas, some screenshots and a pair of youtube videos demonstrating setup and establishing contact.  Feedback, criticism and review of these proposals are very welcome.
 
 Put briefly, the aim is to produce a way of sending encrypted messages from peer to peer, without using a server.  The communication is done by both sides publishing tor hidden services, and the encryption is done using asymmetric PGP once public keys have been exchanged and verified.  Because it runs without a server, peers have to be online at the same time in order to exchange messages.  However, mutual trusted peers can act as blind relays for the encrypted messages, thereby reducing latency.
 
@@ -40,7 +40,7 @@ isn't there, and launches the startup wizard, when it should just wait a little 
 * In the startup wizard, it would be nice to be able to select the executable paths with a file dialog.
 * The punch-card now has added punch.
 
-Given the problems which are being caused by the use of Mongo as a database, it will perhaps be necessary
+Given the problems which are being caused by the use of Mongo as a database, it will probably be necessary
 to replace this with a different, simpler solution.  This may not provide all the power of Mongo's
 functionality (in particular its search), but it would avoid may of the authentication issues,
 service starting/stopping issues, cross-platform incompatibilities and resource usage.
