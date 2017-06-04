@@ -578,11 +578,12 @@ class InfoResponseMessage(AsymmetricMessage):
 
 	def _createSubpayload(self):
 		'''Use the stored fields to pack the payload contents together'''
+		ownProfile = DbClient.getProfile()
 		if self.infoType is None:
 			self.infoType = InfoRequestMessage.INFO_PROFILE
 		if self.profileString is None:
-			self.profileString = dbutils.getOwnProfileAsString()
-		self.profileHash = DbClient.calculateHash(DbClient.getProfile())
+			self.profileString = dbutils.getProfileAsString(ownProfile)
+		self.profileHash = dbutils.calculateHash(ownProfile)
 		return self.packBytesTogether([
 			self.encodeNumberToBytes(self.infoType),
 			self.encodeNumberToBytes(len(self.profileString), 4),
