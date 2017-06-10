@@ -7,7 +7,7 @@ import datetime
 from PyQt4 import QtGui # for file selection
 from i18n import I18nManager
 from config import Config
-from dbclient import DbClient
+from dbinterface import DbI
 from cryptoclient import CryptoClient
 from contactmgr import ContactMaker
 from pagetemplate import PageTemplate
@@ -167,7 +167,7 @@ class ContactsPageSet(PageSet):
 
 	def servePage(self, view, url, params):
 		self.requirePageResources(['button-addperson.png', 'button-drawgraph.png', 'avatar-none.jpg'])
-		DbClient.exportAvatars(Config.getWebCacheDir())
+		DbI.exportAllAvatars(Config.getWebCacheDir())
 		if url == "/add" or url == "/add/":
 			contents = self.generateAddPage()
 			view.setHtml(contents)
@@ -186,13 +186,13 @@ class ContactsPageSet(PageSet):
 					print("I should send an add request to '%s' now." % recipientid)
 					outmsg = message.ContactRequestMessage(introMessage=intromessage)
 					outmsg.recipients = [recipientid]
-					DbClient.addMessageToOutbox(outmsg)
+					DbI.addToOutbox(outmsg)
 				else:
 					print("Hmm, show an error message here?")
 				# in any case, go back to contact list
 				url = "/" + recipientid
 				# ensure that picture is generated for new id
-				DbClient.exportAvatars(Config.getWebCacheDir())
+				DbI.exportAllAvatars(Config.getWebCacheDir())
 		contents = None
 		userid   = None
 		pageParams = {}
@@ -205,7 +205,8 @@ class ContactsPageSet(PageSet):
 				if command[1] == "edit":
 					contents = self.generateListPage(doEdit=True, userid=userid) # show edit fields
 				elif command[1] == "submitedit":
-					DbClient.updateContact(userid, params)
+					DbI.updateProfile(userid, params, Config.getWebCacheDir())
+					# TODO: If we've updated our own details, can we trigger a broadcast?
 					# don't generate contents, go back to details
 				elif command[1] == "delete":
 					ContactMaker.handleDeleteContact(userid)
@@ -243,7 +244,7 @@ class ContactsPageSet(PageSet):
 
 	def generateAddPage(self):
 		'''Build the form page for adding a new user, using the template'''
-		bodytext = self.addtemplate.getHtml({"owntorid" : DbClient.getOwnTorId()})
+		bodytext = self.addtemplate.getHtml({"owntorid" : DbI.getOwnTorid()})
 		return self.buildPage({'pageTitle' : I18nManager.getText("contacts.title"),
 			'pageBody' : bodytext,
 			'pageFooter' : "<p>Footer</p>"})
@@ -251,10 +252,9 @@ class ContactsPageSet(PageSet):
 	def generateFingerprintsPage(self, userid):
 		'''Build the page for checking the fingerprints of the selected user'''
 		# First, get the name of the user
-		person = DbClient.getProfile(userid, False)
-		dispName = person.get('displayName', '')
-		fullName = person.get('name', '')
-		if not dispName: dispName = fullName
+		person = DbI.getProfile(userid)
+		dispName = person['displayName']
+		fullName = person['name']
 		if dispName != fullName:
 			fullName = dispName + " (" + fullName + ")"
 		fc = self._makeFingerprintChecker(userid)
@@ -277,8 +277,8 @@ class ContactsPageSet(PageSet):
 
 	def _makeFingerprintChecker(self, userid):
 		'''Use the given userid to make a FingerprintChecker between me and them'''
-		person = DbClient.getProfile(userid, False)
-		ownFingerprint = CryptoClient.getFingerprint(DbClient.getOwnKeyId())
+		person = DbI.getProfile(userid)
+		ownFingerprint = CryptoClient.getFingerprint(DbI.getOwnKeyid())
 		usrFingerprint = CryptoClient.getFingerprint(person['keyid'])
 		return FingerprintChecker(ownFingerprint, usrFingerprint)
 
@@ -287,16 +287,16 @@ class ContactsPageSet(PageSet):
 		self.requirePageResources(['avatar-none.jpg', 'status-self.png', 'status-requested.png', 'status-untrusted.png',
 			'status-trusted.png', 'status-pending.png'])
 		# List of contacts, and show details for the selected one (or self if userid=None)
-		selectedprofile = DbClient.getProfile(userid)
-		if selectedprofile is None:
-			selectedprofile = DbClient.getProfile()
+		selectedprofile = DbI.getProfile(userid)
+		if not selectedprofile:
+			selectedprofile = DbI.getProfile()
 		userid = selectedprofile['torid']
-		ownPage = userid == DbClient.getOwnTorId()
+		ownPage = userid == DbI.getOwnTorid()
 
 		# Build list of contacts
 		userboxes = []
 		currTime = datetime.datetime.now()
-		for p in DbClient.getContactList():
+		for p in DbI.getProfiles():
 			box = Bean()
 			box.dispName = p['displayName']
 			box.torid = p['torid']
@@ -312,6 +312,7 @@ class ContactsPageSet(PageSet):
 			else:
 				box.lastSeen = None
 			userboxes.append(box)
+
 		# expand templates using current details
 		lefttext = self.listtemplate.getHtml({'webcachedir' : Config.getWebCacheDir(), 'contacts' : userboxes})
 		pageProps = {"webcachedir" : Config.getWebCacheDir(), 'person':selectedprofile}
@@ -362,7 +363,7 @@ class MessagesPageSet(PageSet):
 
 	def servePage(self, view, url, params):
 		self.requirePageResources(['button-compose.png', 'default.css', 'jquery-3.1.1.js'])
-		DbClient.exportAvatars(Config.getWebCacheDir())
+		DbI.exportAllAvatars(Config.getWebCacheDir())
 
 		messageList = None
 		if url == "/send":
@@ -372,23 +373,21 @@ class MessagesPageSet(PageSet):
 				if params.get("accept", "0") == "1":
 					ContactMaker.handleAccept(torId)
 					# Make sure this new contact has an empty avatar
-					DbClient.exportAvatars(Config.getWebCacheDir())
+					DbI.exportAllAvatars(Config.getWebCacheDir())
 					outmsg = message.ContactResponseMessage(message=params['messageBody'])
 				else:
 					ContactMaker.handleDeny(torId)
 					outmsg = message.ContactDenyMessage()
 				# Construct a ContactResponse message object for sending
 				outmsg.recipients = [params['sendTo']]
-				DbClient.addMessageToOutbox(outmsg)
+				DbI.addToOutbox(outmsg)
 		elif url.startswith("/delete/"):
-			DbClient.deleteMessageFromInbox(params.get("msgId", ""))
+			DbI.deleteFromInbox(params.get("msgId", ""))
 		elif url in ["/search", "/search/"]:
-			print("Search!")
-			print("Search term is: ", params.get("searchTerm"))
-			messageList = DbClient.searchInboxMessages(params.get("searchTerm"))
+			messageList = DbI.searchInboxMessages(params.get("searchTerm"))
 
 		# Make dictionary to convert ids to names
-		contactNames = {c['torid']:c['displayName'] for c in DbClient.getContactList()}
+		contactNames = {c['torid']:c['displayName'] for c in DbI.getProfiles()}
 		unknownSender = I18nManager.getText("messages.sender.unknown")
 		unknownRecpt = I18nManager.getText("messages.recpt.unknown")
 		# Get contact requests, responses and mails from inbox
@@ -396,8 +395,11 @@ class MessagesPageSet(PageSet):
 		conresps = []
 		mails = []
 		if messageList is None:
-			messageList = DbClient.getInboxMessages()
+			messageList = DbI.getInboxMessages()
+		# TODO: Paging options?
 		for m in messageList:
+			if not m:
+				continue
 			m['msgId'] = str(m.get("_id", ""))
 			if m['messageType'] == "contactrequest":
 				conreqs.append(m)
@@ -408,14 +410,14 @@ class MessagesPageSet(PageSet):
 			elif m['messageType'] == "contactresponse":
 				if not m.get('accepted', False):
 					m['messageBody'] = I18nManager.getText("messages.contactrequest.refused")
-					m['fromName'] = DbClient.getProfile(m['fromId'], True).get("displayName")
+					m['fromName'] = DbI.getProfile(m['fromId'])["displayName"]
 				elif not m.get('messageBody', False):
 					m['messageBody'] = I18nManager.getText("messages.contactrequest.accepted")
 				conresps.append(m)
 			else:
 				senderId = m.get('fromId', None)
 				if not senderId and m.get('signatureKeyId', None):
-					senderId = DbClient.findUserIdFromKeyId(m['signatureKeyId'])
+					senderId = DbI.findUserIdFromKeyId(m['signatureKeyId'])
 				m['senderName'] = contactNames.get(senderId, unknownSender)
 				m['sentTimeStr'] = self.makeLocalTimeString(m['timestamp'])
 				# Split m['recipients'] by commas, and look up each id with contactNames
@@ -471,7 +473,7 @@ class SettingsPageSet(PageSet):
 			showlogwindow = slw is not None and len(slw) > 0
 			Config.setProperty(Config.KEY_SHOW_LOG_WINDOW, showlogwindow)
 			# If Config has changed, may need to update profile to include/hide friends info
-			DbClient.updateContactList(friendsseefriends)
+			DbI.updateContactList(friendsseefriends)
 			# When friends are notified next time, the profile's hash will be calculated and sent
 			afw = params.get('allowfriendrequests', None)
 			allowfriendrequests = afw is not None and len(afw) > 0
@@ -511,7 +513,7 @@ class SpecialFunctions(PageSet):
 			if fname:
 				view.page().mainFrame().evaluateJavaScript("updateProfilePic('" + fname + "');")
 		elif url == "/friendstorm":
-			if not DbClient.hasFriends():
+			if not DbI.hasFriends():
 				view.page().mainFrame().evaluateJavaScript("window.alert('No friends :(');")
 				return
 			# Launch a storm
@@ -519,16 +521,22 @@ class SpecialFunctions(PageSet):
 			self.bs.show()
 			storm = Storm()
 			# Build up Nodes and Edges using our contact list and if possible our friends' contact lists
-			myTorId = DbClient.getOwnTorId()
+			myTorId = DbI.getOwnTorid()
 			friends = {}
 			friendsOfFriends = {}
-			for c in DbClient.getContactList():
-				#print("Contact:", c['torid'], "'", c['displayName'], "'")
+			for c in DbI.getMessageableProfiles():
+				# print("Contact: id:'%s' name:'%s'" % (c['torid'], c['displayName']))
 				nodeid = storm.getUnusedNodeId()
 				torid = c['torid']
 				friends[torid] = nodeid
 				storm.addNode(Node(None, nodeid, c['displayName']))
 				friendsOfFriends[torid] = c.get('contactlist', "")
+			# Also add ourselves
+			c = DbI.getProfile()
+			nodeid = storm.getUnusedNodeId()
+			friends[c['torid']] = nodeid
+			storm.addNode(Node(None, nodeid, c['displayName']))
+			# Add edges
 			for torid in friends:
 				if torid != myTorId:
 					storm.addEdge(friends[torid], friends[myTorId])
@@ -563,14 +571,14 @@ class ComposePageSet(PageSet):
 		print("Compose: %s, params %s" % (url, ",".join(params)))
 		if url == "/start":
 			self.requirePageResources(['default.css', 'jquery-3.1.1.js'])
-			DbClient.exportAvatars(Config.getWebCacheDir())
+			DbI.exportAllAvatars(Config.getWebCacheDir())
 			parentHash = params.get("reply", None)
 			recpts = params.get("sendto", None)
 			# Build list of contacts to whom we can send
 			userboxes = []
-			for p in DbClient.getMessageableContacts():
+			for p in DbI.getMessageableProfiles():
 				box = Bean()
-				box.dispName = p.get('displayName', p.get('name', p.get('torid')))
+				box.dispName = p['displayName']
 				box.torid = p['torid']
 				userboxes.append(box)
 			pageParams = {"contactlist":userboxes, "parenthash" : parentHash if parentHash else "",
@@ -580,7 +588,7 @@ class ComposePageSet(PageSet):
 				'pageFooter' : "<p>Footer</p>"})
 			view.setHtml(contents)
 			# If we've got no friends, then warn, can't send to anyone
-			if not DbClient.hasFriends():
+			if not DbI.hasFriends():
 				view.page().mainFrame().evaluateJavaScript("window.alert('No friends :(');")
 
 		elif url == "/send":
@@ -591,12 +599,12 @@ class ComposePageSet(PageSet):
 			# Make a corresponding message object and pass it on
 			msg = message.RegularMessage(sendTo=recpts, messageBody=msgBody, replyToHash=parentHash)
 			msg.recipients = recpts.split(",")
-			DbClient.addMessageToOutbox(msg)
+			DbI.addToOutbox(msg)
 			# Save a copy of the sent message
-			sentMessage = {"messageType":"normal", "fromId":DbClient.getOwnTorId(),
+			sentMessage = {"messageType":"normal", "fromId":DbI.getOwnTorid(),
 				"messageBody":msgBody, "timestamp":msg.timestamp, "messageRead":True,
 				"messageReplied":False, "recipients":recpts, "parentHash":parentHash}
-			DbClient.addMessageToInbox(sentMessage)
+			DbI.addToInbox(sentMessage)
 			# Close window after successful send
 			contents = self.buildPage({'pageTitle' : I18nManager.getText("messages.title"),
 				'pageBody' : self.closingtemplate.getHtml(),

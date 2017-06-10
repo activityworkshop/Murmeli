@@ -1,5 +1,6 @@
-from dbclient import DbClient
+from dbinterface import DbI
 from cryptoclient import CryptoClient
+from supersimpledb import MurmeliDb
 import os
 import shutil
 
@@ -32,8 +33,8 @@ class TestUtils:
 
 	@staticmethod
 	def setupOwnProfile(keyId):
-		DbClient.useTestTables()
-		DbClient.deleteOwnProfile()
-		DbClient.updateContact(TestUtils._ownTorId, {"status":"self", "ownprofile":True,
+		tempDb = MurmeliDb()
+		DbI.setDb(tempDb)
+		DbI.updateProfile(TestUtils._ownTorId, {"status":"self", "ownprofile":True,
 			"keyid":keyId, "name":"Geoffrey Lancaster", "displayName":"Me",
 			"description":"Ä fictitious person with a couple of Umläute in his description."})

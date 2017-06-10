@@ -6,10 +6,11 @@ import re
 from PyQt4 import QtGui, QtCore
 from i18n import I18nManager
 from config import Config
-from dbclient import DbClient, AuthSetterUpper
 from cryptoclient import CryptoClient
+from dbinterface import DbI
 from torclient import TorClient
 from murmeli import MainWindow
+from supersimpledb import MurmeliDb
 
 
 class StartupWizard(QtGui.QMainWindow):
@@ -58,7 +59,7 @@ class StartupWizard(QtGui.QMainWindow):
 		#print "back clicked"
 		currIndex = self.cardstack.currentIndex()
 		if currIndex == 0:
-			# Do a controlled shutdown?  Close Mongo, Tor?
+			# Do a controlled shutdown?  Close Db, Tor?
 			self.close()
 		else:
 			self.cardPanels[currIndex].cancel()
@@ -82,7 +83,7 @@ class StartupWizard(QtGui.QMainWindow):
 				# Launch Murmeli
 				self.murmeliWindow = MainWindow()
 				self.murmeliWindow.show()
-				# close this wizard but keep Tor, Mongo running
+				# close this wizard but keep Tor, Db running
 				self.close()
 
 	def enableButtons(self, card):
@@ -213,7 +214,7 @@ class DependenciesPanel(WizardPanel):
 		panel1 = QtGui.QWidget()
 		layout = QtGui.QVBoxLayout()
 		self.labels = {}
-		for k in ["heading", "intro", "pyqt", "gnupg", "pymongo", "alsotor"]:
+		for k in ["heading", "intro", "pyqt", "gnupg", "alsotor"]:
 			self.labels[k] = QtGui.QLabel()
 		self._makeLabelHeading(self.labels["heading"])
 		layout.addWidget(self.labels["heading"])
@@ -221,7 +222,7 @@ class DependenciesPanel(WizardPanel):
 		layout.addWidget(self.labels["intro"])
 		depsbox = QtGui.QFrame(panel1)
 		sublayout = QtGui.QFormLayout()
-		depKeys = ['pyqt', 'gnupg', 'pymongo']
+		depKeys = ['pyqt', 'gnupg']
 		self.dependencyLabels = [QtGui.QLabel() for k in depKeys]
 		for i, k in enumerate(depKeys):
 			sublayout.addRow(self.labels[k], self.dependencyLabels[i])
@@ -241,10 +242,6 @@ class DependenciesPanel(WizardPanel):
 		'''When going from the intro page to the dependencies page, this needs to be updated'''
 		depsFound = {'pyqt':True}  # PyQt must be present, otherwise we wouldn't be here!
 		self.allFound = True
-		try:
-			import pymongo
-			depsFound["pymongo"] = True
-		except: self.allFound = False
 		try:
 			from gnupg import GPG
 			depsFound["gnupg"] = True
@@ -273,7 +270,7 @@ class PathsPanel(WizardPanel):
 		self.panel = QtGui.QWidget()
 		layout = QtGui.QVBoxLayout()
 		self.labels = {}
-		for k in ["heading", "configfile", "datadir", "mongoexe", "torexe", "gpgexe", "considerencryption"]:
+		for k in ["heading", "configfile", "datadir", "torexe", "gpgexe", "considerencryption"]:
 			self.labels[k] = QtGui.QLabel()
 		self._makeLabelHeading(self.labels["heading"])
 		layout.addWidget(self.labels["heading"])
@@ -287,10 +284,6 @@ class PathsPanel(WizardPanel):
 		if not datadir or datadir == "": datadir = Config.DEFAULT_DATA_PATH
 		self.dataDirectoryField = QtGui.QLineEdit(datadir)
 		sublayout.addRow(self.labels["datadir"], self.dataDirectoryField)
-		# Is it right that we don't need the path to gpg exe?  Or do we need to give to python-gnupg?
-		# Path to mongo exe (input)
-		self.mongoPathField = QtGui.QLineEdit("mongod")
-		sublayout.addRow(self.labels["mongoexe"], self.mongoPathField)
 		# Path to tor exe (input)
 		self.torPathField = QtGui.QLineEdit("tor")
 		sublayout.addRow(self.labels["torexe"], self.torPathField)
@@ -298,7 +291,7 @@ class PathsPanel(WizardPanel):
 		self.gpgPathField = QtGui.QLineEdit("gpg")
 		sublayout.addRow(self.labels["gpgexe"], self.gpgPathField)
 		# MAYBE: Could we check whether these paths exist, and guess alternative ones if not?
-		# TODO: Browse buttons to select exes from file
+		# TODO: Browse buttons to select exes and directory
 		filepathbox.setLayout(sublayout)
 		sublayout.setFormAlignment(QtCore.Qt.AlignHCenter) # horizontally centred
 		layout.addWidget(filepathbox)
@@ -325,9 +318,8 @@ class PathsPanel(WizardPanel):
 			return False
 		# Also store selected paths to exes
 		# TODO: Check the exes exist?
-		Config.setProperty(Config.KEY_MONGO_EXE, str(self.mongoPathField.text()))
-		Config.setProperty(Config.KEY_TOR_EXE,   str(self.torPathField.text()))
-		Config.setProperty(Config.KEY_GPG_EXE,   str(self.gpgPathField.text()))
+		Config.setProperty(Config.KEY_TOR_EXE, str(self.torPathField.text()))
+		Config.setProperty(Config.KEY_GPG_EXE, str(self.gpgPathField.text()))
 		Config.save()
 		return True
 
@@ -350,7 +342,7 @@ class ServicesPanel(WizardPanel):
 		self.panel = QtGui.QWidget()
 		layout = QtGui.QVBoxLayout()
 		self.labels = {}
-		for k in ["heading", "intro", "mongo", "gpg", "tor", "abouttostart"]:
+		for k in ["heading", "intro", "database", "gpg", "tor", "abouttostart"]:
 			self.labels[k] = QtGui.QLabel()
 		self._makeLabelHeading(self.labels["heading"])
 		layout.addWidget(self.labels["heading"])
@@ -358,7 +350,7 @@ class ServicesPanel(WizardPanel):
 		layout.addWidget(self.labels["intro"])
 		servicesbox = QtGui.QFrame(self.panel)
 		sublayout = QtGui.QFormLayout()
-		servicesKeys = ['mongo', 'gpg', 'tor']
+		servicesKeys = ['database', 'gpg', 'tor']
 		self.servicesLabels = [QtGui.QLabel() for k in servicesKeys]
 		for i, k in enumerate(servicesKeys):
 			sublayout.addRow(self.labels[k], self.servicesLabels[i])
@@ -396,7 +388,7 @@ class ServicesPanel(WizardPanel):
 
 	def updatedServiceCheck(self):
 		'''Called when service check has been updated (not yet completed) by the other thread'''
-		servicesKeys = ['mongo', 'gpg', 'tor']
+		servicesKeys = ['database', 'gpg', 'tor']
 		for i, k in enumerate(servicesKeys):
 			succ = self.checkerThread.successFlags.get(k, None)
 			self.servicesLabels[i].setPixmap(self.blankPixmap if succ is None
@@ -416,7 +408,8 @@ class ServicesPanel(WizardPanel):
 
 	def cancel(self):
 		'''Coming back from services start - need to stop them'''
-		DbClient.stopDatabase()
+		# If we're cancelling, we don't want to save anything - need method?
+		DbI.releaseDb()
 		TorClient.stopTor()
 
 
@@ -425,11 +418,12 @@ class ServiceStarterThread(QtCore.QThread):
 	def run(self):
 		# Check each of the services in turn
 		self.successFlags = {}
-		# Mongo
-		authSetup = AuthSetterUpper()
-		self.successFlags['mongo'] = authSetup.setup()
+		# Database
+		time.sleep(0.5)
+		DbI.setDb(MurmeliDb(Config.getSsDatabaseFile()))
+		self.successFlags['database'] = True
 		self.emit(QtCore.SIGNAL('updated()'))
-		time.sleep(1)
+		time.sleep(0.5)
 		# Gnupg
 		self.successFlags['gpg'] = CryptoClient.checkGpg()
 		self.emit(QtCore.SIGNAL('updated()'))
@@ -445,8 +439,8 @@ class ServiceStarterThread(QtCore.QThread):
 
 	def allGood(self):
 		'''Check whether all have been started'''
-		return self.successFlags.get('gpg', False) \
-			and self.successFlags.get('mongo', False) \
+		return self.successFlags.get('database', False) \
+			and self.successFlags.get('gpg', False) \
 			and self.successFlags.get('tor', False)
 
 # ================Key generation=====================
@@ -530,7 +524,7 @@ class KeygenPanel(WizardPanel):
 
 	def finish(self):
 		'''Finished the key gen'''
-		# Store key, name in mongo under own profile
+		# Store key, name in the database for our own profile
 		selectedKey = self.privateKeys[self.keypairListWidget.currentRow()]
 		ownid = TorClient.getOwnId()
 		# See if a name was entered before, if so use that
@@ -539,7 +533,8 @@ class KeygenPanel(WizardPanel):
 			# Extract the name from the string which comes back from the key as "'Some Name (no comment) <no@email.com>'"
 			myname = self.extractName(selectedKey['uids'])
 		profile = {"name" : myname, "keyid" : selectedKey['keyid'], "torid" : ownid, "status" : "self", "ownprofile" : True}
-		DbClient.updateContact(ownid, profile)
+		# Store this in the database
+		DbI.updateProfile(ownid, profile)
 		return True
 
 	def extractName(self, gpgName):

@@ -31,7 +31,6 @@ class Config():
 	KEY_SHOW_LOG_WINDOW = "gui.showlogwindow"
 	# paths
 	KEY_DATA_DIR = "path.data"
-	KEY_MONGO_EXE = "path.mongoexe"
 	KEY_TOR_EXE = "path.torexe"
 	KEY_GPG_EXE = "path.gpgexe"
 
@@ -53,7 +52,6 @@ class Config():
 		# Clear properties, and set default values
 		Config.properties = {}
 		Config.properties[Config.KEY_LANGUAGE]  = "en"
-		Config.properties[Config.KEY_MONGO_EXE] = "mongo"
 		Config.properties[Config.KEY_TOR_EXE]   = "tor"
 		Config.properties[Config.KEY_GPG_EXE]   = "gpg"
 		# Default privacy settings
@@ -95,8 +93,8 @@ class Config():
 	def getDatabaseDir():
 		return os.path.join(Config.properties.get(Config.KEY_DATA_DIR, ""), "db")
 	@staticmethod
-	def getDatabasePasswordFile():
-		return os.path.join(Config.getDatabaseDir(), "password_file")
+	def getSsDatabaseFile():
+		return os.path.join(Config.getDatabaseDir(), "murmeli.ssdb")
 
 	@staticmethod
 	def getWebCacheDir():

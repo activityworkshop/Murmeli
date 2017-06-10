@@ -5,7 +5,7 @@ from random import SystemRandom
 import hashlib
 import datetime
 import dbutils
-from dbclient import DbClient
+from dbinterface import DbI
 from cryptoclient import CryptoClient
 
 
@@ -126,12 +126,11 @@ class Message:
 		return self.getPublicKey(torid=None)
 
 	def getPublicKey(self, torid):
-		'''Use the keyid stored in mongo, and get the corresponding public key from the Crypto module'''
-		profile = DbClient.getProfile(torid)
-		if profile is not None:
-			keyid = profile.get('keyid', None)
-			if keyid is not None:
-				return CryptoClient.getPublicKey(keyid)
+		'''Use the keyid stored in the db, and get the corresponding public key from the Crypto module'''
+		profile = DbI.getProfile(torid)
+		keyid = profile.get('keyid', None) if profile else None
+		if keyid:
+			return CryptoClient.getPublicKey(keyid)
 
 	@staticmethod
 	def MessageFromReceivedData(data, isEncrypted=True):
@@ -215,7 +214,7 @@ class UnencryptedMessage(Message):
 
 	def _createUnencryptedPayload(self):
 		if self.senderId is None:
-			self.senderId = DbClient.getOwnTorId()
+			self.senderId = DbI.getOwnTorid()
 		return self.packBytesTogether([
 			self.encodeNumberToBytes(self.messageType, 1),
 			self.senderId, self._createSubpayload()])
@@ -254,8 +253,7 @@ class ContactRequestMessage(UnencryptedMessage):
 		'''Pack the specific fields into the subpayload'''
 		# Get own name
 		if self.senderName is None:
-			self.senderName = DbClient.getProfile(None).get('name', self.senderId)
-		# Get own public key (first get identifier from DbClient, then use that id to ask crypto module)
+			self.senderName = DbI.getProfile().get('name', self.senderId)
 		myPublicKey = self.getOwnPublicKey()
 		messageAsBytes = self.message.encode('utf-8')
 		nameAsBytes = self.senderName.encode('utf-8')
@@ -273,7 +271,7 @@ class ContactRequestMessage(UnencryptedMessage):
 		senderName = chomper.getStringWithLength(4)
 		introMessage = chomper.getStringWithLength(4)
 		m = ContactRequestMessage(senderName=senderName, introMessage=introMessage)
-		m.publicKey = chomper.getRest()
+		m.publicKey = chomper.getRest().decode("utf-8")
 		return m
 
 	def getMessageTypeKey(self):
@@ -332,7 +330,7 @@ class AsymmetricMessage(Message):
 		'''Create the encrypted output for the given recipient'''
 		total = self._createUnencryptedPayload()
 		# Encrypt and sign the result
-		ownKeyId = DbClient.getOwnKeyId()
+		ownKeyId = DbI.getOwnKeyid()
 		return CryptoClient.encryptAndSign(total, recipientKeyId, ownKeyId)
 
 	def _createUnencryptedPayload(self):
@@ -408,7 +406,7 @@ class AsymmetricMessage(Message):
 			msg.signatureKeyId = signatureKey
 			if signatureKey:
 				print("Asymm setting senderId because I've got a signatureKey: '%s'" % signatureKey)
-				signatureId = DbClient.findUserIdFromKeyId(signatureKey)
+				signatureId = DbI.findUserIdFromKeyId(signatureKey)
 				if signatureId:
 					msg.senderId = signatureId
 		return msg
@@ -447,9 +445,9 @@ class ContactResponseMessage(AsymmetricMessage):
 		'''Use the stored fields to pack the payload contents together'''
 		if self.senderKey is None: self.senderKey = self.getOwnPublicKey()
 		# Get own torid and name
-		if not self.senderId: self.senderId = DbClient.getOwnTorId()
+		if not self.senderId: self.senderId = DbI.getOwnTorid()
 		if not self.senderName:
-			self.senderName = DbClient.getProfile(None).get('name', self.senderId)
+			self.senderName = DbI.getProfile().get('name', self.senderId)
 		if not self.introMessage: self.introMessage = ""
 		nameAsBytes = self.senderName.encode('utf-8')
 		messageAsBytes = self.introMessage.encode('utf-8')
@@ -479,7 +477,7 @@ class ContactResponseMessage(AsymmetricMessage):
 		print("Got a senderId: ", senderId)
 		senderName = chomper.getStringWithLength(4)
 		introMessage = chomper.getStringWithLength(4)
-		publicKey = chomper.getRest()
+		publicKey = chomper.getRest().decode("utf-8")
 		return ContactResponseMessage(senderId, senderName, introMessage, publicKey)
 
 	def getMessageTypeKey(self):
@@ -505,7 +503,7 @@ class StatusNotifyMessage(AsymmetricMessage):
 	def _createSubpayload(self):
 		'''Use the stored fields to pack the payload contents together'''
 		if self.profileHash is None or self.profileHash == "":
-			self.profileHash = DbClient.calculateHash(DbClient.getProfile())
+			self.profileHash = dbutils.calculateHash(DbI.getProfile())
 		return self.packBytesTogether([
 			self.encodeNumberToBytes(1 if self.online else 0, 1),
 			self.encodeNumberToBytes(1 if self.ping else 0, 1),
@@ -578,7 +576,7 @@ class InfoResponseMessage(AsymmetricMessage):
 
 	def _createSubpayload(self):
 		'''Use the stored fields to pack the payload contents together'''
-		ownProfile = DbClient.getProfile()
+		ownProfile = DbI.getProfile()
 		if self.infoType is None:
 			self.infoType = InfoRequestMessage.INFO_PROFILE
 		if self.profileString is None:
@@ -664,8 +662,8 @@ class ContactReferralMessage(AsymmetricMessage):
 	def _createSubpayload(self):
 		'''Pack the specific fields into the subpayload'''
 		# Get own name
-		if self.friendName is None:
-			self.friendName = DbClient.getProfile(self.friendId).get('name', self.friendId)
+		if not self.friendName:
+			self.friendName = DbI.getProfile(self.friendId).get('name', self.friendId)
 		publicKey = self.getPublicKey(torid=self.friendId)
 		# TODO: Complain if publicKey is empty
 		messageAsBytes = self.message.encode('utf-8')
@@ -686,7 +684,7 @@ class ContactReferralMessage(AsymmetricMessage):
 		friendName = chomper.getStringWithLength(4)
 		introMessage = chomper.getStringWithLength(4)
 		m = ContactReferralMessage(friendId=friendId, friendName=friendName, introMessage=introMessage)
-		m.publicKey = chomper.getRest()
+		m.publicKey = chomper.getRest().decode("utf-8")
 		return m
 
 	def getMessageTypeKey(self):
@@ -757,13 +755,13 @@ class RelayingMessage(Message):
 				return messageForMe
 			else:
 				msg = RelayingMessage(rcvdBytes=originalPayload)
-				msg.senderId = DbClient.findUserIdFromKeyId(signKey)
+				msg.senderId = DbI.findUserIdFromKeyId(signKey)
 				return msg
 
 	def _createPayload(self, recipientKeyId):
 		'''Get the original message, and then sign it with our key'''
 		if self.origParcel:
-			ownKeyId = DbClient.getOwnKeyId()
+			ownKeyId = DbI.getOwnKeyid()
 			return CryptoClient.signData(self.origParcel, ownKeyId)
 		# or maybe we received the message as bytes, in which case we shouldn't come here
 

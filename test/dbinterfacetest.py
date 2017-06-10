@@ -67,6 +67,9 @@ class DbInterfaceTest(unittest.TestCase):
 		os.makedirs('cache', exist_ok=True)
 		self.assertFalse(os.path.exists(outPath))
 		DbI.updateProfile("deadbeef", {"profilepicpath":inputPath})
+		# Output file still shouldn't exist, we didn't give a path to write picture to
+		self.assertFalse(os.path.exists(outPath))
+		DbI.updateProfile("deadbeef", {"profilepicpath":inputPath}, "cache")
 		# Output file should exist now
 		self.assertTrue(os.path.exists(outPath))
 		# TODO: Any way to compare input with output?  They're not the same.

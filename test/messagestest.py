@@ -2,7 +2,7 @@ import unittest
 import message
 from config import Config
 from cryptoclient import CryptoClient, CryptoError
-from dbclient import DbClient
+from dbinterface import DbI
 from testutils import TestUtils
 
 
@@ -10,7 +10,6 @@ class ContactRequestTest(unittest.TestCase):
 	'''Tests for the contact request messages'''
 	def setUp(self):
 		Config.load()
-		DbClient.useTestTables()
 		CryptoClient.useTestKeyring()
 		TestUtils.setupKeyring(["key1_private", "key2_public"])
 		TestUtils.setupOwnProfile("46944E14D24D711B") # id of key1
@@ -27,7 +26,7 @@ class ContactRequestTest(unittest.TestCase):
 		self.assertIsNotNone(bac, "couldn't decode the data")
 		self.assertEqual(bac.senderId, SENDER, "Sender not right")
 		self.assertEqual(bac.message, INTRO, "Message not right")
-		self.assertTrue(bac.publicKey.decode('utf-8').startswith(KEY_BEGINNING), "Publickey not right")
+		self.assertTrue(bac.publicKey.startswith(KEY_BEGINNING), "Publickey not right")
 
 	def testInvalidContactRequest(self):
 		'''Imagine we've received some kind of invalid content from a stranger,
@@ -72,7 +71,7 @@ class ContactRequestTest(unittest.TestCase):
 		self.assertEqual(bac.senderId, SENDER, "Sender not right")
 		self.assertEqual(bac.introMessage, INTRO, "Message not right")
 		self.assertEqual(bac.senderName, SENDERNAME)
-		self.assertTrue(bac.senderKey.decode('utf-8').startswith(KEY_BEGINNING), "Publickey not right")
+		self.assertTrue(bac.senderKey.startswith(KEY_BEGINNING), "Publickey not right")
 
 	def testMakingContactResponseNoRecpt(self):
 		INTRO = "Jääääää, why näääät?"
@@ -138,7 +137,6 @@ class StatusNotifyTest(unittest.TestCase):
 	def setUp(self):
 		Config.load()
 		CryptoClient.useTestKeyring()
-		DbClient.useTestTables()
 
 	###################################
 	# Tests for encoding, decoding status notify messages
@@ -157,7 +155,7 @@ class StatusNotifyTest(unittest.TestCase):
 		self.assertEqual(online, bac.online)
 		self.assertEqual(ping, bac.ping)
 		print("profile hash is now", bac.profileHash)
-		self.assertTrue(bac.profileHash.startswith("bcc42c9d276"))
+		self.assertTrue(bac.profileHash.startswith("e3f8f001946"))
 
 
 class InfoRequestTest(unittest.TestCase):
@@ -165,7 +163,6 @@ class InfoRequestTest(unittest.TestCase):
 	def setUp(self):
 		Config.load()
 		CryptoClient.useTestKeyring()
-		DbClient.useTestTables()
 
 	def testProfileRequest(self):
 		m = message.InfoRequestMessage(message.InfoRequestMessage.INFO_PROFILE)
@@ -187,7 +184,7 @@ class InfoResponseTest(unittest.TestCase):
 		bac = message.Message.MessageFromReceivedData(output, False)
 		self.assertIsNotNone(bac, "couldn't decode the data")
 		self.assertEqual(message.InfoRequestMessage.INFO_PROFILE, bac.infoType)
-		mydescription = DbClient.getProfile()['description']
+		mydescription = DbI.getProfile()['description']
 		bacProfile = bac.profile
 		self.assertEqual(mydescription, bacProfile['description'])
 
@@ -197,7 +194,6 @@ class RelayTest(unittest.TestCase):
 	def setUp(self):
 		Config.load()
 		CryptoClient.useTestKeyring()
-		DbClient.useTestTables()
 		TestUtils.setupKeyring(["key1_private", "key2_public"])
 
 	def testMakeUnencryptedRelayMessage(self):
@@ -237,10 +233,10 @@ class ContactReferralTest(unittest.TestCase):
 	def setUp(self):
 		Config.load()
 		CryptoClient.useTestKeyring()
-		DbClient.useTestTables()
 		self.FRIEND_TORID = "zo7quhgn1nq1uppt"
 		FRIEND_KEYID = "3B898548F994C536"
-		DbClient.updateContact(self.FRIEND_TORID, {"status":"trusted",
+		TestUtils.setupOwnProfile("46944E14D24D711B") # id of key1
+		DbI.updateProfile(self.FRIEND_TORID, {"status":"trusted",
 			"keyid":FRIEND_KEYID, "name":"Norbert Jones", "displayName":"Uncle Norbert"})
 		TestUtils.setupKeyring(["key1_private", "key2_public"])
 
@@ -256,7 +252,7 @@ class ContactReferralTest(unittest.TestCase):
 		self.assertEqual(bac.friendId, self.FRIEND_TORID, "Friend id not right")
 		self.assertEqual(bac.friendName, FRIENDNAME, "Friend name not right")
 		self.assertEqual(bac.message, INTRO, "Message not right")
-		self.assertTrue(bac.publicKey.decode('utf-8').startswith(KEY_BEGINNING), "Publickey not right")
+		self.assertTrue(bac.publicKey.startswith(KEY_BEGINNING), "Publickey not right")
 
 
 class ContactReferRequestTest(unittest.TestCase):

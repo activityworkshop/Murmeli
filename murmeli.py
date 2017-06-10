@@ -8,21 +8,30 @@
    and the construction of the main Qt window'''
 
 import os, shutil
-import signal
+import signal, sys
 from PyQt4 import QtGui, QtCore
 from gui import GuiWindow
 from i18n import I18nManager
 from config import Config
 from pages import PageServer
-from dbclient import DbClient
 from torclient import TorClient
 import postmen
 from messageshuffler import MessageShuffler
 from log import LogWindow
 from contactmgr import ContactMaker
+from supersimpledb import MurmeliDb
+from dbinterface import DbI
 
-# Hack to allow Ctrl-C to work
-signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+def closeMurmeli(signal, frame):
+	'''Cleanup method called when Murmeli is killed, eg by Ctrl-C'''
+	print("CloseMurmeli has been called")
+	DbI.releaseDb()
+	TorClient.stopTor()
+	sys.exit(0)
+
+# Bind Ctrl-C to cleanup the database and tor
+signal.signal(signal.SIGINT, closeMurmeli)
 
 class MainWindow(GuiWindow):
 	'''Class for main window'''
@@ -58,6 +67,9 @@ class MainWindow(GuiWindow):
 		# Make sure Tor client is started
 		if not TorClient.isStarted():
 			TorClient.startTor()
+		# Create database instance if not already set
+		if not DbI.hasDbSet():
+			DbI.setDb(MurmeliDb(Config.getSsDatabaseFile()))
 		# Make sure the status of the contacts matches our keyring
 		missingKeyNames = ContactMaker.checkAllContactsKeys()
 		if missingKeyNames:
@@ -122,7 +134,7 @@ class MainWindow(GuiWindow):
 		# Tell postmen to stop working
 		for p in self.postmen:
 			p.stop()
-		DbClient.stopDatabase()
+		DbI.releaseDb()
 		TorClient.stopTor()
 		self.clearWebCache()
 		event.accept()

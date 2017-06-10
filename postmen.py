@@ -3,10 +3,11 @@
 import threading
 import socks
 from PyQt4 import QtCore # for timer
-from dbclient import DbClient
+from dbinterface import DbI
 from dbnotify import DbMessageNotifier
 from message import StatusNotifyMessage
 from contacts import Contacts
+import imageutils
 
 
 class OutgoingPostman(QtCore.QObject):
@@ -53,11 +54,11 @@ class OutgoingPostman(QtCore.QObject):
 		'''Queue a status notification message for each of our trusted contacts'''
 		print("Outgoing postman is broadcasting the status...")
 		self._broadcasting = True
-		profileList = DbClient.getContactList("trusted")
+		profileList = DbI.getTrustedProfiles()
 		if profileList:
 			msg = StatusNotifyMessage(online=True, ping=True, profileHash=None)
 			msg.recipients = [c['torid'] for c in profileList]
-			DbClient.addMessageToOutbox(msg)
+			DbI.addToOutbox(msg)
 		self._broadcasting = False
 		self.flushSignal.emit()
 
@@ -76,10 +77,12 @@ class OutgoingPostman(QtCore.QObject):
 		messagesFound = 0
 		messagesSent  = 0
 		failedRecpts = set()
-		for m in DbClient.getOutboxMessages():
+		for m in DbI.getOutboxMessages():
+			if not m:
+				continue	# message already deleted
 			messagesFound += 1
 			# Get recipient, timestamp, relays, message
-			message = m['message']
+			message = imageutils.stringToBytes(m['message'])
 			sendTimestamp = m.get('timestamp', None) # not used yet
 			# TODO: if the timestamp is too old, then either just delete the message (if it's not to be queued) or move to inbox
 
@@ -89,17 +92,17 @@ class OutgoingPostman(QtCore.QObject):
 				sendSuccess = self.RC_MESSAGE_FAILED if recipient in failedRecpts else self.sendMessage(message, recipient)
 				if sendSuccess == self.RC_MESSAGE_IGNORED:
 					print("Dealt with message so I should delete it from the db:", m["_id"])
-					DbClient.deleteMessageFromOutbox(m["_id"])
+					DbI.deleteFromOutbox(m["_id"])
 				elif sendSuccess == self.RC_MESSAGE_SENT:
 					print("Sent message so I should delete it from the db:", m["_id"])
-					DbClient.deleteMessageFromOutbox(m["_id"])
+					DbI.deleteFromOutbox(m["_id"])
 					messagesSent += 1
 					testMsg = "Message sent, type was %s and recipient was %s" % (m.get("msgType", "unknown"), recipient)
 					# TODO: Pass these values with the signal as an object, not a string
 					self.emit(QtCore.SIGNAL("messageSent"), testMsg)
 				elif not m.get('queue', False):
 					print("I failed to send a message but it shouldn't be queued, deleting it")
-					DbClient.deleteMessageFromOutbox(m["_id"])
+					DbI.deleteFromOutbox(m["_id"])
 					failedRecpts.add(recipient)
 				else:
 					print("I failed to send but I'll keep the message and try again later")
@@ -117,11 +120,12 @@ class OutgoingPostman(QtCore.QObject):
 							failedRecipientsForThisMessage.add(rRecipient)
 					if failedRecipientsForThisMessage:
 						# Update m with the recipientList = failedRecipientsForThisMessage
-						DbClient.updateOutboxMessage(m["_id"], {"recipientList" : list(failedRecipientsForThisMessage)})
+						DbI.updateOutboxMessage(m["_id"], {"recipientList" : list(failedRecipientsForThisMessage)})
 						print("I failed to send a relay to:", failedRecipientsForThisMessage)
 					else:
 						print("I managed to relay everything, now deleting relay message")
-						DbClient.deleteMessageFromOutbox(m["_id"])
+						DbI.deleteFromOutbox(m["_id"])
+			# TODO: Wait inbetween sending to avoid overloading the network
 
 		# TODO: Does the parent even need to know when a send has worked?
 		if messagesSent > 0:
@@ -135,7 +139,7 @@ class OutgoingPostman(QtCore.QObject):
 
 	def sendMessage(self, message, whoto):
 		# Check status of recipient in profile
-		profile = DbClient.getProfile(whoto, False)
+		profile = DbI.getProfile(whoto)
 		status = profile['status'] if profile else "deleted"
 		if status in ['deleted', 'blocked']:
 			return self.RC_MESSAGE_IGNORED
@@ -185,7 +189,7 @@ class IncomingPostman(threading.Thread):
 
 	def checkInbox(self):
 		'''Look in the inbox for messages'''
-		messagesFound = DbClient.getInboxMessages().count()
+		messagesFound = len(DbI.getInboxMessages())
 		self.somethingInInbox = (messagesFound > 0)
 		self.parent.postmanKnock() # only once
 

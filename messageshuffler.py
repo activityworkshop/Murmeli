@@ -3,7 +3,7 @@
 from PyQt4.QtCore import QObject, SIGNAL
 from message import Message, StatusNotifyMessage, InfoRequestMessage,\
 	InfoResponseMessage
-from dbclient import DbClient
+from dbinterface import DbI
 from contactmgr import ContactMaker
 from contacts import Contacts
 from config import Config
@@ -23,14 +23,7 @@ class MessageShuffler:
 	   moving them to the inbox (if the message is for us) or to the outbox
 	   (if we should relay it to a friend) or even just ignore it if it's not for us'''
 
-	ownTorId = None
 	_tannoy = None
-
-	@staticmethod
-	def getOwnTorId():
-		if not MessageShuffler.ownTorId:
-			MessageShuffler.ownTorId = DbClient.getOwnTorId()
-		return MessageShuffler.ownTorId
 
 	@staticmethod
 	def getTannoy():
@@ -43,10 +36,10 @@ class MessageShuffler:
 		'''Examine the received message and decide what to do with it'''
 		print("Hmm, the MessageShuffler has been given some kind of message")
 		# We must be online if we've received a message
-		Contacts.instance().comeOnline(MessageShuffler.getOwnTorId())
+		Contacts.instance().comeOnline(DbI.getOwnTorid())
 
 		if message.senderMustBeTrusted:
-			sender = DbClient.getProfile(message.senderId, False)
+			sender = DbI.getProfile(message.senderId)
 			if not sender or sender['status'] != "trusted":
 				return # throw message away
 
@@ -70,7 +63,7 @@ class MessageShuffler:
 			bytesToSend = message.createOutput(None)
 			if bytesToSend:
 				# add to outbox, but don't send it back to message.senderId
-				DbClient.addRelayMessageToOutbox(bytesToSend, message.senderId)
+				DbI.addRelayMessageToOutbox(bytesToSend, message.senderId)
 		else:
 			print("Hä?  What kind of encryption type is that? ", message.encryptionType)
 
@@ -82,7 +75,7 @@ class MessageShuffler:
 
 	@staticmethod
 	def _isProfileStatusOk(torId, allowedStatuses):
-		profile = DbClient.getProfile(torId, False)
+		profile = DbI.getProfile(torId)
 		status = profile.get("status", None) if profile else None
 		return status in allowedStatuses
 
@@ -94,31 +87,31 @@ class MessageShuffler:
 			# Check config to see whether we accept these or not
 			if Config.getProperty(Config.KEY_ALLOW_FRIEND_REQUESTS) \
 			  and MessageShuffler._isProfileStatusOk(message.senderId, [None, 'requested', 'untrusted', 'trusted']):
-				# Call DbClient to store new message in inbox
+				# Store new message in inbox
 				rowToStore = {"messageType":"contactrequest", "fromId":message.senderId,
 					"fromName":message.senderName, "messageBody":message.message,
 					"publicKey":message.publicKey, "timestamp":message.timestamp,
 					"messageRead":False, "messageReplied":False}
-				DbClient.addMessageToInbox(rowToStore)
+				DbI.addToInbox(rowToStore)
 		elif message.messageType == Message.TYPE_CONTACT_RESPONSE:
 			print("It's an unencrypted contact response, so it must be a refusal")
-			sender = DbClient.getProfile(message.senderId, False)
+			sender = DbI.getProfile(message.senderId)
 			if MessageShuffler._isProfileStatusOk(message.senderId, ['requested']):
 				senderName = sender.get("displayName") if sender else ""
 				ContactMaker.handleReceiveDeny(message.senderId)
-				# Call DbClient to store new message in inbox
+				# Store new message in inbox
 				rowToStore = {"messageType":"contactresponse", "fromId":message.senderId,
 					"fromName":senderName, "messageBody":"", "accepted":False,
 					"messageRead":False, "messageReplied":False, "timestamp":message.timestamp,
-					"recipients":MessageShuffler.getOwnTorId()}
-				DbClient.addMessageToInbox(rowToStore)
+					"recipients":DbI.getOwnTorid()}
+				DbI.addToInbox(rowToStore)
 		else:
 			print("Hä?  It's unencrypted but the message type is", message.messageType)
 
 	@staticmethod
 	def dealWithAsymmetricMessage(message):
 		'''Decide what to do with the given asymmetric message'''
-		if message.senderId == MessageShuffler.getOwnTorId():
+		if message.senderId == DbI.getOwnTorid():
 			print("*** Shouldn't receive a message from myself!")
 			return
 		# Sort message according to type
@@ -127,35 +120,35 @@ class MessageShuffler:
 			if MessageShuffler._isProfileStatusOk(message.senderId, ['pending', 'requested', 'untrusted']):
 				print(message.senderName, "'s public key is", message.senderKey)
 				ContactMaker.handleReceiveAccept(message.senderId, message.senderName, message.senderKey)
-				# Call DbClient to store new message in inbox
+				# Store new message in inbox
 				rowToStore = {"messageType":"contactresponse", "fromId":message.senderId,
 					"fromName":message.senderName, "messageBody":message.introMessage, "accepted":True,
 					"messageRead":False, "messageReplied":False, "timestamp":message.timestamp,
-					"recipients":MessageShuffler.getOwnTorId()}
-				DbClient.addMessageToInbox(rowToStore)
+					"recipients":DbI.getOwnTorid()}
+				DbI.addToInbox(rowToStore)
 			elif MessageShuffler._isProfileStatusOk(message.senderId, [None, 'blocked']):
 				print("Received a contact response but I didn't send them a request!")
 				print("Encrypted contents are:", message.encryptedContents)
 				rowToStore = {"messageType":"contactresponse", "fromId":message.senderId,
 					"fromName":message.senderName, "messageBody":message.introMessage, "accepted":True,
 					"timestamp":message.timestamp, "encryptedMsg":message.encryptedContents}
-				DbClient.addMessageToPendingContacts(rowToStore)
+				DbI.addMessageToPendingContacts(rowToStore)
 		elif message.messageType == Message.TYPE_STATUS_NOTIFY:
 			if message.online:
 				print("One of our contacts has just come online- ", message.senderId,
 					"and hash is", message.profileHash)
-				prof = DbClient.getProfile(userid=message.senderId, extend=False)
+				prof = DbI.getProfile(message.senderId)
 				if prof:
 					storedHash = prof.get("profileHash", "empty")
 					if message.profileHash != storedHash:
 						reply = InfoRequestMessage(infoType=InfoRequestMessage.INFO_PROFILE)
 						reply.recipients = [message.senderId]
-						DbClient.addMessageToOutbox(reply)
+						DbI.addToOutbox(reply)
 					if message.ping:
 						print("Now sending back a pong, too")
 						reply = StatusNotifyMessage(online=True, ping=False, profileHash=None)
 						reply.recipients = [message.senderId]
-						DbClient.addMessageToOutbox(reply)
+						DbI.addToOutbox(reply)
 					else:
 						print("It's already a pong so I won't reply")
 				Contacts.instance().comeOnline(message.senderId)
@@ -167,12 +160,12 @@ class MessageShuffler:
 			if MessageShuffler._isProfileStatusOk(message.senderId, ['trusted']):
 				reply = InfoResponseMessage(message.messageType)
 				reply.recipients = [message.senderId]
-				DbClient.addMessageToOutbox(reply)
+				DbI.addToOutbox(reply)
 		elif message.messageType == Message.TYPE_INFO_RESPONSE:
 			if message.profile and MessageShuffler._isProfileStatusOk(message.senderId, ['trusted', 'untrusted']):
 				if message.profileHash:
 					message.profile['profileHash'] = message.profileHash
-				DbClient.updateContact(message.senderId, message.profile)
+				DbI.updateProfile(message.senderId, message.profile, Config.getWebCacheDir())
 		elif message.messageType == Message.TYPE_FRIEND_REFERRAL:
 			print("I've received a friend referral message from:", message.senderId, "for:", message.friendName)
 			if MessageShuffler._isProfileStatusOk(message.senderId, ['trusted']):
@@ -181,7 +174,7 @@ class MessageShuffler:
 					"friendId":message.friendId, "friendName":message.friendName,
 					"messageBody":message.message, "publicKey":message.publicKey,
 					"timestamp":message.timestamp, "messageRead":False, "messageReplied":False}
-				DbClient.addMessageToInbox(rowToStore)
+				DbI.addToInbox(rowToStore)
 		elif message.messageType == Message.TYPE_FRIENDREFER_REQUEST:
 			print("I've received a friend referral request from:", message.senderId, "who wants me to refer:", message.friendId)
 			if MessageShuffler._isProfileStatusOk(message.senderId, ['trusted']):
@@ -190,7 +183,7 @@ class MessageShuffler:
 					"friendId":message.friendId, "friendName":message.friendName,
 					"messageBody":message.message, "publicKey":message.publicKey,
 					"timestamp":message.timestamp, "messageRead":False, "messageReplied":False}
-				DbClient.addMessageToInbox(rowToStore)
+				DbI.addToInbox(rowToStore)
 		elif message.messageType == Message.TYPE_ASYM_MESSAGE:
 			print("It's a general kind of message, this should go in the Inbox, right?")
 			if MessageShuffler._isProfileStatusOk(message.senderId, ['trusted', 'untrusted']):
@@ -198,7 +191,7 @@ class MessageShuffler:
 					"messageBody":message.messageBody, "timestamp":message.timestamp,
 					"messageRead":False, "messageReplied":False,
 					"recipients":message.sendTo, "parentHash":message.replyToHash}
-				DbClient.addMessageToInbox(rowToStore)
+				DbI.addToInbox(rowToStore)
 				Contacts.instance().comeOnline(message.senderId)
 		else:
 			# It's another asymmetric message type
