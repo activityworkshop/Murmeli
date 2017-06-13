@@ -151,15 +151,17 @@ class DbInterfaceTest(unittest.TestCase):
 		self.assertEqual(msg0.get("conversationid", 0), 101, "Id should now be 101")
 
 		# Add another message with the parent hash referring to the first one
-		DbI.addToInbox({"messageBody":"Gorgonzola and Camembert", "timestamp":"middle 2017",
+		DbI.addToInbox({"messageBody":"Fried egg sandwich", "timestamp":"middle 2017",
 			"fromId":"ABC312", "parentHash":'40e98bae7a811c23b59b89bd0f11b0a0'})
-		msg1 = DbI.getInboxMessages()[1]
+		msg1 = DbI.getInboxMessages()[0]
+		self.assertTrue("Fried egg" in msg1.get("messageBody", ""), "Fried egg should be first")
 		self.assertEqual(msg1.get("conversationid", 0), 101, "Id should now also be 101")
 
 		# Add another message with an unrecognised parent hash
-		DbI.addToInbox({"messageBody":"Gorgonzola and Camembert", "timestamp":"late 2017",
+		DbI.addToInbox({"messageBody":"Red wine and chocolate", "timestamp":"late 2017",
 			"fromId":"ABC312", "parentHash":'ff3'})
-		msg2 = DbI.getInboxMessages()[2]
+		msg2 = DbI.getInboxMessages()[0]
+		self.assertTrue("Red wine" in msg2.get("messageBody", ""), "Red wine should be first")
 		self.assertEqual(msg2.get("conversationid", 0), 102, "Id should take 102")
 
 		# done

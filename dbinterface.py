@@ -103,28 +103,30 @@ class DbI:
 	#### Adding and updating profiles ####
 
 	@staticmethod
-	def updateProfile(torid, inProfile):
+	def updateProfile(torid, inProfile, picOutputPath=None):
 		'''Updates the profile with the given torid,
 		   or adds a new profile if it's not found.
-		   Also exports the avatar if profile picture has changed'''
+		   Also exports the avatar to the picOutputPath
+		   if the profile picture has changed'''
 		# If the profile pic path has changed, then we need to load the file
 		givenprofilepicpath = inProfile.get('profilepicpath', None)
 		pic_changed = False
 		if givenprofilepicpath and os.path.exists(givenprofilepicpath):
+			pic_changed = True
 			# check if it's the same path as already stored
 			storedProfile = DbI.getProfile(torid)
 			if not storedProfile or storedProfile['profilepicpath'] != givenprofilepicpath:
 				# file path has been given, so need to make a string from the bytes
 				picBytes = imageutils.makeThumbnailBinary(givenprofilepicpath)
 				inProfile['profilepic'] = imageutils.bytesToString(picBytes)
-				pic_changed = True
 		elif inProfile.get('profilepic', None):
 			pic_changed = True
+
 		inProfile['torid'] = torid
 		if not DbI.db_instance.addOrUpdateProfile(inProfile):
 			print("FAILED to update profile!")
-		if pic_changed:
-			DbI._updateAvatar(torid, Config.getWebCacheDir())
+		if pic_changed and picOutputPath:
+			DbI._updateAvatar(torid, picOutputPath)
 		if inProfile.get("status", None) in ["blocked", "deleted", "trusted"]:
 			DbI.updateContactList(Config.getProperty(Config.KEY_ALLOW_FRIENDS_TO_SEE_FRIENDS))
 			# TODO: Could this flag come as input instead of from Config?
@@ -185,7 +187,10 @@ class DbI:
 	@staticmethod
 	def getInboxMessages():
 		# TODO: Other sorting/paging options?
-		return DbI.db_instance.getInbox()
+		allMsgs = DbI.db_instance.getInbox()
+		# Reverse to get newest first
+		allMsgs.reverse()
+		return allMsgs
 
 	@staticmethod
 	def addToInbox(message):
