@@ -95,3 +95,8 @@ a.reversebutton, input.reversebutton {
 	visibility:hidden;
 }
 
+.msgLevel0 {}
+.msgLevel1 {margin-left:40px}
+.msgLevel2 {margin-left:80px}
+.msgLevel3 {margin-left:120px}
+.msgLevel4 {margin-left:160px}

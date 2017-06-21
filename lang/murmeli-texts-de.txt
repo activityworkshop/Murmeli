@@ -139,6 +139,7 @@ underline=Unterstrichen
 accept=Verbinden
 reject=Ablehnen
 delete=Löschen
+reply=Beantworten
 addall=+ Alle
 removeall=- Alle
 search=Suchen

@@ -139,6 +139,7 @@ underline=Underline
 accept=Accept
 reject=Reject
 delete=Delete
+reply=Reply
 addall=+ All
 removeall=- All
 search=Search

@@ -17,6 +17,7 @@ from compose import ComposeWindow
 import message
 from fingerprints import FingerprintChecker
 from contacts import Contacts
+from messageutils import MessageTree
 
 
 class Bean:
@@ -393,7 +394,7 @@ class MessagesPageSet(PageSet):
 		# Get contact requests, responses and mails from inbox
 		conreqs = []
 		conresps = []
-		mails = []
+		mailTree = MessageTree()
 		if messageList is None:
 			messageList = DbI.getInboxMessages()
 		# TODO: Paging options?
@@ -430,7 +431,8 @@ class MessagesPageSet(PageSet):
 				else:
 					m['recipients'] = unknownRecpt
 					m['replyAll'] = ""
-				mails.append(m)
+				mailTree.addMsg(m)
+		mails = mailTree.build()
 		bodytext = self.messagestemplate.getHtml({"contactrequests":conreqs, "contactresponses":conresps,
 			"mails":mails, "nummessages":len(conreqs)+len(conresps)+len(mails),
 			"webcachedir" : Config.getWebCacheDir()})
