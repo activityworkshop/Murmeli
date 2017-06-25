@@ -93,9 +93,15 @@ class DbInterfaceTest(unittest.TestCase):
 		self.checkMessageIndexes(DbI.getOutboxMessages())
 		self.assertTrue(DbI.deleteFromOutbox(0))
 		self.assertEqual(len(DbI.getOutboxMessages()), 1, "Outbox should only have 1 message (1 empty)")
-		nonEmptyMessages = [msg for msg in DbI.getOutboxMessages() if msg]
+		nonEmptyMessages = DbI.getOutboxMessages()
 		self.assertEqual(len(nonEmptyMessages), 1, "Outbox should only have 1 non-empty message")
 		self.assertEqual(nonEmptyMessages[0]["_id"], 1, "Message 0 should have index 1")
+		# See if index of third message is properly assigned
+		DbI.addToOutbox(ExampleMessage(["ABC312"], "A third message"))
+		self.assertEqual(len(DbI.getOutboxMessages()), 2, "Outbox should have 2 messages again")
+		self.assertEqual(DbI.getOutboxMessages()[0]["_id"], 1, "Message 0 should have index 1")
+		self.assertEqual(DbI.getOutboxMessages()[1]["_id"], 2, "Message 1 should have index 2")
+
 		# done
 		DbI.releaseDb()
 

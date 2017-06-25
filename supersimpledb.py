@@ -185,8 +185,9 @@ class MurmeliDb:
 	def addMessageToInbox(self, msg):
 		with threading.Condition(self.dbWriteLock):
 			# Get current number in inbox, use this as index for msg
-			msg['_id'] = len(self.getInbox())
-			self.db.getTable(MurmeliDb.TABLE_INBOX).append(msg)
+			inbox = self.db.getTable(MurmeliDb.TABLE_INBOX)
+			msg['_id'] = len(inbox)
+			inbox.append(msg)
 
 	def deleteFromInbox(self, index):
 		with threading.Condition(self.dbWriteLock):
@@ -205,8 +206,9 @@ class MurmeliDb:
 	def addMessageToOutbox(self, msg):
 		with threading.Condition(self.dbWriteLock):
 			# Get current number in outbox, use this as index for msg
-			msg['_id'] = len(self.getOutbox())
-			self.db.getTable(MurmeliDb.TABLE_OUTBOX).append(msg)
+			outbox = self.db.getTable(MurmeliDb.TABLE_OUTBOX)
+			msg['_id'] = len(outbox)
+			outbox.append(msg)
 
 	def deleteFromOutbox(self, index):
 		with threading.Condition(self.dbWriteLock):

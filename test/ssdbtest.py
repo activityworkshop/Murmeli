@@ -96,9 +96,17 @@ class SsdbTest(unittest.TestCase):
 		db.addMessageToOutbox({"uncertainty":3.4})
 		self.assertEqual(len(db.getInbox()), 1, "Inbox should have one message")
 		self.assertEqual(len(db.getOutbox()), 1, "Outbox should have one message")
+		self.assertEqual(db.getOutbox()[0]['_id'], 0, "First message has index 0")
 		# Delete message from outbox
 		self.assertTrue(db.deleteFromOutbox(0))
 		self.assertEqual(len(db.getOutbox()), 0, "Outbox should be empty")
+		# Add another and check its id
+		db.addMessageToOutbox({"another":"tantalising factlet"})
+		self.assertEqual(len(db.getOutbox()), 1, "Outbox should have one message")
+		msg = db.getOutbox()[0]
+		self.assertEqual(msg['_id'], 1, "First empty message has index 1 now")
+		self.assertTrue(db.deleteFromOutbox(msg['_id']))
+		self.assertEqual(len(db.getOutbox()), 0, "Outbox should be empty again")
 
 
 	def testMurmeliProfiles(self):
