@@ -5,7 +5,7 @@ import socks
 from PyQt4 import QtCore # for timer
 from dbinterface import DbI
 from dbnotify import DbMessageNotifier
-from message import StatusNotifyMessage
+from message import StatusNotifyMessage, RelayingMessage
 from contacts import Contacts
 import imageutils
 
@@ -107,6 +107,29 @@ class OutgoingPostman(QtCore.QObject):
 				else:
 					print("I failed to send but I'll keep the message and try again later")
 					failedRecpts.add(recipient)
+					# Message couldn't be sent directly, but maybe there are some relays we can use
+					relays = m.get('relays', None)
+					sentSomething = False
+					if relays:
+						# TODO: Check current timestamp and compare with sendTimestamp (types?)
+						failedrelays = set()
+						signedRelayMessage = m.get('relayMessage', None)
+						if not signedRelayMessage:
+							# Take the message bytes and make a RelayingMessage out of them to get the signed output
+							signedRelayMessage = RelayingMessage(message).createOutput(None)
+							# TODO: Store signedRelayMessage back in m
+						# Loop over each relay in the list and try to send to each one
+						for relay in relays:
+							# Should we try to send if this relay is not online?  On the other hand it doesn't hurt.
+							if relay not in failedRecpts and self.sendMessage(signedRelayMessage, relay) == self.RC_MESSAGE_SENT:
+								print("Sent message to relay '%s'" % relay)
+								sentSomething = True
+								messagesSent += 1
+							else:
+								# Send failed, so add this relay to the list of failed ones
+								failedrelays.add(relay)
+						if sentSomething:
+							DbI.updateOutboxMessage(m["_id"], {"relays" : list(failedrelays)})
 			else:
 				# There isn't a direct recipient, so let's hope there's a recipient list
 				recipientList = m.get('recipientList', None)
