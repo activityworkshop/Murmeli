@@ -34,3 +34,7 @@ Given the problems which were caused by the use of Mongo as a database, it was n
 to replace it with a different, simpler solution.  This may not provide all the power of Mongo's
 functionality (in particular its search), but it avoids many of the authentication issues,
 service starting/stopping issues, cross-platform incompatibilities and resource usage.
+
+* There's an intermittent "Segmentation Fault" problem somewhere in the Qt library which is proving difficult to reproduce.
+* Even though Murmeli doesn't use Mongo as a database any more, it still relies on pymongo for its bson processing.  It would be nice to remove this dependency.
+* It appears that all the Qt4 code needs porting to use Qt5 (in particular the signals- and slots-handling) and possibly also porting the use of QtWebKit to the new QtWebEngine.
