@@ -28,7 +28,7 @@ All feedback and help is very welcome.
 * The messages view doesn't yet have any sorting or paging options, it just shows all messages with the newest first.
 * It's not yet clear whether each message has been 'read' or is 'unread'.
 * Search results are not yet highlighted.
-* The punch-card now has added punch.
+* The punch-card now has added punch (but github doesn't show punch-cards any more).
 
 Given the problems which were caused by the use of Mongo as a database, it was necessary
 to replace it with a different, simpler solution.  This may not provide all the power of Mongo's
@@ -37,4 +37,4 @@ service starting/stopping issues, cross-platform incompatibilities and resource 
 
 * There's an intermittent "Segmentation Fault" problem somewhere in the Qt library which is proving difficult to reproduce.
 * Even though Murmeli doesn't use Mongo as a database any more, it still relies on pymongo for its bson processing.  It would be nice to remove this dependency.
-* It appears that all the Qt4 code needs porting to use Qt5 (in particular the signals- and slots-handling) and possibly also porting the use of QtWebKit to the new QtWebEngine.
+* It appears that all the Qt4 code needs porting to use Qt5 (in particular the signals- and slots-handling) and also porting the use of QtWebKit to the new QtWebEngine.
