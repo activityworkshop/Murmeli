@@ -1,6 +1,6 @@
 '''Module for shuffling messages around when received'''
 
-from PyQt4.QtCore import QObject, SIGNAL
+from PyQt5.QtCore import QObject, pyqtSignal
 from message import Message, StatusNotifyMessage, InfoRequestMessage,\
 	InfoResponseMessage
 from dbinterface import DbI
@@ -11,11 +11,12 @@ from config import Config
 
 class MessageTannoy(QObject):
 	'''Object to emit signals about incoming messages'''
+	updateSignal = pyqtSignal(str)
 	def __init__(self):
 		QObject.__init__(self)
 	def shout(self, msgText):
 		# TODO: Pass these values with the signal as an object, not a string
-		self.emit(SIGNAL("messageReceived"), msgText)
+		self.updateSignal.emit(msgText)
 
 
 class MessageShuffler:

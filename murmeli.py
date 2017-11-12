@@ -9,7 +9,7 @@
 
 import os, shutil
 import signal, sys
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtWidgets, QtCore, QtGui
 from gui import GuiWindow
 from i18n import I18nManager
 from config import Config
@@ -50,7 +50,7 @@ class MainWindow(GuiWindow):
 		self.addToolBar(self.toolbar)
 		self.setContextMenuPolicy(QtCore.Qt.NoContextMenu)
 		# status bar
-		self.statusbar = QtGui.QStatusBar(self)
+		self.statusbar = QtWidgets.QStatusBar(self)
 		self.statusbar.setObjectName("statusbar")
 		self.setStatusBar(self.statusbar)
 
@@ -62,8 +62,8 @@ class MainWindow(GuiWindow):
 		# we want to be notified of Config changes
 		Config.registerSubscriber(self)
 		self.postmen = [postmen.IncomingPostman(self), postmen.OutgoingPostman(self)]
-		self.connect(self.postmen[1], QtCore.SIGNAL("messageSent"), self.logPanel.notifyLogEvent)
-		self.connect(MessageShuffler.getTannoy(), QtCore.SIGNAL("messageReceived"), self.logPanel.notifyLogEvent)
+		self.postmen[1].messageSentSignal.connect(self.logPanel.notifyLogEvent)
+		MessageShuffler.getTannoy().updateSignal.connect(self.logPanel.notifyLogEvent)
 		# Make sure Tor client is started
 		if not TorClient.isStarted():
 			TorClient.startTor()
@@ -74,11 +74,11 @@ class MainWindow(GuiWindow):
 		missingKeyNames = ContactMaker.checkAllContactsKeys()
 		if missingKeyNames:
 			warningTexts = [I18nManager.getText("warning.keysnotfoundfor")] + missingKeyNames
-			QtGui.QMessageBox.warning(self, "Murmeli", "\n   ".join(warningTexts))
+			QtWidgets.QMessageBox.warning(self, "Murmeli", "\n   ".join(warningTexts))
 
 	def makeToolbar(self, deflist):
 		'''Given a list of (image, method, tooltip), make a QToolBar with those actions'''
-		toolbar = QtGui.QToolBar(self)
+		toolbar = QtWidgets.QToolBar(self)
 		toolbar.setFloatable(False)
 		toolbar.setMovable(False)
 		toolbar.setIconSize(QtCore.QSize(48, 48))

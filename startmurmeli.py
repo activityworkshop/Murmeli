@@ -9,10 +9,11 @@ from dbinterface import DbI
 
 # First, check PyQt availability, if we haven't got that then we can't show any gui
 try:
-	from PyQt4 import QtGui, QtCore
+	from PyQt5 import QtGui, QtCore
+	from PyQt5.QtWidgets import QApplication
 except ImportError:
 	print("ERROR: Can't find PyQt.  Please install both Qt and PyQt.")
-	print("       On linux you may be able to do this by installing a package called 'python3-qt4'.")
+	print("       On linux you may be able to do this by installing a package called 'python3-qt5'.")
 	exit()
 
 # Try and load the config from the default file
@@ -57,7 +58,7 @@ if not canStartMurmeli:
 # Get ready to launch a Qt GUI
 I18nManager.setLanguage()
 Config.registerSubscriber(I18nManager.instance())
-app = QtGui.QApplication([])
+app = QApplication([])
 
 # Now start either the wizard or the main gui
 if canStartMurmeli:

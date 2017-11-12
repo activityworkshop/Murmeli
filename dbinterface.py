@@ -168,7 +168,7 @@ class DbI:
 		thisHash = dbutils.calculateHash({"body":message['messageBody'],
 			"timestamp":message['timestamp'], "senderId":message['fromId']})
 		# Check id or hash of message to make sure we haven't got it already!
-		for pc in DbI.db_instance.getPendingContacts():
+		for pc in DbI.db_instance.getPendingContactMessages():
 			if pc and pc.get("messageHash") == thisHash:
 				return
 		message['messageHash'] = thisHash

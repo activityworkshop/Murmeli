@@ -19,7 +19,8 @@ def hexStr(b):
 
 def bytesToString(b):
 	'''Turn a series of bytes into a string'''
-	return "".join([hexStr(i) for i in b])
+	if b:
+		return "".join([hexStr(i) for i in b])
 
 def stringToBytes(s):
 	'''Turn a string into a series of bytes'''

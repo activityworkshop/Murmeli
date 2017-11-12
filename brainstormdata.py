@@ -2,14 +2,15 @@
    Used as part of Murmeli for visualizing the contact graph
    All code copyright activityworkshop.net, see license.txt file'''
 
-from PyQt4 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui
+from PyQt5.QtWidgets import QGraphicsItem, QGraphicsTextItem
 
-class Edge(QtGui.QGraphicsItem):
+class Edge(QGraphicsItem):
 	'''Class to represent a single edge in the graph'''
 
 	def __init__(self, sourceNode, destNode):
 		'''Constructor giving the two nodes'''
-		QtGui.QGraphicsItem.__init__(self)
+		QGraphicsItem.__init__(self)
 
 		self.sourcePoint = QtCore.QPointF()
 		self.destPoint = QtCore.QPointF()
@@ -74,7 +75,7 @@ class Edge(QtGui.QGraphicsItem):
 		painter.drawLine(line)
 
 
-class Node(QtGui.QGraphicsTextItem):
+class Node(QGraphicsTextItem):
 	'''Class to represent a single node in the graph'''
 	ATTRACTION_FACTOR = 0.25
 	REPULSION_FACTOR = 1800
@@ -85,12 +86,12 @@ class Node(QtGui.QGraphicsTextItem):
 
 	def __init__(self, graphWidget, nodeid, label, x=0, y=0):
 		'''Constructor'''
-		QtGui.QGraphicsTextItem.__init__(self, " " + label + " ")
+		QGraphicsTextItem.__init__(self, " " + label + " ")
 		self.graph = graphWidget
 		self.label = label
-		self.setFlag(QtGui.QGraphicsItem.ItemIsMovable)
+		self.setFlag(QGraphicsItem.ItemIsMovable)
 		try:
-			self.setFlag(QtGui.QGraphicsItem.ItemSendsGeometryChanges) # required from version 4.6
+			self.setFlag(QGraphicsItem.ItemSendsGeometryChanges) # required from version 4.6
 		except: pass # version 4.5 throws error
 		self.setPos(float(x), float(y))
 		self.velx = 0.0
@@ -162,7 +163,7 @@ class Node(QtGui.QGraphicsTextItem):
 	def paint(self, painter, option, widget):
 		painter.setBrush(QtCore.Qt.white)
 		painter.drawEllipse(self.boundingRect())
-		QtGui.QGraphicsTextItem.paint(self, painter, option, widget)
+		QGraphicsTextItem.paint(self, painter, option, widget)
 
 	def shape(self):
 		'''Define shape for mouse click detection'''
@@ -171,10 +172,10 @@ class Node(QtGui.QGraphicsTextItem):
 		return path
 
 	def itemChange(self, change, value):
-		if change == QtGui.QGraphicsItem.ItemPositionChange:
+		if change == QGraphicsItem.ItemPositionChange:
 			if self.graph != None:
 				self.graph.itemMoved()
-		return QtGui.QGraphicsItem.itemChange(self, change, value)
+		return QGraphicsItem.itemChange(self, change, value)
 
 
 class Storm:

@@ -3,7 +3,7 @@
 import os
 import time
 import re
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtWidgets, QtCore, QtGui
 from i18n import I18nManager
 from config import Config
 from cryptoclient import CryptoClient
@@ -13,42 +13,42 @@ from murmeli import MainWindow
 from supersimpledb import MurmeliDb
 
 
-class StartupWizard(QtGui.QMainWindow):
+class StartupWizard(QtWidgets.QMainWindow):
 	'''Class to act as the main startup wizard using Qt'''
 
 	def __init__(self, *args):
 		'''Constructor'''
-		QtGui.QMainWindow.__init__(*(self,) + args)
+		QtWidgets.QMainWindow.__init__(*(self,) + args)
 		self.setWindowTitle(I18nManager.getText("startupwizard.title"))
 
 		# main pane with the stack and the button panel
-		mainpane = QtGui.QWidget(self)
-		mainlayout = QtGui.QVBoxLayout()
+		mainpane = QtWidgets.QWidget(self)
+		mainlayout = QtWidgets.QVBoxLayout()
 		mainpane.setLayout(mainlayout)
 		self.setCentralWidget(mainpane)
 
-		self.cardstack = QtGui.QStackedWidget(mainpane)
+		self.cardstack = QtWidgets.QStackedWidget(mainpane)
 
 		self.cardPanels = [IntroPanel(), DependenciesPanel(), PathsPanel(), ServicesPanel(), \
 			KeygenPanel(), FinishedPanel()]
 		for card in self.cardPanels:
 			panel = card.getPanel()
 			self.cardstack.addWidget(panel)
-			self.connect(panel, QtCore.SIGNAL("redrawNavButtons()"), self.redrawButtons)
+			card.redrawNavButtonsSignal.connect(self.redrawButtons)
 
 		# button panel at the bottom
-		buttonPanel = QtGui.QFrame(self.cardstack)
-		buttonPanel.setFrameStyle(QtGui.QFrame.Box + QtGui.QFrame.Sunken)
-		self.backButton = QtGui.QPushButton(I18nManager.getText("button.exit"))
-		self.nextButton = QtGui.QPushButton(I18nManager.getText("button.next"))
-		layout = QtGui.QHBoxLayout()
+		buttonPanel = QtWidgets.QFrame(self.cardstack)
+		buttonPanel.setFrameStyle(QtWidgets.QFrame.Box + QtWidgets.QFrame.Sunken)
+		self.backButton = QtWidgets.QPushButton(I18nManager.getText("button.exit"))
+		self.nextButton = QtWidgets.QPushButton(I18nManager.getText("button.next"))
+		layout = QtWidgets.QHBoxLayout()
 		layout.addWidget(self.backButton)
 		layout.addStretch(1)
 		layout.addWidget(self.nextButton)
 		buttonPanel.setLayout(layout)
 
-		self.connect(self.backButton, QtCore.SIGNAL("clicked()"), self.backButtonClicked)
-		self.connect(self.nextButton, QtCore.SIGNAL("clicked()"), self.nextButtonClicked)
+		self.backButton.clicked.connect(self.backButtonClicked)
+		self.nextButton.clicked.connect(self.nextButtonClicked)
 
 		mainlayout.addWidget(self.cardstack)
 		mainlayout.addWidget(buttonPanel)
@@ -104,9 +104,12 @@ class StartupWizard(QtGui.QMainWindow):
 
 # ================WizardPanel===================
 
-class WizardPanel:
+class WizardPanel(QtCore.QObject):
+	redrawNavButtonsSignal = QtCore.pyqtSignal()
+	def __init__(self):
+		QtCore.QObject.__init__(self)
 	def getPanel(self):
-		return QtGui.QLabel("<i>TODO</i>")
+		return QtWidgets.QLabel("<i>TODO</i>")
 	def prepare(self):
 		pass
 	def finish(self):
@@ -116,7 +119,7 @@ class WizardPanel:
 
 	def _makeHeadingLabel(self, token):
 		'''Convenience method for making a bold label for each panel'''
-		label = QtGui.QLabel(I18nManager.getText(token))
+		label = QtWidgets.QLabel(I18nManager.getText(token))
 		boldFont = label.font()
 		boldFont.setWeight(QtGui.QFont.Bold)
 		boldFont.setPointSize(boldFont.pointSize() + 1)
@@ -146,35 +149,36 @@ class WizardPanel:
 
 class IntroPanel(WizardPanel):
 	'''First panel for introduction with a logo'''
+	def __init__(self):
+		WizardPanel.__init__(self)
 	def getName(self):
 		return "intro"
 	def getPanel(self):
 		# first panel, for intro
-		self.panel = QtGui.QWidget()
-		layout = QtGui.QVBoxLayout()
+		self.panel = QtWidgets.QWidget()
+		layout = QtWidgets.QVBoxLayout()
 		# Make labels in advance
 		self.labels = {}
 		for k in ["heading", "description1", "description2", "description3"]:
-			self.labels[k] = QtGui.QLabel()
+			self.labels[k] = QtWidgets.QLabel()
 		self._makeLabelHeading(self.labels["heading"])
 		layout.addWidget(self.labels["heading"])
 		self.labels["description1"].setWordWrap(True)
 		layout.addWidget(self.labels["description1"])
 		# language selection
-		langFrame = QtGui.QWidget()
-		langLayout = QtGui.QHBoxLayout()
+		langFrame = QtWidgets.QWidget()
+		langLayout = QtWidgets.QHBoxLayout()
 		langFrame.setLayout(langLayout)
-		self.languageCombo = QtGui.QComboBox()
+		self.languageCombo = QtWidgets.QComboBox()
 		self.languageCombo.addItem("English")
 		self.languageCombo.addItem("Deutsch")
 		self.languageCombo.setCurrentIndex(1 if Config.getProperty(Config.KEY_LANGUAGE) == "de" else 0)
-		self.panel.connect(self.languageCombo, QtCore.SIGNAL("currentIndexChanged(int)"),
-			self.languageChanged)
+		self.languageCombo.currentIndexChanged.connect(self.languageChanged)
 		langLayout.addStretch(1)
 		langLayout.addWidget(self.languageCombo)
 		layout.addWidget(langFrame)
 		# image
-		logoimage = QtGui.QLabel()
+		logoimage = QtWidgets.QLabel()
 		logoimage.setPixmap(QtGui.QPixmap("images/intrologo.png"))
 		logoimage.setAlignment(QtCore.Qt.AlignHCenter) # horizontally centred
 		layout.addWidget(logoimage)
@@ -192,7 +196,7 @@ class IntroPanel(WizardPanel):
 		selectedLang = ["en", "de"][self.languageCombo.currentIndex()]
 		Config.setProperty(Config.KEY_LANGUAGE, selectedLang)
 		self.redrawLabels()
-		self.panel.emit(QtCore.SIGNAL('redrawNavButtons()'))
+		self.redrawNavButtonsSignal.emit()
 
 	def getButtonKeys(self):
 		'''exit button, not back'''
@@ -204,6 +208,7 @@ class DependenciesPanel(WizardPanel):
 	def getName(self):
 		return "dependencies"
 	def __init__(self):
+		WizardPanel.__init__(self)
 		# some resources
 		self.yesPixmap   = QtGui.QPixmap("images/tick-yes.png")
 		self.noPixmap    = QtGui.QPixmap("images/tick-no.png")
@@ -211,19 +216,19 @@ class DependenciesPanel(WizardPanel):
 
 	def getPanel(self):
 		# second panel, for dependencies
-		panel1 = QtGui.QWidget()
-		layout = QtGui.QVBoxLayout()
+		panel1 = QtWidgets.QWidget()
+		layout = QtWidgets.QVBoxLayout()
 		self.labels = {}
 		for k in ["heading", "intro", "pyqt", "gnupg", "alsotor"]:
-			self.labels[k] = QtGui.QLabel()
+			self.labels[k] = QtWidgets.QLabel()
 		self._makeLabelHeading(self.labels["heading"])
 		layout.addWidget(self.labels["heading"])
 		layout.addStretch(1)
 		layout.addWidget(self.labels["intro"])
-		depsbox = QtGui.QFrame(panel1)
-		sublayout = QtGui.QFormLayout()
+		depsbox = QtWidgets.QFrame(panel1)
+		sublayout = QtWidgets.QFormLayout()
 		depKeys = ['pyqt', 'gnupg']
-		self.dependencyLabels = [QtGui.QLabel() for k in depKeys]
+		self.dependencyLabels = [QtWidgets.QLabel() for k in depKeys]
 		for i, k in enumerate(depKeys):
 			sublayout.addRow(self.labels[k], self.dependencyLabels[i])
 			self.dependencyLabels[i].depkey = k
@@ -263,32 +268,34 @@ class DependenciesPanel(WizardPanel):
 # ================Paths=====================
 
 class PathsPanel(WizardPanel):
+	def __init__(self):
+		WizardPanel.__init__(self)
 	def getName(self):
 		return "paths"
 	def getPanel(self):
 		# third panel, for paths
-		self.panel = QtGui.QWidget()
-		layout = QtGui.QVBoxLayout()
+		self.panel = QtWidgets.QWidget()
+		layout = QtWidgets.QVBoxLayout()
 		self.labels = {}
 		for k in ["heading", "configfile", "datadir", "torexe", "gpgexe", "considerencryption"]:
-			self.labels[k] = QtGui.QLabel()
+			self.labels[k] = QtWidgets.QLabel()
 		self._makeLabelHeading(self.labels["heading"])
 		layout.addWidget(self.labels["heading"])
-		filepathbox = QtGui.QFrame(self.panel)
-		sublayout = QtGui.QFormLayout()
+		filepathbox = QtWidgets.QFrame(self.panel)
+		sublayout = QtWidgets.QFormLayout()
 		sublayout.setSpacing(20)
 		# Path to config file (read-only, can't be changed)
-		sublayout.addRow(self.labels["configfile"], QtGui.QLabel(Config.CONFIG_FILE_PATH))
+		sublayout.addRow(self.labels["configfile"], QtWidgets.QLabel(Config.CONFIG_FILE_PATH))
 		# Path to data directory (input)
 		datadir = Config.getProperty(Config.KEY_DATA_DIR)
 		if not datadir or datadir == "": datadir = Config.DEFAULT_DATA_PATH
-		self.dataDirectoryField = QtGui.QLineEdit(datadir)
+		self.dataDirectoryField = QtWidgets.QLineEdit(datadir)
 		sublayout.addRow(self.labels["datadir"], self.dataDirectoryField)
 		# Path to tor exe (input)
-		self.torPathField = QtGui.QLineEdit("tor")
+		self.torPathField = QtWidgets.QLineEdit("tor")
 		sublayout.addRow(self.labels["torexe"], self.torPathField)
 		# Path to gnupg exe (input)
-		self.gpgPathField = QtGui.QLineEdit("gpg")
+		self.gpgPathField = QtWidgets.QLineEdit("gpg")
 		sublayout.addRow(self.labels["gpgexe"], self.gpgPathField)
 		# MAYBE: Could we check whether these paths exist, and guess alternative ones if not?
 		# TODO: Browse buttons to select exes and directory
@@ -312,7 +319,7 @@ class PathsPanel(WizardPanel):
 					os.makedirs(direc)
 		except:
 			# Couldn't create one of the directories, so show error and stay on this panel
-			QtGui.QMessageBox.critical(self.panel,
+			QtWidgets.QMessageBox.critical(self.panel,
 				I18nManager.getText("gui.dialogtitle.error"),
 				I18nManager.getText("startupwizard.paths.failedtocreatedatadir"))
 			return False
@@ -330,6 +337,7 @@ class ServicesPanel(WizardPanel):
 	def getName(self):
 		return "services"
 	def __init__(self):
+		WizardPanel.__init__(self)
 		# some resources
 		self.yesPixmap   = QtGui.QPixmap("images/tick-yes.png")
 		self.noPixmap    = QtGui.QPixmap("images/tick-no.png")
@@ -339,19 +347,19 @@ class ServicesPanel(WizardPanel):
 
 	def getPanel(self):
 		# fourth panel, for services
-		self.panel = QtGui.QWidget()
-		layout = QtGui.QVBoxLayout()
+		self.panel = QtWidgets.QWidget()
+		layout = QtWidgets.QVBoxLayout()
 		self.labels = {}
 		for k in ["heading", "intro", "database", "gpg", "tor", "abouttostart"]:
-			self.labels[k] = QtGui.QLabel()
+			self.labels[k] = QtWidgets.QLabel()
 		self._makeLabelHeading(self.labels["heading"])
 		layout.addWidget(self.labels["heading"])
 		layout.addStretch(1)
 		layout.addWidget(self.labels["intro"])
-		servicesbox = QtGui.QFrame(self.panel)
-		sublayout = QtGui.QFormLayout()
+		servicesbox = QtWidgets.QFrame(self.panel)
+		sublayout = QtWidgets.QFormLayout()
 		servicesKeys = ['database', 'gpg', 'tor']
-		self.servicesLabels = [QtGui.QLabel() for k in servicesKeys]
+		self.servicesLabels = [QtWidgets.QLabel() for k in servicesKeys]
 		for i, k in enumerate(servicesKeys):
 			sublayout.addRow(self.labels[k], self.servicesLabels[i])
 			self.servicesLabels[i].servicekey = k
@@ -382,8 +390,8 @@ class ServicesPanel(WizardPanel):
 		# start checking services
 		self.checkerThread = ServiceStarterThread()
 		# Connect signals and slots so we know what's happened
-		self.panel.connect(self.checkerThread, QtCore.SIGNAL("finished()"), self.finishedServiceCheck)
-		self.panel.connect(self.checkerThread, QtCore.SIGNAL("updated()"), self.updatedServiceCheck)
+		self.checkerThread.finished.connect(self.finishedServiceCheck)
+		self.checkerThread.updatedSignal.connect(self.updatedServiceCheck)
 		self.checkerThread.start()
 
 	def updatedServiceCheck(self):
@@ -404,7 +412,7 @@ class ServicesPanel(WizardPanel):
 			("allstarted" if self.allOk else "notallstarted")))
 		self.labels["abouttostart"].setVisible(False)
 		# emit signal back to controller
-		self.panel.emit(QtCore.SIGNAL('redrawNavButtons()'))
+		self.redrawNavButtonsSignal.emit()
 
 	def cancel(self):
 		'''Coming back from services start - need to stop them'''
@@ -415,6 +423,7 @@ class ServicesPanel(WizardPanel):
 
 class ServiceStarterThread(QtCore.QThread):
 	'''Separate thread for starting the services and reporting back'''
+	updatedSignal = QtCore.pyqtSignal()
 	def run(self):
 		# Check each of the services in turn
 		self.successFlags = {}
@@ -422,11 +431,11 @@ class ServiceStarterThread(QtCore.QThread):
 		time.sleep(0.5)
 		DbI.setDb(MurmeliDb(Config.getSsDatabaseFile()))
 		self.successFlags['database'] = True
-		self.emit(QtCore.SIGNAL('updated()'))
+		self.updatedSignal.emit()
 		time.sleep(0.5)
 		# Gnupg
 		self.successFlags['gpg'] = CryptoClient.checkGpg()
-		self.emit(QtCore.SIGNAL('updated()'))
+		self.updatedSignal.emit()
 		time.sleep(1)
 		# Tor
 		if TorClient.startTor():
@@ -447,16 +456,18 @@ class ServiceStarterThread(QtCore.QThread):
 
 class KeygenPanel(WizardPanel):
 	'''Panel for generation of own keypair'''
+	def __init__(self):
+		WizardPanel.__init__(self)
 	def getName(self):
 		return "keygen"
 	def getPanel(self):
 		# fifth panel, for generating keypair
-		self.panel = QtGui.QWidget()
-		layout = QtGui.QVBoxLayout()
+		self.panel = QtWidgets.QWidget()
+		layout = QtWidgets.QVBoxLayout()
 		self.labels = {}
 		for k in ["heading", "introemptykeyring", "introsinglekey", "introselectkey", "param.name",
 		  "param.email", "param.comment", "mighttakeawhile"]:
-			self.labels[k] = QtGui.QLabel()
+			self.labels[k] = QtWidgets.QLabel()
 		self._makeLabelHeading(self.labels["heading"])
 		layout.addWidget(self.labels["heading"])
 		layout.addStretch(0.3)
@@ -464,30 +475,30 @@ class KeygenPanel(WizardPanel):
 		layout.addWidget(self.labels["introsinglekey"])
 		layout.addWidget(self.labels["introselectkey"])
 		# list of keypairs already in the keyring
-		self.keypairListWidget = QtGui.QListWidget()
+		self.keypairListWidget = QtWidgets.QListWidget()
 		layout.addWidget(self.keypairListWidget)
 		# parameters for generation of new keypair
-		self.keygenbox = QtGui.QFrame(self.panel)
-		sublayout = QtGui.QFormLayout()
+		self.keygenbox = QtWidgets.QFrame(self.panel)
+		sublayout = QtWidgets.QFormLayout()
 		self.keygenParamBoxes = {}
 		for param in ['name', 'email', 'comment']:  # (no password)
-			editbox = QtGui.QLineEdit()
+			editbox = QtWidgets.QLineEdit()
 			self.keygenParamBoxes[param] = editbox
 			sublayout.addRow(self.labels["param." + param], editbox)
 		self.keygenbox.setLayout(sublayout)
 		sublayout.setFormAlignment(QtCore.Qt.AlignHCenter) # horizontally centred
 		layout.addWidget(self.keygenbox)
 		# 'Generate' button
-		self.generateButton = QtGui.QPushButton(I18nManager.getText("button.generate"))
-		self.panel.connect(self.generateButton, QtCore.SIGNAL("clicked()"), self.generateKeyClicked)
+		self.generateButton = QtWidgets.QPushButton(I18nManager.getText("button.generate"))
+		self.generateButton.clicked.connect(self.generateKeyClicked)
 		layout.addWidget(self.generateButton)
 		# Progress bar (actually more of an hourglass)
-		self.generateProgressbar = QtGui.QProgressBar()
+		self.generateProgressbar = QtWidgets.QProgressBar()
 		self.generateProgressbar.setVisible(False)
 		self.generateProgressbar.setMinimum(0)
 		self.generateProgressbar.setMaximum(0)
-		progressPanel = QtGui.QFrame()
-		sublayout = QtGui.QHBoxLayout()
+		progressPanel = QtWidgets.QFrame()
+		sublayout = QtWidgets.QHBoxLayout()
 		sublayout.addStretch(0.4)
 		sublayout.addWidget(self.generateProgressbar)
 		sublayout.addStretch(0.4)
@@ -568,7 +579,7 @@ class KeygenPanel(WizardPanel):
 			comment = "no comment"
 		# Launch new keygen thread
 		self.keygenThread = KeyGenThread(name, email, comment)
-		self.panel.connect(self.keygenThread, QtCore.SIGNAL("finished()"), self.finishedKeyGen)
+		self.keygenThread.finished.connect(self.finishedKeyGen)
 		self.keygenThread.start()
 
 	def finishedKeyGen(self):
@@ -577,7 +588,7 @@ class KeygenPanel(WizardPanel):
 		self.generateButton.setEnabled(True)
 		# Update list with new key
 		self.prepare()
-		self.panel.emit(QtCore.SIGNAL('redrawNavButtons()'))
+		self.redrawNavButtonsSignal.emit()
 
 	def getButtonsEnabled(self):
 		return (True, self.keypairListWidget.count() > 0)
@@ -601,21 +612,23 @@ class KeyGenThread(QtCore.QThread):
 
 class FinishedPanel(WizardPanel):
 	'''Last panel, just to confirm that the wizard is finished'''
+	def __init__(self):
+		WizardPanel.__init__(self)
 	def getName(self):
 		return "finished"
 	def getPanel(self):
 		# last panel, for confirmation
-		panel5 = QtGui.QWidget()
-		layout = QtGui.QVBoxLayout()
+		panel5 = QtWidgets.QWidget()
+		layout = QtWidgets.QVBoxLayout()
 		self.labels = {}
 		for k in ["heading", "congrats", "nowstart"]:
-			self.labels[k] = QtGui.QLabel()
+			self.labels[k] = QtWidgets.QLabel()
 		self._makeLabelHeading(self.labels["heading"])
 		layout.addWidget(self.labels["heading"])
 		layout.addStretch(1)
 		layout.addWidget(self.labels["congrats"])
 		layout.addWidget(self.labels["nowstart"])
-		self.youridLabel = QtGui.QLabel()
+		self.youridLabel = QtWidgets.QLabel()
 		layout.addWidget(self.youridLabel)
 		layout.addStretch(1)
 		panel5.setLayout(layout)
@@ -638,7 +651,7 @@ if __name__ == "__main__":
 	Config.load()
 	I18nManager.setLanguage()
 	Config.registerSubscriber(I18nManager.instance())
-	app = QtGui.QApplication([])
+	app = QtWidgets.QApplication([])
 
 	win = StartupWizard()
 	win.show()

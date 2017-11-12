@@ -1,90 +1,50 @@
 '''Helper classes for GUI functions'''
 
-from PyQt4 import QtGui, QtWebKit, QtCore, QtNetwork
+from PyQt5 import QtGui, QtCore
+from PyQt5.QtWidgets import QMainWindow, QSplitter
+from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
 from dbnotify import DbResourceNotifier
 
 
-class DummyReply(QtNetwork.QNetworkReply):
-	'''An empty reply class to cancel a network request that we want to deal with another way'''
-	def __init__(self, parent):
-		QtNetwork.QNetworkReply.__init__(self, parent)
-		self.content = "<html>This is empty</html>"
-	def abort(self):
-		pass
-	def bytesAvailable(self):
-		return 0
-	def isSequential(self):
-		return True
-	def readData(self, maxSize):
-		pass
 
-
-class NavigationInterceptor(QtNetwork.QNetworkAccessManager):
-	'''Class for network manager, to intercept network calls'''
-	def __init__(self, parent):
-		QtNetwork.QNetworkAccessManager.__init__(self)
-		self.parent = parent
-
-	def createRequest(self, oper, request, formData):
-		'''Intercept requests from the web view'''
-		path = str(request.url().toString())
-		if path.startswith("file://"):
-			if "avatar" in path:
-				print("Going to createRequest for avatar:", path)
-			return QtNetwork.QNetworkAccessManager.createRequest(self, oper, request, formData)
-		paramd = {}
-		if formData:
-			paramStrings = bytes(formData.readAll()).decode("utf-8").split("&")
-			paramList = [s.split("=") for s in paramStrings if s]
-			print("paramList is:", paramList)
-			paramd = {k : bytes(QtCore.QByteArray.fromPercentEncoding(v.replace("+", " "))).decode("utf-8") for k, v in paramList}
-		self.parent.navigateTo(path, paramd)
-		# abandon request
-		dummyResponse = DummyReply(self)
-		dummyResponse.abort()
-		return dummyResponse
-
-
-class Webpage(QtWebKit.QWebPage):
+class Webpage(QWebEnginePage):
 	'''Class for webpage'''
-	# is this class necessary at all?
-	def acceptNavigationRequest(self, frame, request, navtype):
-		print("accept navigation request:", request.url().toString())
-		if navtype == QtWebKit.QWebPage.NavigationTypeFormSubmitted:
-			print("It's a form submit to", request.url().toString())
-			return True
-		retval = QtWebKit.QWebPage.acceptNavigationRequest(self, frame, request, navtype)
-		return retval
+	def __init__(self):
+		QWebEnginePage.__init__(self)
 
-# Shell around a WebView, connecting with the NavigationInterceptor
-class WebShell(QtWebKit.QWebView):
-	def __init__(self, parent):
-		QtWebKit.QWebView.__init__(self)
-		self.parent = parent
-		self.navInterceptor = NavigationInterceptor(parent)
-		self.setPage(Webpage())
-		self.page().setLinkDelegationPolicy(QtWebKit.QWebPage.DelegateExternalLinks)
-		self.page().setNetworkAccessManager(self.navInterceptor)
-		self.connect(self.page(), QtCore.SIGNAL("linkClicked(const QUrl&)"), parent.slotLinkClicked)
-		DbResourceNotifier.getInstance().addListener(self)
+	def acceptNavigationRequest(self, url, navtype, ismain):
+		if navtype == 2:
+			print("Form submit to", url.fileName())
+		return False
+
+	def setHtml(self, contents):
+		# print("web page setting html to:", contents)
+		QWebEnginePage.setHtml(self, contents, QtCore.QUrl("file://start"))
+
+
+class WebView(QWebEngineView):
+	def __init__(self):
+		QWebEngineView.__init__(self)
+		self._page = Webpage()
+		self.setPage(self._page)
+
+	def setHtml(self, contents):
+		# print("web view setHtml called")
+		return self._page.setHtml(contents)
 
 	def notifyResourceChanged(self, resourcePath):
-		'''A resource has changed, so we need to delete it from the cache'''
-		# Would be nice to just clear this single resource, but clearing all of them works too
-		self.settings().clearMemoryCaches()
+		pass
 
 
-
-class GuiWindow(QtGui.QMainWindow):
+class GuiWindow(QMainWindow):
 	'''Superclass of all the GUI Windows with a WebShell in the middle'''
 	def __init__(self, lowerItem=None):
-		QtGui.QMainWindow.__init__(self)
-		self.webpane = WebShell(self)
+		QMainWindow.__init__(self)
+		self.webpane = WebView()
 		if lowerItem:
-			splitter = QtGui.QSplitter(QtCore.Qt.Vertical)
+			splitter = QSplitter(QtCore.Qt.Vertical)
 			splitter.addWidget(self.webpane)
 			splitter.addWidget(lowerItem)
-			#lowerItem.hide()
 			self.setCentralWidget(splitter)
 		else:
 			self.setCentralWidget(self.webpane)

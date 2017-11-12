@@ -2,16 +2,17 @@
 
 import configparser
 import os.path
-from PyQt4.QtCore import QObject, SIGNAL
+from PyQt5.QtCore import QObject, pyqtSignal
 
 class ConfigTannoy(QObject):
 	'''Class to emit changed signals from the Config class'''
+	updateSignal = pyqtSignal(name="fireUpdated")
 	def __init__(self):
 		QObject.__init__(self)
 	def connectListener(self, sub):
-		self.connect(self, SIGNAL("fireUpdated()"), sub.configUpdated)
+		self.updateSignal.connect(sub.configUpdated)
 	def shout(self):
-		self.emit(SIGNAL("fireUpdated()"))
+		self.updateSignal.emit()
 
 
 class Config():

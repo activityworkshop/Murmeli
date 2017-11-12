@@ -37,4 +37,4 @@ service starting/stopping issues, cross-platform incompatibilities and resource 
 
 * There's an intermittent "Segmentation Fault" problem somewhere in the Qt library which is proving difficult to reproduce.
 * Even though Murmeli doesn't use Mongo as a database any more, it still relies on pymongo for its bson processing.  It would be nice to remove this dependency.
-* It appears that all the Qt4 code needs porting to use Qt5 (in particular the signals- and slots-handling) and also porting the use of QtWebKit to the new QtWebEngine.
+* It was necessary to port all the Qt4 code to use Qt5 (in particular the signals- and slots-handling) and also to port the use of QtWebKit to the new QtWebEngine. Unfortunately this means that Murmeli will no longer run on Debian Stretch.

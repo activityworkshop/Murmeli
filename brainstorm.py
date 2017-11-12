@@ -1,27 +1,28 @@
 '''Brainstorm-derived code for showing Murmeli's contact graph'''
 
 import math
-from PyQt4 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui
+from PyQt5.QtWidgets import QMainWindow, QGraphicsView, QGraphicsScene
 from brainstormdata import Node, Edge, Storm
 
 
-class GraphWidget(QtGui.QGraphicsView):
+class GraphWidget(QGraphicsView):
 	'''Class for the GraphWidget in the middle of the gui'''
 	def __init__(self):
 		'''Constructor'''
-		QtGui.QGraphicsView.__init__(self)
+		QGraphicsView.__init__(self)
 
 		self.timerId = 0
 		self.drawing = False
 
 		scene = Scene(self)
-		scene.setItemIndexMethod(QtGui.QGraphicsScene.NoIndex)
+		scene.setItemIndexMethod(QGraphicsScene.NoIndex)
 		scene.setSceneRect(-350, -250, 700, 500)
 		self.setScene(scene)
-		self.setCacheMode(QtGui.QGraphicsView.CacheBackground)
+		self.setCacheMode(QGraphicsView.CacheBackground)
 		self.setRenderHint(QtGui.QPainter.Antialiasing)
-		self.setTransformationAnchor(QtGui.QGraphicsView.AnchorUnderMouse)
-		self.setResizeAnchor(QtGui.QGraphicsView.AnchorViewCenter)
+		self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
+		self.setResizeAnchor(QGraphicsView.AnchorViewCenter)
 
 		self.storm = None
 		self.scale(0.8, 0.8)
@@ -163,24 +164,24 @@ class GraphWidget(QtGui.QGraphicsView):
 		self.scale(scaleFactor, scaleFactor)
 
 
-class Scene(QtGui.QGraphicsScene):
+class Scene(QGraphicsScene):
 	'''Subclass for graphics scene'''
 	def __init__(self, parent):
-		QtGui.QGraphicsScene.__init__(self, parent)
+		QGraphicsScene.__init__(self, parent)
 
 	# override the mouse event handling to pass unprocessed events upwards
 	def mousePressEvent(self, event):
-		QtGui.QGraphicsScene.mousePressEvent(self, event)
+		QGraphicsScene.mousePressEvent(self, event)
 		if event.button() == QtCore.Qt.RightButton and not event.isAccepted():
 			self.parent().storm.processRightClick(event, self)
 
 
-class Brainstorm(QtGui.QMainWindow):
+class Brainstorm(QMainWindow):
 	'''Main window class for Brainstorm'''
 
 	def __init__(self, windowTitle=None):
 		'''Constructor'''
-		QtGui.QMainWindow.__init__(self)
+		QMainWindow.__init__(self)
 		self._setupUi(windowTitle)
 		self.storm = None
 		self.setStorm(Storm())

@@ -71,7 +71,7 @@
 				</tr></table>
 			</div><br clear="all">
 		{{else}}
-			<p>Weird - not a request or a refer??</p>
+			<p>Weird - not a request or a refer: {{m['messageType']}}?</p>
 		{{endif}}
 	{{endfor}}
 {{endif}}

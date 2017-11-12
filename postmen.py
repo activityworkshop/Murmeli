@@ -2,7 +2,7 @@
 
 import threading
 import socks
-from PyQt4 import QtCore # for timer
+from PyQt5.QtCore import QObject, QTimer, pyqtSignal
 from dbinterface import DbI
 from dbnotify import DbMessageNotifier
 from message import StatusNotifyMessage, RelayingMessage
@@ -10,11 +10,13 @@ from contacts import Contacts
 import imageutils
 
 
-class OutgoingPostman(QtCore.QObject):
+class OutgoingPostman(QObject):
 	'''This class is responsible for occasionally polling the outbox and (if possible)
 	dealing with each of the messages in turn, sending them as appropriate'''
 
-	flushSignal = QtCore.pyqtSignal()
+	# Signals
+	flushSignal = pyqtSignal()
+	messageSentSignal = pyqtSignal(str)
 	# Return codes
 	RC_MESSAGE_SENT    = 1
 	RC_MESSAGE_IGNORED = 2
@@ -22,22 +24,22 @@ class OutgoingPostman(QtCore.QObject):
 
 	def __init__(self, parent):
 		'''Constructor'''
-		QtCore.QObject.__init__(self)
+		QObject.__init__(self)
 		self.parent = parent
 		self._broadcasting = False
 		self._flushing = False
 		self.flushSignal.connect(self.flushOutbox)
 		# Set up timers
-		self.flushTimer = QtCore.QTimer()
-		self.connect(self.flushTimer, QtCore.SIGNAL("timeout()"), self.flushOutbox)
+		self.flushTimer = QTimer()
+		self.flushTimer.timeout.connect(self.flushOutbox)
 		self.flushTimer.start(300000) # flush every 5 minutes
-		self.broadcastTimer = QtCore.QTimer()
-		self.connect(self.broadcastTimer, QtCore.SIGNAL("timeout()"), self.broadcastOnlineStatus)
+		self.broadcastTimer = QTimer()
+		self.broadcastTimer.timeout.connect(self.broadcastOnlineStatus)
 		self.broadcastTimer.start(350000) # broadcast about every 5 minutes
 		# Register myself as listener to the message notifier
 		DbMessageNotifier.getInstance().addListener(self)
 		# Trigger a broadcast after 30 seconds
-		QtCore.QTimer.singleShot(30000, self.broadcastOnlineStatus)
+		QTimer.singleShot(30000, self.broadcastOnlineStatus)
 
 
 	def notifyMessagesChanged(self):
@@ -99,7 +101,7 @@ class OutgoingPostman(QtCore.QObject):
 					messagesSent += 1
 					testMsg = "Message sent, type was %s and recipient was %s" % (m.get("msgType", "unknown"), recipient)
 					# TODO: Pass these values with the signal as an object, not a string
-					self.emit(QtCore.SIGNAL("messageSent"), testMsg)
+					self.messageSentSignal.emit(testMsg)
 				elif not m.get('queue', False):
 					print("I failed to send a message but it shouldn't be queued, deleting it")
 					DbI.deleteFromOutbox(m["_id"])

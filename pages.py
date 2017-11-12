@@ -1,10 +1,10 @@
-'''Module for the pages provided  by the system'''
+'''Module for the pages provided by the system'''
 
 import re               # for regular expressions
 import os.path
 import shutil
 import datetime
-from PyQt4 import QtGui # for file selection
+from PyQt5.QtWidgets import QFileDialog # for file selection (move somewhere else?)
 from i18n import I18nManager
 from config import Config
 from dbinterface import DbI
@@ -71,7 +71,6 @@ class PageSet:
 	def getDomain(self):
 		return self.domain
 
-	# TODO: Maybe some images need to be extracted from mongo to the web cache.
 	def requirePageResource(self, resource):
 		'''Require that the specified resource should be copied from web to the cache directory'''
 		cacheDir = Config.getWebCacheDir()
@@ -81,6 +80,7 @@ class PageSet:
 			srcPath = os.path.join("web", resource)
 			# TODO: This fails if destPath directory doesn't exist - eg if Config has become blank?
 			if os.path.exists(srcPath):
+				assert os.path.exists(cacheDir)
 				shutil.copy(srcPath, destPath)
 			else: print("OUCH - failed to copy resource '%s' from web!" % resource)
 
@@ -134,7 +134,7 @@ class PageSet:
 				return "%d-%02d-%02d %02d:%02d" % (sendTime.year, sendTime.month, sendTime.day,
 					sendTime.hour, sendTime.minute)
 		except TypeError:
-			print("Expected a float timestamp, found", type(tstamp))
+			print("Expected a float timestamp, found", type(tstamp), repr(tstamp))
 		if isinstance(tstamp, str):
 			return tstamp
 		return ""
@@ -510,7 +510,7 @@ class SpecialFunctions(PageSet):
 		if url == "/selectprofilepic":
 			# Get home directory for file dialog
 			homedir = os.path.expanduser("~/")
-			fname = QtGui.QFileDialog.getOpenFileName(view, I18nManager.getText("gui.dialogtitle.openimage"),
+			fname = QFileDialog.getOpenFileName(view, I18nManager.getText("gui.dialogtitle.openimage"),
 				homedir, I18nManager.getText("gui.fileselection.filetypes.jpg"))
 			if fname:
 				view.page().mainFrame().evaluateJavaScript("updateProfilePic('" + fname + "');")
