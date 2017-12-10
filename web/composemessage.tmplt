@@ -77,7 +77,7 @@ function send() {
 <p style="align:right"><a class='reversebutton' href="/closewindow">{{langs['button.cancel']}}</a> 
 or <a class='reversebutton' href="javascript:send()">{{langs['button.send']}}</a></p>
 
-<form id="sendForm" action="http://murmeli/compose/send" method="post">
+<form id="sendForm" action="http://murmeli/compose/send" method="get">
 	<input type="hidden" name="sendto" value="">
 	<input type="hidden" name="messagebody" value="">
 	<input type="hidden" name="parenthash" value="{{parenthash}}">

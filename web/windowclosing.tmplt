@@ -1,5 +1,5 @@
 <body>
-<form action='http://murmeli/closewindow' method='post' id='closeForm'></form>
+<form action='http://murmeli/closewindow' method='get' id='closeForm'></form>
 
 <div class="genericbox" style='margin-top:100px;text-align:center'>
 	<p>Message sent</p>

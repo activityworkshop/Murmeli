@@ -36,6 +36,7 @@ class PageServer:
 		self.addPageSet(SettingsPageSet())
 		self.addPageSet(ComposePageSet())
 		self.addPageSet(SpecialFunctions())
+		self._openWindows = []
 
 	def addPageSet(self, ps):
 		self.pageSets[ps.getDomain()] = ps
@@ -48,6 +49,8 @@ class PageServer:
 			cw.setPageServer(self)
 			cw.showPage("<html></html>")
 			cw.navigateTo(path, params)
+			# TODO: Remove the closed windows from the list
+			self._openWindows.append(cw)
 			return
 
 		server = self.pageSets.get(domain)
@@ -570,7 +573,7 @@ class ComposePageSet(PageSet):
 		self.closingtemplate = PageTemplate('windowclosing')
 
 	def servePage(self, view, url, params):
-		print("Compose: %s, params %s" % (url, ",".join(params)))
+		print("Compose: %s, params %s" % (url, repr(params)))
 		if url == "/start":
 			self.requirePageResources(['default.css', 'jquery-3.1.1.js'])
 			DbI.exportAllAvatars(Config.getWebCacheDir())

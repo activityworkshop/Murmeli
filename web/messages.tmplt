@@ -5,7 +5,7 @@
 	{
 		msgTmp = (accept ? "{{langs["messages.prompt.contactaccept"]}}" : "{{langs["messages.prompt.contactreject"]}}");
 		var msg=[name].reduce(_r, msgTmp);
-		showMessage(msg + ":<form action='http://murmeli/messages/send' method='post'>"
+		showMessage(msg + ":<form action='http://murmeli/messages/send' method='get'>"
 			+ "<input type='hidden' name='messageType' value='contactresponse'>"
 			+ "<input type='hidden' name='accept' value='" + (accept?"1":"0") + "'>"
 			+ "<input type='hidden' name='sendTo' value='" + id + "'>"
@@ -22,7 +22,7 @@
 	{
 		if (msg == "") {msg = '{{langs['messages.delete']}}';}
 		showMessage(msg
-			+ "<form action='http://murmeli/messages/delete/' method='post'>"
+			+ "<form action='http://murmeli/messages/delete/' method='get'>"
 			+ "<input type='hidden' name='msgId' value='" + id + "'>"
 			+ "<input type='submit' class='reversebutton' value='{{langs['button.delete']}}'>"
 			+ "</form>");
@@ -30,7 +30,7 @@
 	function searchMessages()
 	{
 		showMessage("{{langs['messages.searchfor']}}:"
-			+ "<form id='searchForm' action='http://murmeli/messages/search/' method='post'>"
+			+ "<form id='searchForm' action='http://murmeli/messages/search/' method='get'>"
 			+ "<input type='text' name='searchTerm' value='' required='required'>"
 			+ "<input type='submit' class='reversebutton' value='{{langs['button.search']}}' onclick='return checkSearch()'>"
 			+ "</form>");

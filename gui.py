@@ -4,17 +4,23 @@ from PyQt5 import QtGui, QtCore
 from PyQt5.QtWidgets import QMainWindow, QSplitter
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
 from dbnotify import DbResourceNotifier
-
+from urllib.parse import parse_qs
 
 
 class Webpage(QWebEnginePage):
 	'''Class for webpage'''
+
+	# Signal
+	linkClickSignal = QtCore.pyqtSignal(QtCore.QUrl)
+
 	def __init__(self):
 		QWebEnginePage.__init__(self)
 
 	def acceptNavigationRequest(self, url, navtype, ismain):
 		if navtype == 2:
 			print("Form submit to", url.fileName())
+		if url:
+			self.linkClickSignal.emit(url)
 		return False
 
 	def setHtml(self, contents):
@@ -23,13 +29,14 @@ class Webpage(QWebEnginePage):
 
 
 class WebView(QWebEngineView):
-	def __init__(self):
+	'''View class which contains a page'''
+	def __init__(self, parent):
 		QWebEngineView.__init__(self)
 		self._page = Webpage()
 		self.setPage(self._page)
+		self._page.linkClickSignal.connect(parent.slotLinkClicked)
 
 	def setHtml(self, contents):
-		# print("web view setHtml called")
 		return self._page.setHtml(contents)
 
 	def notifyResourceChanged(self, resourcePath):
@@ -37,10 +44,10 @@ class WebView(QWebEngineView):
 
 
 class GuiWindow(QMainWindow):
-	'''Superclass of all the GUI Windows with a WebShell in the middle'''
+	'''Superclass of all the GUI Windows with a WebView in the middle'''
 	def __init__(self, lowerItem=None):
 		QMainWindow.__init__(self)
-		self.webpane = WebView()
+		self.webpane = WebView(self)
 		if lowerItem:
 			splitter = QSplitter(QtCore.Qt.Vertical)
 			splitter.addWidget(self.webpane)
@@ -62,8 +69,19 @@ class GuiWindow(QMainWindow):
 		self.webpane.setHtml(contents)
 
 	def slotLinkClicked(self, link):
-		linkParams = {str(k):str(v) for k, v in link.queryItems()}
+		queryDict = parse_qs(link.query())
+		# This dictionary contains lists of strings, we just take the first one in each list
+		linkParams = {str(k):self.takeFirstString(v) for k, v in queryDict.items()}
 		self.navigateTo(str(link.path()), linkParams)
+
+	@staticmethod
+	def takeFirstString(paramValue):
+		'''urllib returns the parameter values as lists, so we need to just take the first one'''
+		if paramValue and type(paramValue) == str:
+			return paramValue
+		if paramValue and type(paramValue) == list:
+			return str(paramValue[0])
+		return ""
 
 	def navigateTo(self, path, params=None):
 		if (path == '/closewindow' or path == 'http://murmeli/closewindow') and not params:

@@ -11,7 +11,7 @@ return formOk;
 </script>
 <p>{{langs['contacts.adduser.intro']}}</p>
 <div style='margin:10px; padding:10px; border:3px solid a87; border-radius:5px; width:80%;'>
-<form action='http://murmeli/contacts/submitaddrequest' method='post'>
+<form action='http://murmeli/contacts/submitaddrequest' method='get'>
 <table border='0'><tr><td>{{langs['contacts.adduser.useridfield']}}</td>
 	<td><input type='text' name='murmeliid' maxlength='16' id='murmeliidfield'></td><tr>
 <tr><td>{{langs['contacts.adduser.displaynamefield']}}</td>
@@ -19,7 +19,7 @@ return formOk;
 <tr><td>{{langs['contacts.adduser.messagefield']}}</td>
 	<td><textarea name='intromessage' rows='3'></textarea></td></tr>
 <tr><td colspan='2'><div style='float:right;clear:both'>
-<a href='/contacts/' class='reversebutton' style='margin:right:40px'>{{langs['button.cancel']}}</a>
+<a href='http://murmeli/contacts/' class='reversebutton' style='margin:right:40px'>{{langs['button.cancel']}}</a>
 <input type='submit' class='reversebutton' value='{{langs['button.send']}}' onclick='return validateForm()'>
 </div>
 </td></tr></table>

@@ -2,7 +2,7 @@
 
 import math
 from PyQt5 import QtCore, QtGui
-from PyQt5.QtWidgets import QMainWindow, QGraphicsView, QGraphicsScene
+from PyQt5.QtWidgets import QMainWindow, QGraphicsView, QGraphicsScene, QStatusBar
 from brainstormdata import Node, Edge, Storm
 
 
@@ -198,7 +198,7 @@ class Brainstorm(QMainWindow):
 		self.resize(551, 343)
 		self.gwidget = GraphWidget()
 		self.setCentralWidget(self.gwidget)
-		self.statusbar = QtGui.QStatusBar(self)
+		self.statusbar = QStatusBar(self)
 		self.statusbar.setObjectName("statusbar")
 		self.setStatusBar(self.statusbar)
 		# texts

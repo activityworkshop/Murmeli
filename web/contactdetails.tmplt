@@ -2,20 +2,20 @@
 	function deleteContact()
 	{
 		showMessage("{{langs['contacts.confirmdelete']}}"
-			+ "<form action='http://murmeli/contacts/{{person['torid']}}/delete' method='post'>"
+			+ "<form action='http://murmeli/contacts/{{person['torid']}}/delete' method='get'>"
 			+ "<input type='submit' class='reversebutton' value='{{langs['button.delete']}}'>"
 			+ "</form>");
 	}
 	function sendRefer(id, referName)
 	{
-		showMessage("<form action='http://murmeli/contacts/{{person['torid']}}/refer/" + id + "' method='post'>"
+		showMessage("<form action='http://murmeli/contacts/{{person['torid']}}/refer/" + id + "' method='get'>"
 			+ "<p>Send referral messages to both '{{person['displayName']}}' and '" + referName + "'</p>"
 			+ "<input type='text' name='introMessage' value=''>"
 			+ "<input type='submit' class='reversebutton' value='{{langs['button.send']}}'></form>");
 	}
 	function requestRefer(id, referName)
 	{
-		showMessage("<form action='http://murmeli/contacts/{{person['torid']}}/requestrefer/" + id + "' method='post'>"
+		showMessage("<form action='http://murmeli/contacts/{{person['torid']}}/requestrefer/" + id + "' method='get'>"
 			+ "<p>Request contact with '" + referName + "' from {{person['displayName']}}</p>"
 			+ "<input type='text' name='introMessage' value=''>"
 			+ "<input type='submit' class='reversebutton' value='{{langs['button.send']}}'></form>");

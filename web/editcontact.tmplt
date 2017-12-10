@@ -4,7 +4,7 @@
 <p>This is the page for {{person['displayName']}}'s details, so these aren't as editable as one's own!
  But maybe you want to add a displayName or a reminder day...</p>
 
-<form name="detailsform" method="post" action="http://murmeli/contacts/{{person['torid']}}/submitedit">
+<form name="detailsform" method="get" action="http://murmeli/contacts/{{person['torid']}}/submitedit">
 <table style="border:1px solid #a87">
 	<tr><td>{{langs['contacts.details.name']}}</td><td>:</td><td>{{person['name']}}</td></tr>
 	<tr><td>{{langs['contacts.details.displayname']}}</td><td>:</td><td><input type="text" value="{{person['displayName']}}" name="displayName"></td></tr>

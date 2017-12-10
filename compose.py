@@ -1,6 +1,6 @@
 '''Module for composing a new message'''
 
-from PyQt5 import QtGui
+from PyQt5.QtWidgets import QStatusBar
 from gui import GuiWindow
 
 # TODO: Maybe this could be moved into gui as an ExtraWindow class
@@ -18,7 +18,7 @@ class ComposeWindow(GuiWindow):
 		'''Initialise the user interface'''
 		self.setObjectName("MainWindow") # TODO: needs to be different from MainWindow?
 		self.resize(551, 343)
-		self.statusbar = QtGui.QStatusBar(self)   # TODO: does compose window need a status bar?
+		self.statusbar = QStatusBar(self)   # TODO: does compose window need a status bar?
 		self.statusbar.setObjectName("statusbar")
 		self.setStatusBar(self.statusbar)
 		# texts
