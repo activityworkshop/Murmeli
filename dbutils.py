@@ -1,6 +1,6 @@
 '''DbUtils for JSON conversion for Murmeli'''
 
-from bson import json_util
+import json
 import hashlib # for calculating checksums
 
 
@@ -11,11 +11,11 @@ def getProfileAsString(profile):
 		for k in profile.keys():
 			if k not in ["status", "displayName", "ownprofile", "torid", "_id", "keyid", "profilepicpath"]:
 				fieldsToCopy[k] = profile[k]
-	return json_util.dumps(fieldsToCopy)
+	return json.dumps(fieldsToCopy)
 
 def convertStringToDictionary(profileString):
 	'''Converts a profile string from an incoming message to a dictionary for update'''
-	return json_util.loads(profileString)
+	return json.loads(profileString)
 
 def calculateHash(dbRow):
 	'''Return a hexadecimal string identifying the state of the database row, for comparison'''

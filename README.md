@@ -35,6 +35,5 @@ to replace it with a different, simpler solution.  This may not provide all the 
 functionality (in particular its search), but it avoids many of the authentication issues,
 service starting/stopping issues, cross-platform incompatibilities and resource usage.
 
-* There's an intermittent "Segmentation Fault" problem somewhere in the Qt library which is proving difficult to reproduce.
-* Even though Murmeli doesn't use Mongo as a database any more, it still relies on pymongo for its bson processing.  It would be nice to remove this dependency.
-* It was necessary to port all the Qt4 code to use Qt5 (in particular the signals- and slots-handling) and also to port the use of QtWebKit to the new QtWebEngine. Unfortunately this means that Murmeli will no longer run on Debian Stretch.
+* There's an intermittent "Segmentation Fault" problem somewhere in the Qt library which is proving difficult to reproduce.  Hopefully this is gone with the move to Qt5, we'll see.
+* It was necessary to port all the Qt4 code to use Qt5 (in particular the signals- and slots-handling) and also to port the use of QtWebKit to the new QtWebEngine. Unfortunately this means that Murmeli will no longer run on Debian Jessie or on the Raspberry Pi.

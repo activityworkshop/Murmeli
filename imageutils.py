@@ -5,12 +5,14 @@ from PIL import Image
 
 def makeThumbnailBinary(picpath):
 	'''Load the given picture file and make a binary from the jpeg thumbnail'''
+	byteFile = None
 	with open(picpath, "rb") as f:
 		im = Image.open(f)
 		im.thumbnail((200, 200), Image.ANTIALIAS)
 		byteFile = BytesIO()
 		im.save(byteFile, format="JPEG")
-	return byteFile.getvalue()
+	if byteFile:
+		return byteFile.getvalue()
 
 def hexStr(b):
 	'''Turn a byte value into a two-digit hex code'''
