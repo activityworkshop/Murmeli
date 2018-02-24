@@ -48,7 +48,7 @@ class FingerprintChecker:
         return (self.codes[1] + self.codes[3] + self.codes[5] + (1 if self.am_requester else 0)) % 6
 
     @staticmethod
-    def get_words(indexes, lang):
+    def _get_words_for_indexes(indexes, lang):
         '''Return the words for the given indexes and language (2-letter code)'''
         # Load text file for lang
         word_file = os.path.join("lang", "codewords-" + lang + ".txt")
@@ -63,18 +63,10 @@ class FingerprintChecker:
     def _get_combo_indexes(self):
         '''Based on the combination index, return a list showing the order in which
            the three options should be shown'''
-        i = self._get_combination_index()
-        if i == 0:
-            return [0, 1, 2]
-        if i == 1:
-            return [0, 2, 1]
-        if i == 2:
-            return [1, 0, 2]
-        if i == 3:
-            return [1, 2, 0]
-        if i == 4:
-            return [2, 0, 1]
-        return [2, 1, 0]
+        combo_index = self._get_combination_index()
+        assert combo_index >= 0 and combo_index <= 5
+        combos = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]]
+        return combos[combo_index]
 
     def get_correct_answer(self):
         '''Return the correct answer expected from the check - an index 0, 1 or 2'''
@@ -97,4 +89,4 @@ class FingerprintChecker:
                 indexes = self._get_indexes(self.wrong_codes1, own_set)
             elif list_index == 2:
                 indexes = self._get_indexes(self.wrong_codes2, own_set)
-        return FingerprintChecker.get_words(indexes, lang)
+        return FingerprintChecker._get_words_for_indexes(indexes, lang)

@@ -30,5 +30,26 @@ class FingerprintTest(unittest.TestCase):
         # Check that our calculated answer is the same as theirs
         self.assertEqual(words1, words2, "word sequences don't match")
 
+    def test_words_from_fingerprints(self):
+        '''Check which words are generated from these fingerprints'''
+        finger1 = "776034AEB5AD7A6FF668E2DD0C2C0FC8ED5118F6"
+        finger2 = "4DA0047805B862B90467AD2B886A6C843297E297"
+        checker1 = FingerprintChecker(finger1, finger2)
+        own_words1 = checker1.get_code_words(True, 0, "en")
+        self.assertTrue("tesselate" in own_words1, "Tesselate found")
+        self.assertEqual(checker1.get_correct_answer(), 0, "0 is correct")
+        other_words1 = [checker1.get_code_words(False, setnum, "en") for setnum in range(3)]
+        self.assertTrue("firework" in other_words1[0], "Firework found")
+        self.assertTrue("alligator" in other_words1[1], "Alligator found")
+        self.assertTrue("telephone" in other_words1[2], "Telephone found")
+        # now from the other side
+        checker2 = FingerprintChecker(finger2, finger1)
+        self.assertEqual(checker2.get_correct_answer(), 1, "1 is correct")
+        own_words2 = checker2.get_code_words(True, 0, "en")
+        self.assertEqual(other_words1[0], own_words2, "checker1 should take index 0")
+        other_words2 = [checker2.get_code_words(False, setnum, "en") for setnum in range(3)]
+        self.assertEqual(other_words2[1], own_words1, "checker2 should take index 1")
+
+
 if __name__ == "__main__":
     unittest.main()
