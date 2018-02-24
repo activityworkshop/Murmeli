@@ -28,7 +28,6 @@ All feedback and help is very welcome.
 * The messages view doesn't yet have any sorting or paging options, it just shows all messages with the newest first.
 * It's not yet clear whether each message has been 'read' or is 'unread'.
 * Search results are not yet highlighted.
-* The punch-card now has added punch (but github doesn't show punch-cards any more).
 
 Given the problems which were caused by the use of Mongo as a database, it was necessary
 to replace it with a different, simpler solution.  This may not provide all the power of Mongo's
@@ -37,3 +36,11 @@ service starting/stopping issues, cross-platform incompatibilities and resource 
 
 * There's an intermittent "Segmentation Fault" problem somewhere in the Qt library which is proving difficult to reproduce.  Hopefully this is gone with the move to Qt5, we'll see.
 * It was necessary to port all the Qt4 code to use Qt5 (in particular the signals- and slots-handling) and also to port the use of QtWebKit to the new QtWebEngine. Unfortunately this means that Murmeli will no longer run on Debian Jessie or on the Raspberry Pi.
+
+## Redesign
+
+This separate branch will explore some possibilities for redesigning the architecture to make things more modular.  In particular, we'll plug together components at runtime instead of coupling them in a fixed way.  This should get rid of the singletons and make things much more testable.  It would also be desirable to plug together a partial system for tests, and for the robot instances a gui-less system without dependencies on Qt.
+
+We'll also focus much more closely on the outputs of pylint and try to name things and indent things in a more pylint-friendly way.
+
+Unfortunately this means that during the reorganisation the main Murmeli gui won't work for a while, as the focus will be on the components and their tests.
