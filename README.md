@@ -37,3 +37,8 @@ service starting/stopping issues, cross-platform incompatibilities and resource 
 
 * There's an intermittent "Segmentation Fault" problem somewhere in the Qt library which is proving difficult to reproduce.  Hopefully this is gone with the move to Qt5, we'll see.
 * It was necessary to port all the Qt4 code to use Qt5 (in particular the signals- and slots-handling) and also to port the use of QtWebKit to the new QtWebEngine. Unfortunately this means that Murmeli will no longer run on Debian Jessie or on the Raspberry Pi.
+
+## Redesign
+There is a new branch called 'redesign' which will explore some possibilities for redesigning the architecture to make things more modular. In particular, separate components will be plugged together at runtime instead of being coupled in a single, fixed way. This should get rid of the singletons and make things much more testable. It would also be desirable to plug together a partial system for tests, and for the robot instances a gui-less system without dependencies on Qt.
+
+These changes are being done in a separate branch, as they are causing substantial (but hopefully temporary!) breakage.  But this means that they're much less visible here on github.
