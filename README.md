@@ -17,9 +17,12 @@ Please try out the code and report back any difficulties encountered.  The tool 
 
 and the tests can be run with (for example):
 
-        cd test
-        PYTHONPATH=.. python3 ssdbtest.py
+        PYTHONPATH=. python3 test/systemtest.py
 
+Linting can be done with any tool of course, for example:
+
+        pylint --max-line-length=100 murmeli
+ 
 All feedback and help is very welcome.
 
 ## Known issues
