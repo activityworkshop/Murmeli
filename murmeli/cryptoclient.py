@@ -42,7 +42,7 @@ class CryptoClient(Component):
             if self.keyring_path and os.path.exists(self.keyring_path):
                 print("keyring exists at:", self.keyring_path)
                 try:
-                    gpgexe = self.call_component(System.COMPNAME_CONFIG, "getProperty",
+                    gpgexe = self.call_component(System.COMPNAME_CONFIG, "get_property",
                                                  key=Config.KEY_GPG_EXE) or "gpg"
                     self.gpg = GPG(gnupghome=self.keyring_path, gpgbinary=gpgexe)
                 except Exception as exc:

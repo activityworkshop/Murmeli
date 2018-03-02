@@ -6,8 +6,6 @@ from murmeli.config import Config
 
 class ConfigTest(unittest.TestCase):
     '''Tests for the config'''
-    def setUp(self):
-        pass
 
     def test_empty_config(self):
         '''Test an empty config file'''

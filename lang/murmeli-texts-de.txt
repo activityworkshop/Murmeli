@@ -51,6 +51,9 @@ toolbar.messages=Nachrichten
 toolbar.calendar=Kalender
 toolbar.settings=Einstellungen
 
+[home]
+title=Murmeli
+
 [contacts]
 title=Kontakte
 online=online
