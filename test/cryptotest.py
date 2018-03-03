@@ -22,8 +22,9 @@ class CryptoTest(unittest.TestCase):
                         "fingerprint as expected")
 
 
-    def _setup_keyring(self, keyring_path, key_names=None):
+    def _setup_keyring(self, keyring_name, key_names=None):
         '''Set up the keyring using the specified public and private key names'''
+        keyring_path = os.path.join("test", "outputdata", keyring_name)
         # Delete the entire keyring
         shutil.rmtree(keyring_path, ignore_errors=True)
         os.makedirs(keyring_path)
