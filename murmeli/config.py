@@ -9,7 +9,7 @@ class Config(Component):
     '''Class to store application-wide config'''
     # Fixed location of config file
     CONFIG_FILE_PATH = os.path.expanduser("~/.murmeli")
-    # Fixed location of config file
+    # Fixed location of data directory
     DEFAULT_DATA_PATH = os.path.expanduser("~/murmeli")
     # keys
     KEY_LANGUAGE = "gui.language"
@@ -39,7 +39,7 @@ class Config(Component):
         '''Start the component'''
         self.load()
 
-    def load(self):
+    def load(self, src_file=None):
         '''Load the configuration from file'''
         # Clear properties, and set default values
         self.properties = {}
@@ -55,7 +55,7 @@ class Config(Component):
         # Locate file in home directory, and load it if found
         try:
             parser = configparser.RawConfigParser()
-            parser.read(os.path.expanduser(Config.CONFIG_FILE_PATH))
+            parser.read(src_file or Config.CONFIG_FILE_PATH)
             for sec in parser.sections():
                 for opt in parser.options(sec):
                     self.properties[sec + '.' + opt] = parser.get(sec, opt)
@@ -79,7 +79,7 @@ class Config(Component):
     def set_property(self, key, value):
         '''Set the value of the specified property and broadcast the change'''
         self.properties[key] = value
-        # Config.tannoy.shout()
+        # TODO: Broadcast to registered listeners
 
     def get_database_dir(self):
         '''Get the database directory'''
@@ -110,7 +110,7 @@ class Config(Component):
         '''Stop the component'''
         self.save()
 
-    def save(self):
+    def save(self, dest_file=None):
         '''Save the config to file'''
         writer = configparser.RawConfigParser()
         for prop in self.properties:
@@ -121,7 +121,7 @@ class Config(Component):
                     writer.add_section(section)
                 writer.set(section, prop[dotpos+1:], self.properties[prop])
         try:
-            with open(Config.CONFIG_FILE_PATH, 'w') as configfile:
+            with open(dest_file or Config.CONFIG_FILE_PATH, 'w') as configfile:
                 writer.write(configfile)
         except OSError as exc:
             print("*** FAILED to save config!", exc)
