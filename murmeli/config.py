@@ -25,15 +25,7 @@ class Config(Component):
     def __init__(self, parent):
         Component.__init__(self, parent, System.COMPNAME_CONFIG)
         self.properties = {}
-
-    @staticmethod
-    def found_config_file():
-        '''Return True if the config file was found and is readable, False otherwise'''
-        try:
-            with open(Config.CONFIG_FILE_PATH, 'r'):
-                return True
-        except OSError: # file not found, or can't be read
-            return False
+        self.config_listeners = set()
 
     def start(self):
         '''Start the component'''
@@ -79,7 +71,8 @@ class Config(Component):
     def set_property(self, key, value):
         '''Set the value of the specified property and broadcast the change'''
         self.properties[key] = value
-        # TODO: Broadcast to registered listeners
+        for sub in self.config_listeners:
+            sub.config_updated()
 
     def get_database_dir(self):
         '''Get the database directory'''
@@ -101,10 +94,14 @@ class Config(Component):
         '''Get the directory for the tor configuration'''
         return os.path.join(self.properties.get(Config.KEY_DATA_DIR, ""), "tor")
 
-    def register_subscriber(self, sub):
-        '''Add the given subscriber to the list of objects to be informed about changes'''
-        # Config.tannoy.connectListener(sub)
-        pass
+    def add_listener(self, sub):
+        '''Add the given subscriber to the listeners to be informed about changes'''
+        if sub:
+            self.config_listeners.add(sub)
+
+    def remove_listener(self, sub):
+        '''Remove the given subscriber from the listeners, won't be informed any more'''
+        self.config_listeners.discard(sub)
 
     def stop(self):
         '''Stop the component'''
