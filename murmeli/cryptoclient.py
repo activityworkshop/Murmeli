@@ -6,6 +6,7 @@
    only place where that implementation detail is necessary.'''
 
 import os.path
+import subprocess
 from random import SystemRandom
 from gnupg import GPG
 from murmeli.system import Component, System
@@ -23,10 +24,11 @@ class CryptoClient(Component):
     # Constant string used for wrapping signed data
     SIGNATURE_WRAP_TEXT = ":murmeli:".encode("utf-8")
 
-    def __init__(self, parent, keyring_path):
+    def __init__(self, parent, keyring_path=None):
         Component.__init__(self, parent, System.COMPNAME_CRYPTO)
         self.randgen = SystemRandom()
-        self.keyring_path = keyring_path
+        config_keyring_path = self.call_component(System.COMPNAME_CONFIG, "get_keyring_dir")
+        self.keyring_path = keyring_path or config_keyring_path
         self.gpg = None
 
 
@@ -42,12 +44,25 @@ class CryptoClient(Component):
             if self.keyring_path and os.path.exists(self.keyring_path):
                 print("keyring exists at:", self.keyring_path)
                 try:
-                    gpgexe = self.call_component(System.COMPNAME_CONFIG, "get_property",
-                                                 key=Config.KEY_GPG_EXE) or "gpg"
+                    gpgexe = self.get_config_property(Config.KEY_GPG_EXE) or "gpg"
                     self.gpg = GPG(gnupghome=self.keyring_path, gpgbinary=gpgexe)
                 except Exception as exc:
                     print("exception thrown:", exc)
                     self.gpg = None
+
+    def get_gpg_version(self):
+        '''Call gpg --version to get the version number string'''
+        gpgexe = self.get_config_property(Config.KEY_GPG_EXE) or "gpg"
+        try:
+            verstr, *_ = subprocess.check_output([gpgexe, "--version"]).decode("utf-8").split("\n")
+            return verstr
+        except Exception:
+            return None # GPG not found, or call threw exception
+
+    def found_keyring(self):
+        '''Return True if keyring was found and valid'''
+        self.init_gpg()
+        return self.gpg and os.path.exists(self.keyring_path)
 
     def get_private_keys(self):
         '''Return a list of private keys'''
@@ -55,11 +70,12 @@ class CryptoClient(Component):
         if self.gpg:
             return self.gpg.list_keys(True) # True for just the private keys
 
-    def get_num_public_keys(self):
-        '''Get the number of public keys - only used for testing'''
+    def get_num_keys(self, public_keys=False, private_keys=False):
+        '''Get the number of public or private keys - only used for testing'''
+        assert(public_keys ^ private_keys)
         self.init_gpg()
         if self.gpg:
-            return len(self.gpg.list_keys(False)) # False for just the public keys
+            return len(self.gpg.list_keys(private_keys)) # True for private, false for public
         return 0
 
     def get_public_key(self, key_id):

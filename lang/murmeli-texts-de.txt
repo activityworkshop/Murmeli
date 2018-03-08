@@ -1,5 +1,14 @@
 # German texts for Murmeli
 
+[setup]
+qtoquit=(oder 'q' zum Abbrechen)
+languageselected=Deutsche Sprache ausgewählt.
+foundgpgversion=GPG gefunden, Version: %s
+notfoundgpgversion=Aufruf nach gpg fehlgeschlagen.  Namen / Pfad setzen?
+foundkeyring=Schlüsselbund gefunden
+nokeyring=Schlüsselbund nicht gefunden
+foundkeys=%d private und %d öffentliche Schlüssel gefunden
+
 [startupwizard]
 title=Murmeli Startup Wizard
 intro.heading=Murmeli ist ein Kommunikationsmittel, für dich.  Unter deine Kontrolle.

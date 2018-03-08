@@ -1,5 +1,17 @@
 # English texts for Murmeli
 
+[setup]
+language=Select language / Sprache auswählen
+lang.en=English
+lang.de=Deutsch
+qtoquit=(or 'q' to quit)
+languageselected=English language selected.
+foundgpgversion=Found GPG version: %s
+notfoundgpgversion=Call to gpg failed.  Need to configure exe name?
+foundkeyring=Found keyring
+nokeyring=No keyring found
+foundkeys=Found %d private and %d public keys
+
 [startupwizard]
 title=Murmeli Startup Wizard
 intro.heading=Murmeli is a way for you to communicate.  Under your control.

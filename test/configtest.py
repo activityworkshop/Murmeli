@@ -34,6 +34,7 @@ class ConfigTest(unittest.TestCase):
         conf.set_property("house.furniture", True)
         conf.set_property(Config.KEY_LET_FRIENDS_SEE_FRIENDS, True)
         conf.set_property(Config.KEY_ALLOW_FRIEND_REQUESTS, False)
+        self.assertFalse(conf.from_file)
         test_file = os.path.join("test", "outputdata", "config.txt")
         conf.save(test_file)
         # Now load this file back into a new object
@@ -46,6 +47,7 @@ class ConfigTest(unittest.TestCase):
         # These two are recognised as specially "boolean" and are converted back to flags
         self.assertTrue(conf2.get_property(Config.KEY_LET_FRIENDS_SEE_FRIENDS), "got true")
         self.assertFalse(conf2.get_property(Config.KEY_ALLOW_FRIEND_REQUESTS), "got false")
+        self.assertTrue(conf2.from_file)
 
     class NameListener:
         '''Listener to the given config object'''

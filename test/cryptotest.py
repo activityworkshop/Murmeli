@@ -16,8 +16,8 @@ class CryptoTest(unittest.TestCase):
         '''Just check that crypto client can be initialised and is ready'''
         crypto = self._setup_keyring("keyringtest", ["key1_private", "key1_public"])
         self.assertTrue(crypto and crypto.check_gpg(), "Crypto ready")
-        self.assertEqual(crypto.get_num_public_keys(), 1, "1 public key loaded")
-        self.assertEqual(len(crypto.get_private_keys()), 1, "1 private key loaded")
+        self.assertEqual(crypto.get_num_keys(public_keys=True), 1, "1 public key loaded")
+        self.assertEqual(crypto.get_num_keys(private_keys=True), 1, "1 private key loaded")
         self.assertTrue(crypto.get_fingerprint(self.keyid_1).startswith("C7091CE836"),
                         "fingerprint as expected")
 
@@ -143,18 +143,18 @@ class CryptoTest(unittest.TestCase):
         # Delete the entire keyring
         shutil.rmtree(keyring_path, ignore_errors=True)
         crypto = self._setup_keyring("keyringtest")
-        self.assertEqual(len(crypto.get_private_keys()), 0, "Keyring should be empty")
-        self.assertEqual(crypto.get_num_public_keys(), 0, "Keyring should have 0 public keys")
+        self.assertEqual(crypto.get_num_keys(private_keys=True), 0, "Keyring should be empty")
+        self.assertEqual(crypto.get_num_keys(public_keys=True), 0, "should have 0 public keys")
         # Add a public key from file
         self.assertIsNotNone(self._import_key_from_file(crypto, "key1_public"),
                              "Import of public key works")
-        self.assertEqual(len(crypto.get_private_keys()), 0, "Keyring has no private keys")
-        self.assertEqual(crypto.get_num_public_keys(), 1, "Keyring should have 1 public key")
+        self.assertEqual(crypto.get_num_keys(private_keys=True), 0, "Keyring has no private keys")
+        self.assertEqual(crypto.get_num_keys(public_keys=True), 1, "should have 1 public key")
         # Now add the corresponding private key
         own_keyid = self._import_key_from_file(crypto, "key1_private")
         self.assertIsNotNone(own_keyid, "Import of private key should work")
-        self.assertEqual(len(crypto.get_private_keys()), 1, "Keyring should have 1 private key")
-        self.assertEqual(crypto.get_num_public_keys(), 1, "Keyring should have 1 public key")
+        self.assertEqual(crypto.get_num_keys(private_keys=True), 1, "should have 1 private key")
+        self.assertEqual(crypto.get_num_keys(public_keys=True), 1, "should have 1 public key")
 
     def test_encrypt_from_key2(self):
         '''Encrypt a message for key1 signing with key2'''

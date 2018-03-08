@@ -69,3 +69,7 @@ class Component:
         '''Invoke a call on the specified component'''
         if self._parent:
             return self._parent.invoke_call(comp_name, call_name, **kwargs)
+
+    def get_config_property(self, key):
+        '''Convenience method for calling the config if available'''
+        return self.call_component(System.COMPNAME_CONFIG, "get_property", key=key)

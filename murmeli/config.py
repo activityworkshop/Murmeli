@@ -26,6 +26,7 @@ class Config(Component):
         Component.__init__(self, parent, System.COMPNAME_CONFIG)
         self.properties = {}
         self.config_listeners = set()
+        self.from_file = False
 
     def start(self):
         '''Start the component'''
@@ -45,10 +46,12 @@ class Config(Component):
         self.properties[Config.KEY_SHOW_LOG_WINDOW] = False
 
         # Locate file in home directory, and load it if found
+        self.from_file = False
         try:
             parser = configparser.RawConfigParser()
             parser.read(src_file or Config.CONFIG_FILE_PATH)
             for sec in parser.sections():
+                self.from_file = True
                 for opt in parser.options(sec):
                     self.properties[sec + '.' + opt] = parser.get(sec, opt)
         except configparser.MissingSectionHeaderError:
@@ -118,7 +121,9 @@ class Config(Component):
                     writer.add_section(section)
                 writer.set(section, prop[dotpos+1:], self.properties[prop])
         try:
-            with open(dest_file or Config.CONFIG_FILE_PATH, 'w') as configfile:
+            config_path = dest_file or Config.CONFIG_FILE_PATH
+            os.makedirs(os.path.dirname(config_path), exist_ok=True)
+            with open(config_path, 'w') as configfile:
                 writer.write(configfile)
         except OSError as exc:
             print("*** FAILED to save config!", exc)

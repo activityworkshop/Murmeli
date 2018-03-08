@@ -15,7 +15,7 @@ class I18nManager(Component):
 
     def set_language(self):
         '''Get the language from the config and use it to setup the I18n'''
-        lang = self.call_component(System.COMPNAME_CONFIG, "get_property", key=Config.KEY_LANGUAGE)
+        lang = self.get_config_property(Config.KEY_LANGUAGE)
         # First load English texts as default values
         self._load_language('en')
         # Now load selected language over the top
