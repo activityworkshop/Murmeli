@@ -2,12 +2,27 @@
 
 [setup]
 qtoquit=(oder 'q' zum Abbrechen)
+abort=Setup abgebrochen.
+configsaved=Configdatei gespeichert.
 languageselected=Deutsche Sprache ausgewählt.
 foundgpgversion=GPG gefunden, Version: %s
 notfoundgpgversion=Aufruf nach gpg fehlgeschlagen.  Namen / Pfad setzen?
+entergpgpath=Aufruf nach 'gpg' fehlgeschlagen.  Namen und Pfad bitte eingeben:
 foundkeyring=Schlüsselbund gefunden
 nokeyring=Schlüsselbund nicht gefunden
 foundkeys=%d private und %d öffentliche Schlüssel gefunden
+datadir=Ordner für Murmeli-Daten
+createdatadir=Datenordner kreieren?
+createdir.create=Kreieren
+createddir.cancel=Abbrechen
+datadir.creating=Ordner kreiert.
+genkeypair=Ein neues Schlüsselpaar muss jetzt generiert werden.  Das dauert ja ein bisschen.
+genkeypair.rsa=RSA Schlüsselpaar generieren
+genkeypair.name=Name (benötigt)
+genkeypair.email=Email (optional)
+genkeypair.comment=Bemerkung (optional)
+genkeypair.pleasewait=Bitte Geduld haben während der Generierung...
+genkeypair.complete=Schlüsselpaar generiert.
 
 [startupwizard]
 title=Murmeli Startup Wizard

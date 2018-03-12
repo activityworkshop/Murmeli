@@ -2,6 +2,7 @@
    Without dependencies to Qt, it could also be used to
    setup a robot system on a screenless pi, for example.'''
 
+import os
 import sys
 import pkg_resources as pkgs
 from murmeli.system import System
@@ -36,16 +37,16 @@ def check_dependencies():
     found_qt = False
     # Check Qt5
     try:
-        from PyQt4 import QtCore
-        print("Found PyQt4, using Qt:", QtCore.QT_VERSION_STR)
+        from PyQt4 import QtCore as QtCore4
+        print("Found PyQt4, using Qt:", QtCore4.QT_VERSION_STR)
         found_qt = True
     except ImportError:
         pass
     # Check Qt4
     if not found_qt:
         try:
-            from PyQt5 import QtCore
-            print("Found PyQt5, using Qt:", QtCore.QT_VERSION_STR)
+            from PyQt5 import QtCore as QtCore5
+            print("Found PyQt5, using Qt:", QtCore5.QT_VERSION_STR)
             found_qt = True
         except ImportError:
             print("Didn't find either PyQt4 or PyQt5.  No gui will be possible.")
@@ -57,32 +58,87 @@ def check_config(system):
     conf = Config(system)
     conf.load()
     system.invoke_call(System.COMPNAME_I18N, "set_language")
-    if conf.from_file:
-        print("Found existing config file")
-    else:
-        print("Found no config file, need to create one")
-        # Select which language to use
-        selected_language = ask_question(system, "setup.language", ["setup.lang.en", "setup.lang.de"])
-        if selected_language == "q":
-            print("Aborting setup")
-            sys.exit(1)
-        lang = "de" if selected_language == "2" else "en"
-        conf.set_property(conf.KEY_LANGUAGE, lang)
-        system.invoke_call(System.COMPNAME_I18N, "set_language")
-        print(get_text(system, "setup.languageselected"))
+    print(make_heading(system, "startupwizard.title"))
+    # Select which language to use
+    selected_language = ask_question(system, "setup.language", ["setup.lang.en", "setup.lang.de"])
+    check_abort(selected_language, system)
+    lang = "de" if selected_language == "2" else "en"
+    conf.set_property(conf.KEY_LANGUAGE, lang)
+    system.invoke_call(System.COMPNAME_I18N, "set_language")
+    print(get_text(system, "setup.languageselected"))
+    if not conf.from_file:
+        conf.save()
+        print(get_text(system, "setup.configsaved"))
 
 
 def check_keyring(system):
     '''Given the data directory, is there a keyring and are there keys in it?'''
     crypto = CryptoClient(system)
-    gpg_version = crypto.get_gpg_version()
-    if gpg_version:
-        print(get_text(system, "setup.foundgpgversion") % gpg_version)
-    else:
-        print(get_text(system, "setup.notfoundgpgversion"))
+    gpg_version = None
+    while not gpg_version:
+        gpg_version = crypto.get_gpg_version()
+        if gpg_version:
+            print(get_text(system, "setup.foundgpgversion") % gpg_version)
+        else:
+            print(get_text(system, "setup.entergpgpath"))
+            gpg_path = input("? ")
+            if gpg_path in ["", "q"]:
+                check_abort("q", system)
+            system.invoke_call(System.COMPNAME_CONFIG, "set_property",
+                               key=Config.KEY_GPG_EXE, value=gpg_path)
     print(get_text(system, "setup.foundkeyring" if crypto.found_keyring() else "setup.nokeyring"))
     print(get_text(system, "setup.foundkeys") % (crypto.get_num_keys(private_keys=True),
                                                  crypto.get_num_keys(public_keys=True)))
+    if crypto.get_num_keys(private_keys=True) < 1:
+        gen_pair = ask_question(system, "setup.genkeypair", ["setup.genkeypair.rsa"])
+        check_abort(gen_pair, system)
+        generate_keypair(crypto, system)
+
+def generate_keypair(crypto, system):
+    '''Generate a new private/public key pair using the given data'''
+    key_name = None
+    while not key_name:
+        key_name = input(get_text(system, "setup.genkeypair.name") + ": ")
+    key_email = input(get_text(system, "setup.genkeypair.email") + ": ")
+    key_comment = input(get_text(system, "setup.genkeypair.comment") + ": ")
+    # Pass these fields to gpg
+    print(get_text(system, "setup.genkeypair.pleasewait"))
+    result = crypto.generate_key_pair(key_name, key_email, key_comment)
+    print(get_text(system, "setup.genkeypair.complete"))
+    return result
+
+def check_data_path(system):
+    '''Check if the data path is configured and if it exists or not'''
+    data_path = system.invoke_call(System.COMPNAME_CONFIG, "get_data_dir")
+    if data_path:
+        print(get_text(system, "setup.datadir"), ":", data_path)
+    selected_data_path = None
+    while not selected_data_path:
+        selected_data_path = input(get_text(system, "setup.datadir") + "? ")
+        if selected_data_path:
+            data_path = selected_data_path
+        else:
+            selected_data_path = data_path
+        if data_path:
+            data_path = os.path.abspath(os.path.expanduser(data_path))
+            if not os.path.exists(data_path):
+                # Confirm before creation
+                print(get_text(system, "setup.datadir"), ":", data_path)
+                create_dir = ask_question(system, "setup.createdatadir",
+                                          ["setup.createdir.create", "setup.createddir.cancel"])
+                check_abort(create_dir, system)
+                if create_dir == "2":
+                    selected_data_path = None
+
+    system.invoke_call(System.COMPNAME_CONFIG, "set_property",
+                       key=Config.KEY_DATA_DIR, value=data_path)
+    if not os.path.exists(data_path):
+        print(get_text(system, "setup.datadir.creating"))
+    os.makedirs(system.invoke_call(System.COMPNAME_CONFIG, "get_database_dir"), exist_ok=True)
+    os.makedirs(system.invoke_call(System.COMPNAME_CONFIG, "get_web_cache_dir"), exist_ok=True)
+    os.makedirs(system.invoke_call(System.COMPNAME_CONFIG, "get_keyring_dir"), exist_ok=True)
+    os.makedirs(system.invoke_call(System.COMPNAME_CONFIG, "get_tor_dir"), exist_ok=True)
+
 
 def ask_question(system, question_key, answer_keys):
     '''Use the console to ask the user a question and collect the answer'''
@@ -100,6 +156,17 @@ def ask_question(system, question_key, answer_keys):
         except KeyboardInterrupt:
             return "q"
 
+def check_abort(answer, system):
+    '''Check the returned answer and abort if requested'''
+    if answer == 'q':
+        print(get_text(system, "setup.abort"))
+        sys.exit(1)
+
+def make_heading(system, key):
+    '''Make a heading string for printing to the console'''
+    title = get_text(system, key)
+    return "\n".join(["", title, "-" * len(title)])
+
 def get_text(system, key):
     '''Convenience methods for getting texts from the system's i18n'''
     return system.invoke_call(System.COMPNAME_I18N, "get_text", key=key)
@@ -109,4 +176,10 @@ if __name__ == "__main__":
     SYSTEM = System()
     I18N = I18nManager(SYSTEM)
     check_config(SYSTEM)
+    check_data_path(SYSTEM)
+    # TODO: Define where tor is - do we want to insist on tor here?
     check_keyring(SYSTEM)
+    # TODO: Select which keypair to use
+    # TODO: Define robot parameters
+    # Save config
+    SYSTEM.invoke_call(System.COMPNAME_CONFIG, "save")

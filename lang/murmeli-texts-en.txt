@@ -5,12 +5,26 @@ language=Select language / Sprache auswählen
 lang.en=English
 lang.de=Deutsch
 qtoquit=(or 'q' to quit)
+abort=Setup aborted.
+configsaved=Config file saved.
 languageselected=English language selected.
 foundgpgversion=Found GPG version: %s
-notfoundgpgversion=Call to gpg failed.  Need to configure exe name?
+entergpgpath=Could not find 'gpg'.  Please enter path to GPG executable:
 foundkeyring=Found keyring
 nokeyring=No keyring found
 foundkeys=Found %d private and %d public keys
+datadir=Data directory
+createdatadir=Create data directory?
+createdir.create=Create
+createddir.cancel=Cancel
+datadir.creating=Creating data directory.
+genkeypair=To use Murmeli, you need to generate a new keypair.  This will take some time.
+genkeypair.rsa=Generate RSA keypair
+genkeypair.name=Name (required)
+genkeypair.email=Email (optional)
+genkeypair.comment=Comment (optional)
+genkeypair.pleasewait=Please wait while the keypair is generated...
+genkeypair.complete=Keypair generated.
 
 [startupwizard]
 title=Murmeli Startup Wizard

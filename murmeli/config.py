@@ -77,6 +77,10 @@ class Config(Component):
         for sub in self.config_listeners:
             sub.config_updated()
 
+    def get_data_dir(self):
+        '''Get the database directory'''
+        return self.properties.get(Config.KEY_DATA_DIR, "")
+
     def get_database_dir(self):
         '''Get the database directory'''
         return os.path.join(self.properties.get(Config.KEY_DATA_DIR, ""), "db")
