@@ -64,18 +64,19 @@ class CryptoClient(Component):
         self.init_gpg()
         return self.gpg and os.path.exists(self.keyring_path)
 
-    def get_private_keys(self):
-        '''Return a list of private keys'''
-        self.init_gpg()
-        if self.gpg:
-            return self.gpg.list_keys(True) # True for just the private keys
-
-    def get_num_keys(self, public_keys=False, private_keys=False):
-        '''Get the number of public or private keys - only used for testing'''
+    def get_keys(self, public_keys=False, private_keys=False):
+        '''Get a list of either the public or private keys'''
         assert(public_keys ^ private_keys)
         self.init_gpg()
         if self.gpg:
-            return len(self.gpg.list_keys(private_keys)) # True for private, false for public
+            return self.gpg.list_keys(private_keys) # True for private, false for public
+        return []
+
+    def get_num_keys(self, public_keys=False, private_keys=False):
+        '''Get the number of public or private keys'''
+        key_list = self.get_keys(public_keys=public_keys, private_keys=private_keys)
+        if key_list:
+            return len(key_list)
         return 0
 
     def get_public_key(self, key_id):

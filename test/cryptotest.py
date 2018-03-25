@@ -39,10 +39,8 @@ class CryptoTest(unittest.TestCase):
     def _import_key_from_file(crypto, filename):
         '''Load the specified file and import the contents to the current keyring.
            This works for text files containing either a public key or a private key.'''
-        key = ""
         with open(os.path.join("test", "inputdata", filename + ".txt"), "r") as keyfile:
-            for line in keyfile:
-                key += line
+            key = "".join(keyfile.readlines())
         return crypto.import_public_key(key)
 
     def test_encryption(self):
