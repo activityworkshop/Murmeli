@@ -10,6 +10,7 @@ from murmeli.config import Config
 from murmeli.cryptoclient import CryptoClient
 from murmeli.i18n import I18nManager
 from murmeli.torclient import TorClient
+from murmeli.supersimpledb import MurmeliDb
 
 
 def check_dependencies():
@@ -52,7 +53,6 @@ def check_dependencies():
         except ImportError:
             print("Didn't find either PyQt4 or PyQt5.  No gui will be possible.")
 
-    # TODO: Check tor
 
 def check_config(system):
     '''Look for a config file, and load it if possible'''
@@ -155,6 +155,7 @@ def check_tor(system):
         print(get_text(system, "setup.startingtorfailed"))
     elif torid:
         print(get_text(system, "setup.foundtorid") % torid)
+    return torid
 
 
 def select_keypair(system):
@@ -182,6 +183,9 @@ def select_robot_status(system, private_keyid):
     # print("Selected system type:", system_type)
     data_path = system.invoke_call(System.COMPNAME_CONFIG, "get_data_dir")
     if system_type == "1":
+        # Real system, not a robot
+        system.invoke_call(System.COMPNAME_CONFIG, "set_property",
+                           key=Config.KEY_ROBOT_OWNER_KEY, value="")
         # Check whether to export the public key or not
         export_index = ask_question(system, "setup.exportpublickey", ["setup.no", "setup.yes"])
         check_abort(export_index, system)
@@ -193,36 +197,54 @@ def select_robot_status(system, private_keyid):
             print(get_text(system, "setup.publickeyexported") % keyfile_name)
 
     elif system_type == "2":
-        print("Need to select (or load) a public key for the owner")
-        while True:
-            # Collect the public keys from keyring, but not own one
-            public_keys = system.invoke_call(System.COMPNAME_CRYPTO, "get_keys",
-                                             public_keys=True)
-            public_keys = [key for key in public_keys if key['keyid'] != private_keyid]
-            print("Keyring has %d public keys: %s" % (len(public_keys), public_keys))
-            # Also find any .key files in data directory
-            keyfiles = [file for file in os.listdir(data_path) if file.endswith(".key")
-                        and os.path.isfile(os.path.join(data_path, file))]
-            # Assemble list of available public keys
-            key_list = ["%s (%s)" % (key['keyid'], key['uids'][0]) for key in public_keys] + \
-                       [os.path.basename(file) for file in keyfiles] + \
-                       [get_text(system, "setup.refreshkeylist")]
-            files_to_load = [None for _ in public_keys] + keyfiles
-            print(key_list, files_to_load)
-            # Ask question which one to take (& mention that keys can be copied to datadir)
-            owner_key = ask_question_raw(system, get_text(system, "setup.selectrobotownerkey"), key_list)
-            check_abort(owner_key, system)
-            refresh_index = len(key_list)
-            if owner_key != str(refresh_index):
-                key_index = int(owner_key) - 1
-                file_to_load = files_to_load[key_index]
-                if file_to_load:
-                    # Selected key is in a file to load, so import into the keyring
-                    with open(os.path.join(data_path, file_to_load), "r") as keyfile:
-                        key = "".join(keyfile.readlines())
-                        return system.invoke_call(System.COMPNAME_CRYPTO, "import_public_key", key)
-                return public_keys[key_index]['keyid']
+        return setup_robot_system(system, data_path, private_keyid)
 
+def setup_robot_system(system, data_path, private_keyid):
+    '''Choose which key to use for the robot system's owner and save this choice'''
+    while True:
+        # Collect the public keys from keyring, but not own one
+        public_keys = system.invoke_call(System.COMPNAME_CRYPTO, "get_keys",
+                                         public_keys=True)
+        public_keys = [key for key in public_keys if key['keyid'] != private_keyid]
+        print("Keyring has %d public keys: %s" % (len(public_keys), public_keys))
+        # Also find any .key files in data directory
+        keyfiles = [file for file in os.listdir(data_path) if file.endswith(".key")
+                    and os.path.isfile(os.path.join(data_path, file))]
+        # Assemble list of available public keys
+        key_list = ["%s (%s)" % (key['keyid'], key['uids'][0]) for key in public_keys] + \
+                   [os.path.basename(file) for file in keyfiles] + \
+                   [get_text(system, "setup.refreshkeylist")]
+        files_to_load = [None for _ in public_keys] + keyfiles
+        print(key_list, files_to_load)
+        # Ask question which one to take (& mention that keys can be copied to datadir)
+        owner_key = ask_question_raw(system, get_text(system, "setup.selectrobotownerkey"),
+                                     key_list)
+        check_abort(owner_key, system)
+        refresh_index = len(key_list)
+        if owner_key != str(refresh_index):
+            key_index = int(owner_key) - 1
+            file_to_load = files_to_load[key_index]
+            if file_to_load:
+                # Selected key is in a file to load, so import into the keyring
+                with open(os.path.join(data_path, file_to_load), "r") as keyfile:
+                    key = "".join(keyfile.readlines())
+                    key_id = system.invoke_call(System.COMPNAME_CRYPTO,
+                                                "import_public_key", key)
+            else:
+                key_id = public_keys[key_index]['keyid']
+            # Store owner key id in config
+            system.invoke_call(System.COMPNAME_CONFIG, "set_property",
+                               key=Config.KEY_ROBOT_OWNER_KEY, value=key_id)
+            return key_id
+
+def setup_database(system, torid, private_keyid):
+    '''Setup database and store private key'''
+    print("Storing database: tor id='%s', key id='%s'" % (torid, private_keyid))
+    db_filename = system.invoke_call(System.COMPNAME_CONFIG, "get_ss_database_file")
+    ssdb = MurmeliDb(None, db_filename)
+    ssdb.add_or_update_profile({"torid":torid, "keyid":private_keyid, "status":"self",
+                                "ownprofile":True})
+    ssdb.save_to_file()
 
 def ask_question(system, question_key, answer_keys):
     '''Use the console to ask the user a question and collect the answer, using token keys'''
@@ -261,21 +283,28 @@ def get_text(system, key):
     text = system.invoke_call(System.COMPNAME_I18N, "get_text", key=key)
     return text.replace("\\n", "\n") if text else ""
 
-if __name__ == "__main__":
+def setup_murmeli():
+    '''Run through all the checks and setup the config, keyring and database'''
     check_dependencies()
-    SYSTEM = System()
-    I18N = I18nManager(SYSTEM)
-    check_config(SYSTEM)
-    check_data_path(SYSTEM)
-    check_tor(SYSTEM)
-    check_keyring(SYSTEM)
+    system = System()
+    i18n = I18nManager(system)
+    check_config(system)
+    check_data_path(system)
+    tor_id = check_tor(system)
+    check_abort(tor_id or 'q', system)
+    check_keyring(system)
     # Select which keypair to use
-    PRIVATE_KEYID = select_keypair(SYSTEM)
-    print("Selected key '%s'" % PRIVATE_KEYID)
+    private_keyid = select_keypair(system)
+    print("Selected key '%s'" % private_keyid)
     # Define robot parameters
-    OWNER_ID = select_robot_status(SYSTEM, PRIVATE_KEYID)
-    print("Owner id '%s'" % OWNER_ID)
-    # TODO: Setup database (using ssdb?) and store private key, owner key
+    owner_keyid = select_robot_status(system, private_keyid)
+    print("Owner keyid '%s'" % owner_keyid)
+    # Setup database and store private key
+    setup_database(system, tor_id, private_keyid)
     # Save config
-    SYSTEM.invoke_call(System.COMPNAME_CONFIG, "save")
+    system.invoke_call(System.COMPNAME_CONFIG, "save")
+
+
+if __name__ == "__main__":
+    setup_murmeli()
 

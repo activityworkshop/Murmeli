@@ -20,7 +20,7 @@ class Config(Component):
     KEY_DATA_DIR = "path.data"
     KEY_TOR_EXE = "path.torexe"
     KEY_GPG_EXE = "path.gpgexe"
-
+    KEY_ROBOT_OWNER_KEY = "robot.ownerkey"
 
     def __init__(self, parent):
         Component.__init__(self, parent, System.COMPNAME_CONFIG)
