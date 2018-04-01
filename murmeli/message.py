@@ -67,6 +67,9 @@ class Message:
     ENCTYPE_SYMM = 2
     ENCTYPE_RELAY = 3
 
+    FIELD_MESSAGE_TYPE = "msgType"
+    FIELD_SENDER_ID = "senderId"
+
     MAGIC_TOKEN = "murmeli"
 
     def __init__(self, enc_type, msg_type):
@@ -95,6 +98,10 @@ class Message:
         except TypeError:
             # TODO: Log this exception somewhere
             raise
+
+    def get_field(self, key):
+        '''Get the given field from the message'''
+        return self.body.get(key)
 
     @staticmethod
     def from_received_data(data, decrypter=None):
@@ -222,9 +229,6 @@ class Message:
 class UnencryptedMessage(Message):
     '''Superclass for both unencrypted message types'''
 
-    FIELD_MESSAGE_TYPE = "msgType"
-    FIELD_SENDER_ID = "senderId"
-
     def __init__(self, msg_type):
         Message.__init__(self, Message.ENCTYPE_NONE, msg_type)
         self.sender_must_be_trusted = False  # ok if sender unknown
@@ -295,9 +299,6 @@ class ContactDenyMessage(UnencryptedMessage):
 
 class AsymmetricMessage(Message):
     '''Superclass for all asymmetrically-encrypted message types'''
-
-    FIELD_MESSAGE_TYPE = "msgType"
-    FIELD_SENDER_ID = "senderId"
 
     def __init__(self, msg_type):
         Message.__init__(self, Message.ENCTYPE_ASYM, msg_type)
