@@ -20,6 +20,7 @@ class TorClient(Component):
         self.tor_exe = tor_exe
         self.daemon = None
         self.socket_broker = None
+        self.started = False
 
     def ignite_to_get_tor_id(self):
         '''Start tor, but only to get the tor id, then stop it again.
@@ -47,7 +48,7 @@ class TorClient(Component):
         except PermissionError:
             return False # can't write file
 
-    def get_own_torid(self, is_started):
+    def get_own_torid(self, is_started=True):
         '''Get our own Torid from the hostname file'''
         # maybe the id hasn't been written yet, so we'll try a few times and wait
         for _ in range(10):
@@ -85,7 +86,7 @@ class TorClient(Component):
             print("Exception:", e)
             started = False
         if start_socket_broker:
-            self.socket_broker = SocketBroker()
+            self.socket_broker = SocketBroker(self)
         return started
 
     def stop_tor(self):
@@ -94,6 +95,7 @@ class TorClient(Component):
             print("Stopping tor")
             self.daemon.terminate()
             self.daemon = None
+            self.started = False
         else:
             print("Can't stop tor because we haven't got a handle on the process")
         if self.socket_broker:
@@ -102,11 +104,12 @@ class TorClient(Component):
 
     def start(self):
         '''Start the component'''
-        self.start_tor()
+        self.started = self.start_tor()
 
     def stop(self):
         '''Stop the component'''
         self.stop_tor()
+
 
 ###############################################################################
 
@@ -115,8 +118,9 @@ class SocketBroker(threading.Thread):
     and starts a new thread for each accepted connection.  Connections should deal with
     only one message or command, and then be destroyed.'''
 
-    def __init__(self):
+    def __init__(self, parent):
         threading.Thread.__init__(self)
+        self.parent = parent
         self.socket = None
         self.running = False
         self.setDaemon(True)
@@ -156,7 +160,7 @@ class SocketBroker(threading.Thread):
                 print("Accepted new connection from ", address, ", now start a new thread...")
                 # Start new listener thread with this conn
                 # (address is meaningless, just comes from proxy)
-                SocketListener(conn)
+                SocketListener(conn, self.parent)
                 # Don't need to keep a handle on this as it'll start its own thread
             except:
                 print("socket listener error, failed to accept connection!")
@@ -181,10 +185,11 @@ class SocketListener(threading.Thread):
     and starts a new thread to receive data on this connection.
     Connections should deal with only one message or command, and then be destroyed.'''
 
-    def __init__(self, conn):
+    def __init__(self, conn, component):
         '''Constructor'''
         threading.Thread.__init__(self)
         self.conn = conn
+        self.component = component
         self.running = False
         self.start()
 
@@ -211,8 +216,9 @@ class SocketListener(threading.Thread):
                 if received_msg:
                     print("Incoming message!  Sender was '%s'"
                           % received_msg.get_field(received_msg.FIELD_SENDER_ID))
-                    # MessageShuffler.dealWithMessage(m)
-                    # TODO: Pass to the system's message handler
+                    # Pass to the system's message handler
+                    self.component.call_component(System.COMPNAME_MSG_HANDLER, "receive",
+                                                  msg=received_msg)
                 else:
                     print("Hang on, why is the incoming message None?")
                 # Note: should reply with ACK/NACK, but this doesn't work through the proxy
