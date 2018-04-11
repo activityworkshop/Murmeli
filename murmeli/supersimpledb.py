@@ -215,6 +215,7 @@ class MurmeliDb(Component):
             # Get current number in outbox, use this as index for msg
             outbox = self.db.get_table(MurmeliDb.TABLE_OUTBOX)
             msg['_id'] = len(outbox)
+            # TODO: Call system's encrypter for each of the recipients
             outbox.append(msg)
 
     def delete_from_outbox(self, index):

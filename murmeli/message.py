@@ -54,13 +54,14 @@ class Message:
     TYPE_CONTACT_REQUEST = 1
     TYPE_CONTACT_RESPONSE = 2
     TYPE_STATUS_NOTIFY = 3
-    TYPE_SYMMETRIC_BLOB = 4
     TYPE_INFO_REQUEST = 5
     TYPE_INFO_RESPONSE = 6
     TYPE_FRIEND_REFERRAL = 7
     TYPE_FRIENDREFER_REQUEST = 8
     TYPE_REGULAR_MESSAGE = 20
-    TYPE_SYMMETRIC_KEY = 21
+    TYPE_RELAYED_MESSAGE = 21
+    TYPE_SYMMETRIC_BLOB = 30
+    TYPE_SYMMETRIC_KEY = 31
 
     ENCTYPE_NONE = 0
     ENCTYPE_ASYM = 1
@@ -81,7 +82,7 @@ class Message:
         self.should_be_relayed = False
         self.timestamp = None
         self.body = {}
-        # recipients?
+        self.recipients = []
         # version number?
 
     def set_field(self, key, value):

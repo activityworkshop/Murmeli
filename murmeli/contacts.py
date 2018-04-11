@@ -10,6 +10,13 @@ class Contacts(Component):
         self._online_list = set()
         self._last_times = {}
 
+    def set_online_status(self, tor_id, online):
+        '''Set the online status to online or offline'''
+        if online:
+            self.come_online(tor_id)
+        else:
+            self.gone_offline(tor_id)
+
     def come_online(self, tor_id):
         '''The given tor id has announced it is online'''
         if not self.is_online(tor_id):
