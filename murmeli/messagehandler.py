@@ -87,13 +87,46 @@ class RobotMessageHandler(MessageHandler):
         # Compare incoming keyid with owner id in Config, ignore all others
         sender_keyid = msg.get_field(msg.FIELD_SENDER_KEY)
         owner_keyid = self.get_config_property(Config.KEY_ROBOT_OWNER_KEY)
-        if sender_keyid == owner_keyid:
-            # TODO: Accept, update db with SENDER_ID, send response
-            pass
+        if sender_keyid == owner_keyid and sender_keyid:
+            sender_id = msg.get_field(msg.FIELD_SENDER_ID)
+            # Check if owner already set, if so then don't change it
+            if not self.call_component(System.COMPNAME_DATABASE, "get_profiles_with_status",
+                                       status="owner"):
+                # update db with SENDER_ID
+                owner_profile = {"torid":sender_id, 'status':'owner', 'keyId':owner_keyid}
+                self.call_component(System.COMPNAME_DATABASE, "add_or_update_profile",
+                                    prof=owner_profile)
+            # NOTE: Make sure that just the keyid is sent, not the whole key - special for robot
+            resp = message.ContactAcceptMessage()
+            resp.recipients = [sender_id]
+            self.call_component(System.COMPNAME_DATABASE, "add_message_to_outbox", msg=resp)
+
     def receive_friend_referral(self, msg):
         '''Receive a friend referral'''
-        # TODO: If it's from the robot's owner, accept automatically
-        pass
+        if self._is_message_from_owner(msg):
+            # Get referred friend out of message
+            new_friend_id = msg.get_field(msg.FIELD_FRIEND_ID)
+            new_friend_name = msg.get_field(msg.FIELD_FRIEND_NAME)
+            new_friend_key = msg.get_field(msg.FIELD_FRIEND_KEY)
+            # TODO: Add key to keyring and get keyid
+            friend_keyid = None
+            # Update database
+            profile = {"torid":new_friend_id, 'status':'trusted', 'keyId':friend_keyid}
+            self.call_component(System.COMPNAME_DATABASE, "add_or_update_profile",
+                                prof=profile)
+            # accept automatically
+            resp = message.ContactAcceptMessage()
+            resp.recipients = [new_friend_id]
+            self.call_component(System.COMPNAME_DATABASE, "add_message_to_outbox", msg=resp)
+
+    def _is_message_from_owner(self, msg):
+        '''Return true if message is from this robot's owner'''
+        sender_id = msg.get_field(msg.FIELD_SENDER_ID)
+        owner_profile = self.call_component(System.COMPNAME_DATABASE,
+                                            "get_profiles_with_status",
+                                            status="owner")
+        owner_id = owner_profile.get('torid') if owner_profile else None
+        return owner_id and sender_id == owner_id
 
 
 class RegularMessageHandler(MessageHandler):
@@ -111,4 +144,9 @@ class RegularMessageHandler(MessageHandler):
         is_online = msg.get_field(msg.FIELD_ONLINE)
         self.call_component(System.COMPNAME_CONTACTS, "set_online_status", tor_id=sender_id,
                             online=is_online)
+
+    def receive_contact_response(self, msg):
+        '''Receive a contact response'''
+        # TODO: Check if this is a response from our robot, if so then treat differently
+        pass
 

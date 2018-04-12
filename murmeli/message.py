@@ -60,12 +60,12 @@ class Message:
     TYPE_FRIENDREFER_REQUEST = 8
     TYPE_REGULAR_MESSAGE = 20
     TYPE_RELAYED_MESSAGE = 21
-    TYPE_SYMMETRIC_BLOB = 30
-    TYPE_SYMMETRIC_KEY = 31
+    # TYPE_SYMMETRIC_BLOB = 30
+    # TYPE_SYMMETRIC_KEY = 31
 
     ENCTYPE_NONE = 0
     ENCTYPE_ASYM = 1
-    ENCTYPE_SYMM = 2
+    # ENCTYPE_SYMM = 2
     ENCTYPE_RELAY = 3
 
     FIELD_MESSAGE_TYPE = "msgType"
@@ -334,6 +334,8 @@ class AsymmetricMessage(Message):
                 msg = InfoResponseMessage()
             elif msg_type == Message.TYPE_REGULAR_MESSAGE:
                 msg = RegularMessage()
+            elif msg_type == Message.TYPE_FRIEND_REFERRAL:
+                msg = ContactReferralMessage()
             if msg:
                 msg.timestamp = tstamp
                 msg.set_all_fields(subpayload.decode("utf-8"))
@@ -491,3 +493,25 @@ class RegularMessage(AsymmetricMessage):
     def get_required_body_fields(self):
         '''Get which fields are necessary for the message to be valid'''
         return [self.FIELD_MSGBODY, self.FIELD_RECIPIENTS]
+
+
+class ContactReferralMessage(AsymmetricMessage):
+    '''Class for a contact referral of a friend's friend'''
+
+    FIELD_MSGBODY = "messageBody"
+    FIELD_FRIEND_ID = "friendId"
+    FIELD_FRIEND_NAME = "friendName"
+    FIELD_FRIEND_KEY = "friendKey"
+
+    def __init__(self):
+        AsymmetricMessage.__init__(self, Message.TYPE_FRIEND_REFERRAL)
+
+    def get_body_fields(self):
+        '''Get which fields should be packed in body'''
+        return [self.FIELD_MSGBODY, self.FIELD_FRIEND_ID,
+                self.FIELD_FRIEND_NAME, self.FIELD_FRIEND_KEY]
+
+    def get_required_body_fields(self):
+        '''Get which fields are necessary for the message to be valid'''
+        return [self.FIELD_FRIEND_ID, self.FIELD_FRIEND_NAME, self.FIELD_FRIEND_KEY]
+

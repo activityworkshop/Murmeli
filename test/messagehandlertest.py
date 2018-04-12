@@ -1,9 +1,11 @@
 ''''Testing of the functions of the MessageHandler'''
 
 import unittest
-from murmeli.handler import RobotMessageHandler
+from murmeli.messagehandler import RobotMessageHandler
 from murmeli.system import System, Component
-from murmeli.message import StatusNotifyMessage
+from murmeli.config import Config
+from murmeli.message import (StatusNotifyMessage, ContactRequestMessage,
+                             ContactAcceptMessage, ContactReferralMessage)
 
 
 class MockDatabase(Component):
@@ -11,10 +13,21 @@ class MockDatabase(Component):
     def __init__(self, parent):
         Component.__init__(self, parent, System.COMPNAME_DATABASE)
         self.outbox = []
+        self.profiles = []
 
     def add_message_to_outbox(self, msg):
         '''React to storing messages in the outbox'''
         self.outbox.append(msg)
+
+    def get_profiles_with_status(self, status):
+        '''Return list of profiles with the given status'''
+        if self.profiles:
+            return self.profiles[0]
+        return None
+
+    def add_or_update_profile(self, prof):
+        '''Add or update the given profile'''
+        self.profiles.append(prof)
 
 
 class HandlerTest(unittest.TestCase):
@@ -23,7 +36,8 @@ class HandlerTest(unittest.TestCase):
         self.sys = System()
         self.robot = RobotMessageHandler(self.sys)
         self.fakedb = MockDatabase(self.sys)
-        self.sys.start()
+        config = Config(self.sys)
+        config.set_property(config.KEY_ROBOT_OWNER_KEY, "EasterBunny") # keyid, not torid
 
     def test_sending_nonsense(self):
         '''Just check that nothing falls over when non-message objects are sent'''
@@ -53,6 +67,42 @@ class HandlerTest(unittest.TestCase):
         self.assertEqual(reply.get_field(reply.FIELD_PING), 0, "reply is a pong")
         self.assertTrue(reply.get_field(reply.FIELD_ONLINE), "reply is online")
         self.assertEqual(reply.recipients, ["abcdefg"], "reply is for abcdefg")
+
+    def test_sending_conreqs_to_robot(self):
+        '''Check that contact requests are handled properly by robot'''
+        req = ContactRequestMessage()
+        # send a message with a different sender key, this should be ignored
+        req.set_field(req.FIELD_SENDER_KEY, "ABC987DEF")
+        req.set_field(req.FIELD_SENDER_NAME, "Zürich")
+        req.set_field(req.FIELD_SENDER_ID, "NOP456HAA")
+        self.robot.receive(req)
+        self.assertFalse(self.fakedb.outbox, "outbox still empty after invalid contactreq")
+        # send a second message with a matching sender key, this should result
+        # in a database update and an accept message
+        req.set_field(req.FIELD_SENDER_KEY, "EasterBunny")
+        self.robot.receive(req)
+        self.assertEqual(len(self.fakedb.outbox), 1, "outbox now has one message")
+        reply = self.fakedb.outbox.pop()
+        self.assertTrue(isinstance(reply, ContactAcceptMessage), "reply is a contactaccept")
+
+    def test_sending_conreferral_to_robot(self):
+        '''Check that contact referrals are handled properly by robot'''
+        owner_id = "b83jdn100uviva33"
+        req = ContactReferralMessage()
+        # database has no owner set, so any referrals should be ignored
+        req.set_field(req.FIELD_SENDER_ID, owner_id)
+        req.set_field(req.FIELD_FRIEND_NAME, "Bruce Wayne")
+        req.set_field(req.FIELD_FRIEND_ID, "802.11ac")
+        req.set_field(req.FIELD_FRIEND_KEY, "Really quite a rather long string of digits")
+        self.robot.receive(req)
+        self.assertFalse(self.fakedb.outbox, "outbox still empty after invalid referral")
+        # Now add an owner to the db
+        self.fakedb.profiles.append({"status":"owner", "torid":owner_id})
+        self.robot.receive(req)
+        self.assertEqual(len(self.fakedb.outbox), 1, "outbox now has one message")
+        self.assertEqual(len(self.fakedb.profiles), 2, "now two profiles")
+        reply = self.fakedb.outbox.pop()
+        self.assertTrue(isinstance(reply, ContactAcceptMessage), "reply is a contactaccept")
 
 
 if __name__ == "__main__":

@@ -225,6 +225,26 @@ class AsymmMessageTest(unittest.TestCase):
         self.assertTrue(isinstance(back_again, message.RegularMessage), "Correct type")
         self.assertEqual(back_again.body[back_again.FIELD_MSGBODY], msg_body, "Content match")
 
+    def test_referral_message(self):
+        '''Test the contact referral message (still without encryption)'''
+        referral = message.ContactReferralMessage()
+        self.assertTrue(isinstance(referral, message.ContactReferralMessage), "Correct type")
+        msg_body = "Snoring snowflakes"
+        friend_id = "ISO-8859-1"
+        friend_name = "Adrian Mole"
+        friend_key = "Some really long string describing the whole public key for this person..."
+        referral.set_field(referral.FIELD_MSGBODY, msg_body)
+        referral.set_field(referral.FIELD_FRIEND_ID, friend_id)
+        referral.set_field(referral.FIELD_FRIEND_NAME, friend_name)
+        referral.set_field(referral.FIELD_FRIEND_KEY, friend_key)
+        unenc_output = referral.create_output(encrypter=None)
+        back_again = message.Message.from_received_data(unenc_output)
+        self.assertTrue(isinstance(back_again, message.ContactReferralMessage), "Correct type")
+        self.assertEqual(back_again.body[back_again.FIELD_MSGBODY], msg_body, "Content match")
+        self.assertEqual(back_again.body[back_again.FIELD_FRIEND_ID], friend_id, "Id match")
+        self.assertEqual(back_again.body[back_again.FIELD_FRIEND_NAME], friend_name, "Name match")
+        self.assertEqual(back_again.body[back_again.FIELD_FRIEND_KEY], friend_key, "Key match")
+
 
 if __name__ == "__main__":
     unittest.main()
