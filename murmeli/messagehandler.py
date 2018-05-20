@@ -40,9 +40,11 @@ class MessageHandler(Component):
     def receive_contact_request(self, msg):
         '''Receive a contact request'''
         pass
+
     def receive_contact_response(self, msg):
         '''Receive a contact response'''
         pass
+
     def receive_status_notify(self, msg):
         '''Receive a status notification'''
         # If it's a ping, reply with a pong
@@ -59,7 +61,6 @@ class MessageHandler(Component):
         pass
     def receive_info_response(self, msg):
         '''Receive an info response'''
-        # TODO: Validate, then save in database
         pass
     def receive_friend_referral(self, msg):
         '''Receive a friend referral'''
@@ -74,6 +75,9 @@ class MessageHandler(Component):
         '''Receive a relayed message for somebody else'''
         # TODO: Validate, then save in database
         pass
+
+    def _add_message_to_inbox(self, msg):
+        self.call_component(System.COMPNAME_DATABASE, "add_message_to_inbox", msg=msg)
 
 
 class RobotMessageHandler(MessageHandler):
@@ -106,18 +110,19 @@ class RobotMessageHandler(MessageHandler):
         if self._is_message_from_owner(msg):
             # Get referred friend out of message
             new_friend_id = msg.get_field(msg.FIELD_FRIEND_ID)
-            new_friend_name = msg.get_field(msg.FIELD_FRIEND_NAME)
             new_friend_key = msg.get_field(msg.FIELD_FRIEND_KEY)
-            # TODO: Add key to keyring and get keyid
-            friend_keyid = None
-            # Update database
-            profile = {"torid":new_friend_id, 'status':'trusted', 'keyId':friend_keyid}
-            self.call_component(System.COMPNAME_DATABASE, "add_or_update_profile",
-                                prof=profile)
-            # accept automatically
-            resp = message.ContactAcceptMessage()
-            resp.recipients = [new_friend_id]
-            self.call_component(System.COMPNAME_DATABASE, "add_message_to_outbox", msg=resp)
+            # Add key to keyring and get keyid
+            friend_keyid = self.call_component(System.COMPNAME_CRYPTO, "import_public_key",
+                                               strkey=new_friend_key)
+            if friend_keyid:
+                # Update database
+                profile = {"torid":new_friend_id, 'status':'trusted', 'keyId':friend_keyid}
+                self.call_component(System.COMPNAME_DATABASE, "add_or_update_profile",
+                                    prof=profile)
+                # accept automatically
+                resp = message.ContactAcceptMessage()
+                resp.recipients = [new_friend_id]
+                self.call_component(System.COMPNAME_DATABASE, "add_message_to_outbox", msg=resp)
 
     def _is_message_from_owner(self, msg):
         '''Return true if message is from this robot's owner'''
@@ -145,8 +150,41 @@ class RegularMessageHandler(MessageHandler):
         self.call_component(System.COMPNAME_CONTACTS, "set_online_status", tor_id=sender_id,
                             online=is_online)
 
+    def receive_contact_request(self, msg):
+        '''Receive a contact request'''
+        # Maybe: check we haven't got this contact already
+        # Check config to see whether we accept untrusted contact requests
+        if self.call_component(System.COMPNAME_CONFIG, "get_property",
+                               key=Config.KEY_ALLOW_FRIEND_REQUESTS):
+            self._add_message_to_inbox(msg)
+
     def receive_contact_response(self, msg):
         '''Receive a contact response'''
         # TODO: Check if this is a response from our robot, if so then treat differently
+        pass
+
+    def receive_info_request(self, msg):
+        '''Receive an info request'''
+        # TODO: Validate, then respond or discard
+        pass
+
+    def receive_info_response(self, msg):
+        '''Receive an info response'''
+        # TODO: Validate, then save in database
+        pass
+
+    def receive_friend_referral(self, msg):
+        '''Receive a friend referral'''
+        # TODO: Validate, then save in database
+        pass
+
+    def receive_friend_refer_request(self, msg):
+        '''Receive a friend referral request'''
+        # TODO: Validate, then save in database
+        pass
+
+    def receive_regular_message(self, msg):
+        '''Receive a regular message'''
+        # TODO: Validate, then save in database
         pass
 
