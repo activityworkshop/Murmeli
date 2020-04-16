@@ -17,11 +17,15 @@ Please try out the code and report back any difficulties encountered.  The tool 
 
 and the tests can be run with (for example):
 
-        PYTHONPATH=. python3 test/systemtest.py
+	PYTHONPATH=. python3 test/systemtest.py
+
+or using automatic test discovery:
+
+	python3 -m unittest discover test
 
 Linting can be done with any tool of course, for example:
 
-        pylint --max-line-length=100 murmeli
+	pylint --max-line-length=100 murmeli
  
 All feedback and help is very welcome.
 
