@@ -1,4 +1,4 @@
-<script src="file:///{{webcachedir}}/jquery-3.1.1.js"></script>
+<script src="file:///{{webcachedir}}/jquery-3.3.1.slim.js"></script>
 <script>
 	var _r=function(p,c){return p.replace(/%s/,c);};
 	function respondToContactRequest(id, name, accept)

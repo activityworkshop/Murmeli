@@ -2,7 +2,7 @@
 	#editpane {font-size:75%; padding:0px}
 	.dontshow {display:none}
 </style>
-<script src="file:///{{webcachedir}}/jquery-3.1.1.js"></script>
+<script src="file:///{{webcachedir}}/jquery-3.3.1.slim.js"></script>
 <script>
 function makeBold() {document.execCommand("Bold", false, null);}
 function makeItalic() {document.execCommand("Italic", false, null);}
