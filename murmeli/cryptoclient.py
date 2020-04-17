@@ -82,13 +82,12 @@ class CryptoClient(Component):
     def get_public_key(self, key_id):
         '''Get a public key as ascii, either ours or another one'''
         self.init_gpg()
-        if self.gpg:
-            return str(self.gpg.export_keys(key_id))
+        return str(self.gpg.export_keys(key_id)) if self.gpg else None
 
     def generate_key_pair(self, name, email, comment):
         '''Create a new asymmetric keypair with the given information (slow)'''
         self.init_gpg()
-        #print "GPG client will generate a keypair for %s, %s, %s." % (name, email, comment)
+        print("GPG client will generate a keypair for '%s', '%s', '%s'." % (name, email, comment))
         inputdata = self.gpg.gen_key_input(key_type="RSA", key_length=4096, \
             name_real=name, name_email=email, name_comment=comment)
         return self.gpg.gen_key(inputdata)
@@ -118,6 +117,7 @@ class CryptoClient(Component):
             for key in self.gpg.list_keys():
                 if key.get("keyid", "") == key_id:
                     return key.get("fingerprint", None)
+        return None
 
 
     ########## Asymmetric encryption ##############

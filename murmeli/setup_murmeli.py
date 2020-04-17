@@ -174,6 +174,7 @@ def select_keypair(system):
         key_index = ask_question_raw(system, get_text(system, "setup.selectprivatekey"), answers)
         check_abort(key_index, system)
         return private_keys[int(key_index) - 1].get('keyid')
+    return None
 
 def select_robot_status(system, private_keyid):
     '''Specify whether we're setting up a robot system or a real system'''
@@ -198,6 +199,7 @@ def select_robot_status(system, private_keyid):
 
     elif system_type == "2":
         return setup_robot_system(system, data_path, private_keyid)
+    return None
 
 def setup_robot_system(system, data_path, private_keyid):
     '''Choose which key to use for the robot system's owner and save this choice'''

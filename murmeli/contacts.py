@@ -33,7 +33,7 @@ class Contacts(Component):
 
     def is_online(self, tor_id):
         '''Check whether the given tor id is currently online (as far as we know)'''
-        #print("Contact list asked about", tor_id, ", answer is", (torId in self._online_list))
+        # print("Contact list asked about", tor_id, ", answer is", (tor_id in self._online_list))
         return tor_id in self._online_list
 
     def last_seen(self, tor_id):

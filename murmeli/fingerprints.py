@@ -59,6 +59,7 @@ class FingerprintChecker:
             # Pull out the texts with the indexes and join with " "
             if indexes:
                 return " ".join([words[i] for i in indexes])
+        return None
 
     def _get_combo_indexes(self):
         '''Based on the combination index, return a list showing the order in which

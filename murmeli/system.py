@@ -44,6 +44,7 @@ class System:
                 raise
         else:
             print("Can't invoke %s, component %s not found" % (call_name, comp_name))
+        return None
 
 
 class Component:
@@ -69,6 +70,7 @@ class Component:
         '''Invoke a call on the specified component'''
         if self._parent:
             return self._parent.invoke_call(comp_name, call_name, **kwargs)
+        return None
 
     def get_config_property(self, key):
         '''Convenience method for calling the config if available'''

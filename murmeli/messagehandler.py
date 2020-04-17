@@ -71,6 +71,7 @@ class MessageHandler(Component):
     def receive_regular_message(self, msg):
         '''Receive a regular message'''
         pass
+
     def receive_relayed_message(self, msg):
         '''Receive a relayed message for somebody else'''
         # TODO: Validate, then save in database

@@ -31,7 +31,7 @@ class PlainLogSink:
     def log(self, logstr, log_level):
         '''Log the given string to the console'''
         if log_level >= self.log_level:
-            print(logstr)
+            print("Log:", logstr)
 
 
 class FileLogSink:

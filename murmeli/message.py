@@ -44,8 +44,7 @@ class ByteChomper:
 
     def get_rest(self):
         '''Get the rest of the data'''
-        if self.data:
-            return self.data[self.pos:]
+        return self.data[self.pos:] if self.data else None
 
 
 class Message:
@@ -248,7 +247,7 @@ class UnencryptedMessage(Message):
             if msg:
                 msg.set_all_fields(payload[2:].decode("utf-8"))
                 return msg
-
+        return None
 
     def create_payload(self):
         '''Create the payload from the message contents'''
@@ -340,6 +339,7 @@ class AsymmetricMessage(Message):
                 msg.timestamp = tstamp
                 msg.set_all_fields(subpayload.decode("utf-8"))
                 return msg
+        return None
 
 
     def create_payload(self):

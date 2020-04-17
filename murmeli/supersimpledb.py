@@ -145,6 +145,7 @@ class MurmeliDb(Component):
             return [Profile(i) for i in tab if i and i.get("status", None) in status]
         elif status:
             return [Profile(i) for i in tab if i and i.get("status", None) == status]
+        return []
 
     def get_profile(self, torid=None):
         '''Get the profile for the given torid'''
@@ -240,9 +241,9 @@ class MurmeliDb(Component):
             new_id = prof.get("torid", None)
             if not new_id:
                 return False
-            for p in tab:
-                if p.get("torid", None) == new_id:
-                    p.update(prof)
+            for found_profile in tab:
+                if found_profile.get("torid", None) == new_id:
+                    found_profile.update(prof)
                     return True
             tab.append(prof)
             return True
@@ -253,6 +254,7 @@ class MurmeliDb(Component):
         first_row = tab[0] if tab else None
         if first_row:
             return first_row.get(key, None)
+        return None
 
     def set_admin_value(self, key, value):
         '''Set the value of the given key'''

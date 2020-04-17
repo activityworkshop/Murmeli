@@ -10,8 +10,7 @@ def make_thumbnail_binary(picpath):
         image.thumbnail((200, 200), Image.ANTIALIAS)
         byte_file = BytesIO()
         image.save(byte_file, format="JPEG")
-    if byte_file:
-        return byte_file.getvalue()
+    return byte_file.getvalue() if byte_file else None
 
 def hex_str(byteval):
     '''Turn a byte value into a two-digit hex code'''
@@ -22,6 +21,7 @@ def bytes_to_string(in_bytes):
     '''Turn a series of bytes into a string'''
     if in_bytes:
         return "".join([hex_str(i) for i in in_bytes])
+    return None
 
 def string_to_bytes(in_str):
     '''Turn a string into a series of bytes'''
