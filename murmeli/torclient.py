@@ -81,9 +81,9 @@ class TorClient(Component):
             self.daemon = subprocess.Popen([self.tor_exe, "-f", rc_file])
             print("started tor daemon!")
             started = True
-        except Exception as e:
+        except Exception as exc:
             print("failed to start tor daemon - is it already running or did it just fail?")
-            print("Exception:", e)
+            print("Exception:", exc)
             started = False
         if start_socket_broker:
             self.socket_broker = SocketBroker(self)
@@ -102,13 +102,14 @@ class TorClient(Component):
             self.socket_broker.close()
             self.socket_broker = None
 
-    def start(self):
+    def checked_start(self):
         '''Start the component'''
-        self.started = self.start_tor()
+        return self.start_tor()
 
     def stop(self):
         '''Stop the component'''
         self.stop_tor()
+        Component.stop(self)
 
 
 ###############################################################################
@@ -144,8 +145,8 @@ class SocketBroker(threading.Thread):
                 self.socket.bind((interface, port))
                 print("Started tor and opened socket on attempt number", attempts)
                 started = True
-            except Exception as e:
-                print("Attempt", attempts, "- failed to open socket for listening!", e)
+            except Exception as exc:
+                print("Attempt", attempts, "- failed to open socket for listening!", exc)
                 attempts += 1
         if not started:
             print("Failed after", attempts, "attempts to start the socket - tor failed to start?")
@@ -204,14 +205,14 @@ class SocketListener(threading.Thread):
         while received and not is_http_req:
             received = self.conn.recv(1024)
             print("Got something" if received else "Got nothing!")
-            if len(received) > 0:
+            if received:
                 is_http_req = not msg and self.looks_like_http(received)
                 msg += received
                 if is_http_req:
                     print("Got Http request: ", msg)
                     reply_to_send = "undergrowth (%d)" % random.Random().choice(range(10000))
                     self.conn.send(reply_to_send.encode("utf-8"))
-            elif len(msg) > 0:
+            elif msg:
                 received_msg = Message.from_received_data(msg)
                 if received_msg:
                     print("Incoming message!  Sender was '%s'"

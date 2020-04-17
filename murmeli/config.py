@@ -28,9 +28,10 @@ class Config(Component):
         self.config_listeners = set()
         self.from_file = False
 
-    def start(self):
+    def checked_start(self):
         '''Start the component'''
         self.load()
+        return True
 
     def load(self, src_file=None):
         '''Load the configuration from file'''
@@ -105,6 +106,8 @@ class Config(Component):
         '''Add the given subscriber to the listeners to be informed about changes'''
         if sub:
             self.config_listeners.add(sub)
+            return True
+        return False
 
     def remove_listener(self, sub):
         '''Remove the given subscriber from the listeners, won't be informed any more'''
@@ -113,6 +116,7 @@ class Config(Component):
     def stop(self):
         '''Stop the component'''
         self.save()
+        Component.stop(self)
 
     def save(self, dest_file=None):
         '''Save the config to file'''

@@ -35,6 +35,10 @@ class I18nManager(Component):
         '''Get the i18n of the key if found, otherwise return the key'''
         return self.texts.get(key, key)
 
+    def checked_start(self):
+        '''Connect to config if it's available'''
+        return self.call_component(System.COMPNAME_CONFIG, "add_listener", sub=self)
+
     def config_updated(self):
         '''The config has changed, so set the language in case it has changed'''
         self.set_language()

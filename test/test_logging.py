@@ -20,7 +20,7 @@ class LoggingTest(unittest.TestCase):
         log.log("avocado", logger.LOGLEVEL_DEBUG)
         log.log("something normal", logger.LOGLEVEL_NORMAL)
         log.log("something bad", logger.LOGLEVEL_WARNING)
-        self.assertEqual(mock_stdout.getvalue(), "banana\nsomething normal\nsomething bad\n")
+        self.assertEqual(mock_stdout.getvalue(), "Log: banana\nLog: something normal\nLog: something bad\n")
 
     def test_normal_print_logging(self):
         '''Test regular logging using print calls'''

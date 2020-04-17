@@ -17,7 +17,7 @@ Please try out the code and report back any difficulties encountered.  The tool 
 
 and the tests can be run with (for example):
 
-	PYTHONPATH=. python3 test/systemtest.py
+	python3 -m unittest test/test_system.py
 
 or using automatic test discovery:
 
