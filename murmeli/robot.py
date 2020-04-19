@@ -6,6 +6,10 @@ from murmeli.config import Config
 from murmeli.i18n import I18nManager
 from murmeli.torclient import TorClient
 from murmeli.supersimpledb import MurmeliDb
+try:
+    from murmeli.scrollbot import ScrollbotGuiNotifier as RobotNotifier
+except ImportError:
+    from murmeli.guinotification import DefaultGuiNotifier as RobotNotifier
 
 
 class Robot:
