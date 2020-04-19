@@ -61,9 +61,13 @@ class RobotHandlerTest(unittest.TestCase):
     def setUp(self):
         self.sys = System()
         self.robot = RobotMessageHandler(self.sys)
+        self.sys.add_component(self.robot)
         self.fakedb = MockDatabase(self.sys)
+        self.sys.add_component(self.fakedb)
         self.fakecrypto = MockCrypto(self.sys)
+        self.sys.add_component(self.fakecrypto)
         config = Config(self.sys)
+        self.sys.add_component(config)
         config.set_property(config.KEY_ROBOT_OWNER_KEY, "EasterBunny") # keyid, not torid
 
     def test_sending_nonsense(self):
@@ -139,10 +143,15 @@ class RegularHandlerTest(unittest.TestCase):
     def setUp(self):
         self.sys = System()
         self.handler = RegularMessageHandler(self.sys)
+        self.sys.add_component(self.handler)
         self.fakedb = MockDatabase(self.sys)
+        self.sys.add_component(self.fakedb)
         self.fakecrypto = MockCrypto(self.sys)
+        self.sys.add_component(self.fakecrypto)
         self.fakecontacts = MockContacts(self.sys)
+        self.sys.add_component(self.fakecontacts)
         self.config = Config(self.sys)
+        self.sys.add_component(self.config)
         self.config.set_property(Config.KEY_ALLOW_FRIEND_REQUESTS, True)
 
 

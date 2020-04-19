@@ -30,7 +30,7 @@ class TorTest(unittest.TestCase):
         tordir = os.path.join("test", "outputdata", "tor")
         os.makedirs(tordir, exist_ok=True)
         tor_client = TorClient(sys, tordir)
-        sys.start()
+        sys.add_component(tor_client)
         self.assertTrue(tor_client.started, "Tor started")
         time.sleep(5)
 
@@ -45,6 +45,7 @@ class TorTest(unittest.TestCase):
 
         # Add receiver to handle the messages
         receiver = FakeMessageHandler(sys)
+        sys.add_component(receiver)
         self.assertFalse(receiver.messages, "no messages received yet")
 
         # contact request

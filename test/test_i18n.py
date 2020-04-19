@@ -30,7 +30,9 @@ class I18nTest(unittest.TestCase):
         '''Helper method to create a system configured to the given language'''
         sys = System()
         i18n = I18nManager(sys)
+        sys.add_component(i18n)
         conf = Config(sys)
+        sys.add_component(conf)
         conf.set_property(conf.KEY_LANGUAGE, language_name)
         i18n.set_language()
         return i18n

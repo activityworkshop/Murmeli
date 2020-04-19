@@ -56,9 +56,11 @@ class TorClient(Component):
                 hostfile_path = os.path.join(self.file_path, "hidden_service", "hostname")
                 with open(hostfile_path, "r") as hostfile:
                     line = hostfile.read().rstrip()
-                address_match = re.match(r'(.{16})\.onion$', line)
+                address_match = re.match(r'(.{16,56})\.onion$', line)
                 if address_match:
-                    return address_match.group(1)
+                    torid = address_match.group(1)
+                    if len(torid) in [16, 56]:
+                        return torid
             except Exception:
                 if not is_started:
                     return None # no point in trying again if starting failed
