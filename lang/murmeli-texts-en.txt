@@ -1,5 +1,44 @@
 # English texts for Murmeli
 
+[setup]
+language=Select language / Sprache auswählen
+lang.en=English
+lang.de=Deutsch
+qtoquit=(or 'q' to quit)
+abort=Setup aborted.
+configsaved=Config file saved.
+languageselected=English language selected.
+foundgpgversion=Found GPG version: %s
+entergpgpath=Could not find 'gpg'.  Please enter path to GPG executable:
+foundkeyring=Found keyring
+nokeyring=No keyring found
+foundkeys=Found %d private and %d public keys
+datadir=Data directory
+createdatadir=Create data directory?
+createdir.create=Create
+createddir.cancel=Cancel
+datadir.creating=Creating data directory.
+entertorpath=Full path to tor exe (or 'tor')
+startingtorfailed=Failed to start tor.  Check the exe path.
+foundtorid=Your Murmeli id is '%s'
+genkeypair=To use Murmeli, you need to generate a new keypair.  This will take some time.
+genkeypair.rsa=Generate RSA keypair
+genkeypair.name=Name (required)
+genkeypair.email=Email (optional)
+genkeypair.comment=Comment (optional)
+genkeypair.pleasewait=Please wait while the keypair is generated...
+genkeypair.complete=Keypair generated.
+selectprivatekey=This keyring has more than one key already.  Which one should Murmeli use?
+realorrobot=Would you like to setup a normal system, or a robot relay?
+system.real=Normal system
+system.robot=Robot system, just for your personal relay
+selectrobotownerkey=Select the key of the robot's owner, either from the keyring\nor from a .key file in the data directory
+refreshkeylist=Refresh list
+exportpublickey=Export the public key to a file (for setting up a robot)
+publickeyexported=To setup a robot, copy the key file '%s' to the robot's data directory.
+yes=Yes
+no=No
+
 [startupwizard]
 title=Murmeli Startup Wizard
 intro.heading=Murmeli is a way for you to communicate.  Under your control.
@@ -50,6 +89,9 @@ toolbar.contacts=Contacts
 toolbar.messages=Messages
 toolbar.calendar=Calendar
 toolbar.settings=Settings
+
+[home]
+title=Murmeli
 
 [contacts]
 title=Contacts

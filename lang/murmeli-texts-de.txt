@@ -1,5 +1,42 @@
 # German texts for Murmeli
 
+[setup]
+qtoquit=(oder 'q' zum Abbrechen)
+abort=Setup abgebrochen.
+configsaved=Configdatei gespeichert.
+languageselected=Deutsche Sprache ausgewählt.
+foundgpgversion=GPG gefunden, Version: %s
+notfoundgpgversion=Aufruf nach gpg fehlgeschlagen.  Namen / Pfad setzen?
+entergpgpath=Aufruf nach 'gpg' fehlgeschlagen.  Namen und Pfad bitte eingeben:
+foundkeyring=Schlüsselbund gefunden
+nokeyring=Schlüsselbund nicht gefunden
+foundkeys=%d private und %d öffentliche Schlüssel gefunden
+datadir=Ordner für Murmeli-Daten
+createdatadir=Datenordner kreieren?
+createdir.create=Kreieren
+createddir.cancel=Abbrechen
+datadir.creating=Ordner kreiert.
+entertorpath=Pfad zum Tor exe (manchmal nur 'tor')
+startingtorfailed=Starten von Tor ist fehlgeschlagen.  Pfad überprüfen.
+foundtorid=Die neue Murmeli-Id lautet '%s'
+genkeypair=Ein neues Schlüsselpaar muss jetzt generiert werden.  Das dauert ja ein bisschen.
+genkeypair.rsa=RSA Schlüsselpaar generieren
+genkeypair.name=Name (benötigt)
+genkeypair.email=Email (optional)
+genkeypair.comment=Bemerkung (optional)
+genkeypair.pleasewait=Bitte Geduld haben während der Generierung...
+genkeypair.complete=Schlüsselpaar generiert.
+selectprivatekey=Dieser Schlüsselbund hat mehrere Schlüssel.  Welcher sollte für Murmeli verwendet werden?
+realorrobot=Sollte dieses System ein normales sein, oder einen Robotersystem für Weiterleitung?
+system.real=Normales System
+system.robot=Robotersystem für das Weiterleiten der Nachrichten
+selectrobotownerkey=Den Schlüssel des Owners auswählen, entweder vom Schlüsselbund\noder von einer .key Datei im Datenverzeichnis
+refreshkeylist=Liste aktualisieren
+exportpublickey=Den öffentlichen Schlüssel zur Datei exportieren (für das Aufsetzten eines Robotersystems)
+publickeyexported=Um ein Roboter aufzusetzen, die Schlüsseldatei '%s' ins Datenverzeichnis des Roboters kopieren.
+yes=Ja
+no=Nein
+
 [startupwizard]
 title=Murmeli Startup Wizard
 intro.heading=Murmeli ist ein Kommunikationsmittel, für dich.  Unter deine Kontrolle.
@@ -50,6 +87,9 @@ toolbar.contacts=Kontakte
 toolbar.messages=Nachrichten
 toolbar.calendar=Kalender
 toolbar.settings=Einstellungen
+
+[home]
+title=Murmeli
 
 [contacts]
 title=Kontakte
