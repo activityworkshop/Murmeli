@@ -90,11 +90,11 @@ class SsdbTest(unittest.TestCase):
         self.assertEqual(ssdb.get_num_tables(), 2, "Database should have two empty tables at start")
         self.assertEqual(len(ssdb.get_inbox()), 0, "Inbox should be empty at the start")
         # Add a message to the inbox
-        ssdb.add_message_to_inbox({"something":"amazing"})
+        ssdb.add_row_to_inbox({"something":"amazing"})
         self.assertEqual(len(ssdb.get_inbox()), 1, "Inbox should now have one message")
         self.assertEqual(len(ssdb.get_outbox()), 0, "Outbox should be empty")
         # Add a message to the outbox
-        ssdb.add_message_to_outbox({"uncertainty":3.4})
+        ssdb.add_row_to_outbox({"uncertainty":3.4})
         self.assertEqual(len(ssdb.get_inbox()), 1, "Inbox should have one message")
         self.assertEqual(len(ssdb.get_outbox()), 1, "Outbox should have one message")
         self.assertEqual(ssdb.get_outbox()[0]['_id'], 0, "First message has index 0")
@@ -102,7 +102,7 @@ class SsdbTest(unittest.TestCase):
         self.assertTrue(ssdb.delete_from_outbox(0))
         self.assertEqual(len(ssdb.get_outbox()), 0, "Outbox should be empty")
         # Add another and check its id
-        ssdb.add_message_to_outbox({"another":"tantalising factlet"})
+        ssdb.add_row_to_outbox({"another":"tantalising factlet"})
         self.assertEqual(len(ssdb.get_outbox()), 1, "Outbox should have one message")
         msg = ssdb.get_outbox()[0]
         self.assertEqual(msg['_id'], 1, "First empty message has index 1 now")
@@ -176,10 +176,10 @@ class SsdbTest(unittest.TestCase):
         # Check that filename we want to use doesn't exist
         self.assertFalse(os.path.exists(db_filename), "File %s shouldn't exist!" % db_filename)
         ssdb = supersimpledb.MurmeliDb(None, db_filename)
-        ssdb.add_message_to_outbox({"sender":"me", "recipient":"you",
-                                    "messageBody":"Here is my message"})
-        ssdb.add_message_to_outbox({"sender":"me", "recipient":"you",
-                                    "messageBody":"Here is another message"})
+        ssdb.add_row_to_outbox({"sender":"me", "recipient":"you",
+                                "messageBody":"Here is my message"})
+        ssdb.add_row_to_outbox({"sender":"me", "recipient":"you",
+                                "messageBody":"Here is another message"})
         self.assertEqual(len(ssdb.get_outbox()), 2, "Two messages in outbox")
         self.check_message_indexes(ssdb.get_outbox())
         self.assertTrue(ssdb.delete_from_outbox(0), "Delete of first message should work")
@@ -210,11 +210,11 @@ class SsdbTest(unittest.TestCase):
         # Create new, empty Murmeli database without file-storage
         ssdb = supersimpledb.MurmeliDb(None)
         self.assertEqual(len(ssdb.get_inbox()), 0, "Inbox should be empty at the start")
-        ssdb.add_message_to_inbox({"something":"amazing"})
+        ssdb.add_row_to_inbox({"something":"amazing"})
         self.assertEqual(len(ssdb.get_inbox()), 1, "Inbox should now have one message")
         # Without locking, access to the table will follow appends
         inbox = ssdb.get_inbox()
-        ssdb.add_message_to_inbox({"another":"interesting thing"})
+        ssdb.add_row_to_inbox({"another":"interesting thing"})
         self.assertEqual(len(inbox), 1, "Inbox should now still have one message")
         self.assertEqual(len(ssdb.get_inbox()), 2, "Real Inbox should now have 2 message")
 

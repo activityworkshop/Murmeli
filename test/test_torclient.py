@@ -50,7 +50,7 @@ class TorTest(unittest.TestCase):
 
         # contact request
         req = ContactRequestMessage()
-        sender_name = "Wurzel Gummidge"
+        sender_name = "Worzel Gummidge"
         sender_msg = "Watch out for the volcano, it's radioactive!"
         req.set_field(req.FIELD_SENDER_NAME, sender_name)
         req.set_field(req.FIELD_MESSAGE, sender_msg)
