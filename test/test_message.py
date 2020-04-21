@@ -47,17 +47,16 @@ class TimestampTest(unittest.TestCase):
     def test_string_conversion(self):
         '''Test converting a timestamp to a string and back again'''
         now = message.Message.make_current_timestamp()
+        self.assertTrue(isinstance(now, float))
         as_string = message.Message.timestamp_to_string(now)
         self.assertIsNotNone(as_string, "stamp converted to string")
         self.assertTrue(isinstance(as_string, str), "String created")
         self.assertEqual(len(as_string), 16, "Should be 16 chars long")
         back_again = message.Message.string_to_timestamp(as_string)
         self.assertIsNotNone(back_again, "string converted back again")
-        self.assertEqual(now.year, back_again.year, "Should be equal")
-        self.assertEqual(now.month, back_again.month, "Should be equal")
-        self.assertEqual(now.day, back_again.day, "Should be equal")
-        self.assertEqual(now.hour, back_again.hour, "Should be equal")
-        self.assertEqual(now.minute, back_again.minute, "Should be equal")
+        self.assertTrue(isinstance(back_again, float))
+        timediff = abs(now - back_again)
+        self.assertTrue(timediff < 60.0, "Floats should be equal to the nearest minute")
 
 
 class UnencMessageTest(unittest.TestCase):
@@ -104,6 +103,7 @@ class UnencMessageTest(unittest.TestCase):
         self.assertIsNotNone(back_again, "Recreated message")
         self.assertTrue(isinstance(back_again, message.ContactRequestMessage), "Correct type")
         self.assertFalse(back_again.body, "Empty body")
+        self.assertEqual(1, back_again.version_number, "Version 1")
 
     def test_contactrequest_with_fields(self):
         '''Test construction of contact request message with fields'''
@@ -127,6 +127,7 @@ class UnencMessageTest(unittest.TestCase):
         self.assertEqual(back_again.body[req.FIELD_SENDER_ID], test_id, "Id match")
         self.assertEqual(back_again.body[req.FIELD_MESSAGE], test_msg, "Msg match")
         self.assertEqual(back_again.body[req.FIELD_SENDER_KEY], test_key, "Key match")
+        self.assertEqual(1, back_again.version_number, "Version 1")
 
     def test_contact_deny_message(self):
         '''Test construction of contact deny message'''
@@ -140,6 +141,7 @@ class UnencMessageTest(unittest.TestCase):
         self.assertTrue(isinstance(back_again, message.ContactDenyMessage), "Correct type")
         self.assertEqual(back_again.msg_type, req.TYPE_CONTACT_RESPONSE, "Typenum match")
         self.assertEqual(back_again.body[req.FIELD_SENDER_ID], test_id, "Id match")
+        self.assertEqual(1, back_again.version_number, "Version 1")
 
 
 class AsymmMessageTest(unittest.TestCase):
@@ -161,6 +163,7 @@ class AsymmMessageTest(unittest.TestCase):
         self.assertEqual(back_again.msg_type, req.TYPE_CONTACT_RESPONSE, "Typenum match")
         self.assertEqual(back_again.body[req.FIELD_SENDER_ID], test_id, "Id match")
         self.assertEqual(back_again.body[req.FIELD_MESSAGE], test_msg, "Msg match")
+        self.assertEqual(1, back_again.version_number, "Version 1")
 
     def test_status_notify_message(self):
         '''Test the status notify message (still without encryption though)'''
@@ -188,6 +191,7 @@ class AsymmMessageTest(unittest.TestCase):
         unenc_output = notify.create_output(encrypter=None)
         back_again = message.Message.from_received_data(unenc_output)
         self.assertFalse(back_again.body[notify.FIELD_ONLINE], "Online match")
+        self.assertEqual(1, back_again.version_number, "Version 1")
 
     def test_info_request_message(self):
         '''Test the info request message (still without encryption)'''
@@ -198,6 +202,7 @@ class AsymmMessageTest(unittest.TestCase):
         back_again = message.Message.from_received_data(unenc_output)
         self.assertTrue(isinstance(back_again, message.InfoRequestMessage), "Correct type")
         self.assertEqual(back_again.body[req.FIELD_INFOTYPE], req.INFO_PROFILE, "Content match")
+        self.assertEqual(1, back_again.version_number, "Version 1")
 
     def test_info_response_message(self):
         '''Test the info response message for a profile (still without encryption)'''
@@ -213,6 +218,7 @@ class AsymmMessageTest(unittest.TestCase):
         self.assertTrue(isinstance(back_again, message.InfoResponseMessage), "Correct type")
         self.assertEqual(back_again.body[resp.FIELD_INFOTYPE], resp.INFO_PROFILE, "Content match")
         self.assertEqual(back_again.body[resp.FIELD_RESULT], test_profile, "Content match")
+        self.assertEqual(1, back_again.version_number, "Version 1")
 
     def test_regular_message(self):
         '''Test the regular message (still without encryption)'''
@@ -224,6 +230,7 @@ class AsymmMessageTest(unittest.TestCase):
         back_again = message.Message.from_received_data(unenc_output)
         self.assertTrue(isinstance(back_again, message.RegularMessage), "Correct type")
         self.assertEqual(back_again.body[back_again.FIELD_MSGBODY], msg_body, "Content match")
+        self.assertEqual(1, back_again.version_number, "Version 1")
 
     def test_referral_message(self):
         '''Test the contact referral message (still without encryption)'''
@@ -244,6 +251,7 @@ class AsymmMessageTest(unittest.TestCase):
         self.assertEqual(back_again.body[back_again.FIELD_FRIEND_ID], friend_id, "Id match")
         self.assertEqual(back_again.body[back_again.FIELD_FRIEND_NAME], friend_name, "Name match")
         self.assertEqual(back_again.body[back_again.FIELD_FRIEND_KEY], friend_key, "Key match")
+        self.assertEqual(1, back_again.version_number, "Version 1")
 
 
 if __name__ == "__main__":

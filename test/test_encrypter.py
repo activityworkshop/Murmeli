@@ -16,6 +16,7 @@ class TrivialEncrypter:
             return unenc
         elif enc_type == message.Message.ENCTYPE_ASYM:
             return bytes([char ^ TrivialEncrypter.secret_xor_key for char in unenc])
+        return None
 
     def decrypt(self, enc_data, enc_type):
         '''Decrypt the given encrypted data'''
@@ -54,6 +55,7 @@ class EncryptedMessageTest(unittest.TestCase):
         self.assertEqual(back_again.body[req.FIELD_SENDER_ID], test_id, "Id match")
         self.assertEqual(back_again.body[req.FIELD_MESSAGE], test_msg, "Msg match")
         self.assertEqual(back_again.body[req.FIELD_SENDER_KEY], test_key, "Key match")
+        self.assertEqual(1, back_again.version_number, "Version 1")
 
     def test_regular_message(self):
         '''Test the regular message using trivial encryption'''
@@ -72,6 +74,7 @@ class EncryptedMessageTest(unittest.TestCase):
         self.assertIsNotNone(back_again, "Decryption should succeed")
         self.assertTrue(isinstance(back_again, message.RegularMessage), "Correct type")
         self.assertEqual(back_again.body[back_again.FIELD_MSGBODY], msg_body, "Content match")
+        self.assertEqual(1, back_again.version_number, "Version 1")
 
 
 if __name__ == "__main__":

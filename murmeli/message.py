@@ -82,7 +82,7 @@ class Message:
         self.timestamp = None
         self.body = {}
         self.recipients = []
-        # version number?
+        self.version_number = None
 
     def set_field(self, key, value):
         '''Set the given field in the message'''
@@ -164,7 +164,7 @@ class Message:
     def is_complete_for_sending(self):
         '''Check if all the required fields are non-empty for sending'''
         for field in self.get_required_body_fields():
-            if not self.body.get(field, None):
+            if not self.body.get(field):
                 return False
         return True
 
@@ -193,14 +193,15 @@ class Message:
 
     @staticmethod
     def make_current_timestamp():
-        '''Make a timestamp according to UTC'''
-        return datetime.datetime.now(datetime.timezone.utc)
+        '''Make a timestamp float according to UTC'''
+        return datetime.datetime.now(datetime.timezone.utc).timestamp()
 
     @staticmethod
-    def timestamp_to_string(stamp):
-        '''Make a timestamp string for sending'''
-        return "%d-%02d-%02d-%02d-%02d" % (stamp.year, stamp.month,
-                                           stamp.day, stamp.hour, stamp.minute)
+    def timestamp_to_string(tstamp):
+        '''Make a UTC timestamp string for sending from the given float'''
+        send_time = datetime.datetime.fromtimestamp(tstamp, tz=datetime.timezone.utc)
+        return "%d-%02d-%02d-%02d-%02d" % (send_time.year, send_time.month,
+                                           send_time.day, send_time.hour, send_time.minute)
 
     @staticmethod
     def string_to_timestamp(timestr):
@@ -209,9 +210,11 @@ class Message:
             (year, month, day, hour, minute) = [int(i) for i in timestr.split("-")]
             when = datetime.datetime(year, month, day, hour, minute, tzinfo=datetime.timezone.utc)
         except ValueError:
-            print("Failed to parse timestamp '", timestr, "'")
+            print("Failed to parse timestamp '%s'" % timestr)
             when = datetime.datetime.now()
-        return when
+        except AttributeError:
+            when = datetime.datetime.now()
+        return when.timestamp()
 
     def get_body_fields(self):
         '''Get which fields should be packed in body'''
@@ -239,13 +242,17 @@ class UnencryptedMessage(Message):
         if payload:
             msg = None
             msg_type = payload[0]
-            _ = payload[1]    # TODO: message version not used yet
+            msg_ver = payload[1]
+            assert msg_ver == 1
             if msg_type == Message.TYPE_CONTACT_REQUEST:
                 msg = ContactRequestMessage()
             elif msg_type == Message.TYPE_CONTACT_RESPONSE:
                 msg = ContactDenyMessage()
             if msg:
+                msg.version_number = msg_ver
                 msg.set_all_fields(payload[2:].decode("utf-8"))
+                # Unencrypted messages don't have timestamps, so we'll assign one on receipt
+                msg.timestamp = msg.make_current_timestamp()
                 return msg
         return None
 
@@ -302,7 +309,6 @@ class AsymmetricMessage(Message):
 
     def __init__(self, msg_type):
         Message.__init__(self, Message.ENCTYPE_ASYM, msg_type)
-        self.timestamp = None
         self.should_be_relayed = True  # Most should be relayed
 
     @staticmethod
@@ -321,7 +327,7 @@ class AsymmetricMessage(Message):
             msg_version = payload[0]
             print("msg version:", msg_version)
             # Separate fields of message into common ones and the type-specific payload
-            msg_type, subpayload, tstamp = AsymmetricMessage.strip_fields(payload[1:])
+            msg_type, subpayload, timestr = AsymmetricMessage.strip_fields(payload[1:])
             print("msg type:", msg_type)
             if msg_type == Message.TYPE_CONTACT_RESPONSE:
                 msg = ContactAcceptMessage()
@@ -336,7 +342,8 @@ class AsymmetricMessage(Message):
             elif msg_type == Message.TYPE_FRIEND_REFERRAL:
                 msg = ContactReferralMessage()
             if msg:
-                msg.timestamp = tstamp
+                msg.timestamp = msg.string_to_timestamp(timestr)
+                msg.version_number = msg_version
                 msg.set_all_fields(subpayload.decode("utf-8"))
                 return msg
         return None
@@ -371,7 +378,8 @@ class AsymmetricMessage(Message):
                   and mag1.decode('utf-8') == Message.MAGIC_TOKEN:
                     start_pos = 2*toklen + magic_token_len
                     # timestamp is always the last 16 bytes
-                    return (payload[start_pos], payload[start_pos+1:-16], payload[-16:])
+                    timestamp = payload[-16:].decode("utf-8")
+                    return (payload[start_pos], payload[start_pos+1:-16], timestamp)
         return ("", "", "")
 
 
@@ -514,4 +522,3 @@ class ContactReferralMessage(AsymmetricMessage):
     def get_required_body_fields(self):
         '''Get which fields are necessary for the message to be valid'''
         return [self.FIELD_FRIEND_ID, self.FIELD_FRIEND_NAME, self.FIELD_FRIEND_KEY]
-
