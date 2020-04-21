@@ -42,6 +42,9 @@ class DbUtilsTest(unittest.TestCase):
         # add an extra string
         test_profile['veg'] = "cabbage, peas"
         self.assertNotEqual(dbutils.calculate_hash(test_profile), result, "hash changed")
+        # add an empty value
+        test_profile['koalas'] = None
+        self.assertNotEqual(dbutils.calculate_hash(test_profile), result, "hash changed")
 
 
 if __name__ == "__main__":

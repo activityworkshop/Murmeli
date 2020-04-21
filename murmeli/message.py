@@ -69,6 +69,7 @@ class Message:
 
     FIELD_MESSAGE_TYPE = "msgType"
     FIELD_SENDER_ID = "senderId"
+    FIELD_SIGNATURE_KEYID = "signatureId"
 
     MAGIC_TOKEN = "murmeli"
 
@@ -136,15 +137,20 @@ class Message:
         if calculated_check != checksum:
             return None        # checksum doesn't match
 
+        sig_id = None
         if decrypter:
-            payload = decrypter.decrypt(payload, enc_type)
+            payload, sig_id = decrypter.decrypt(payload, enc_type)
 
+        msg = None
         if enc_type == Message.ENCTYPE_NONE:
-            return UnencryptedMessage.from_received_data(payload)
+            msg = UnencryptedMessage.from_received_data(payload)
         elif enc_type == Message.ENCTYPE_ASYM:
-            return AsymmetricMessage.from_received_data(payload)
+            msg = AsymmetricMessage.from_received_data(payload)
+            if sig_id:
+                msg.set_field(msg.FIELD_SIGNATURE_KEYID, sig_id)
         elif enc_type == Message.ENCTYPE_RELAY:
             pass
+        return msg
 
     def create_output(self, encrypter=None):
         '''Create the whole output packet from the internal fields'''
