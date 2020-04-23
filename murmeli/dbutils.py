@@ -38,3 +38,14 @@ def calculate_hash(db_row, used_fields=None):
                 val_str = key + ":" + found_val
                 hasher.update(val_str.encode('utf-8'))
     return hasher.hexdigest()
+
+def get_own_tor_id(database):
+    '''Get our own tor id from the database'''
+    own_profile = database.get_profile() if database else None
+    return own_profile.get('torid') if own_profile else None
+
+def get_messageable_profiles(database):
+    '''Return list of profiles to whom we can send a message'''
+    if database:
+        return [profile for profile in database.get_profiles_with_status(["trusted", "untrusted"])]
+    return []
