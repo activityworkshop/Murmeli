@@ -13,6 +13,7 @@ class System:
     COMPNAME_LOGGING = "comp.logging"
     COMPNAME_I18N = "comp.i18n"
     COMPNAME_GUI = "comp.gui"
+    COMPNAME_POSTSERVICE = "comp.post"
 
 
     def __init__(self):
