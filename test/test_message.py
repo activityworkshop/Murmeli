@@ -253,6 +253,26 @@ class AsymmMessageTest(unittest.TestCase):
         self.assertEqual(back_again.body[back_again.FIELD_FRIEND_KEY], friend_key, "Key match")
         self.assertEqual(1, back_again.version_number, "Version 1")
 
+    def test_reconstructing_message(self):
+        '''Test the reconstruction of the contact accept message'''
+        req = message.ContactAcceptMessage()
+        test_id = "1234567890hijklm"
+        test_msg = "He said, \"Schanke döhn\"."
+        req.set_field(req.FIELD_SENDER_ID, test_id)
+        req.set_field(req.FIELD_MESSAGE, test_msg)
+        unenc_output = req.create_output(encrypter=None)
+        # can we convert back again?
+        back_again = message.Message.from_received_data(unenc_output)
+        self.assertIsNotNone(back_again.original_payload, "Payload available")
+        self.assertTrue(isinstance(back_again.original_payload, bytes), "Payload of correct type")
+        reconstructed = message.AsymmetricMessage.from_received_payload(back_again.original_payload)
+        self.assertIsNotNone(reconstructed, "Message reconstructed")
+        self.assertTrue(isinstance(reconstructed, message.ContactAcceptMessage), "Correct type")
+        self.assertEqual(reconstructed.msg_type, req.TYPE_CONTACT_RESPONSE, "Typenum match")
+        self.assertEqual(reconstructed.body[req.FIELD_SENDER_ID], test_id, "Id match")
+        self.assertEqual(reconstructed.body[req.FIELD_MESSAGE], test_msg, "Msg match")
+        self.assertEqual(1, reconstructed.version_number, "Version 1")
+
 
 if __name__ == "__main__":
     unittest.main()

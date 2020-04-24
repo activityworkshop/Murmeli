@@ -67,7 +67,6 @@ class Message:
     # ENCTYPE_SYMM = 2
     ENCTYPE_RELAY = 3
 
-    FIELD_MESSAGE_TYPE = "msgType"
     FIELD_SENDER_ID = "senderId"
     FIELD_SIGNATURE_KEYID = "signatureId"
 
@@ -78,7 +77,7 @@ class Message:
         self.msg_type = msg_type
         self.should_be_queued = True   # Most should be queued, just certain subtypes not
         self.sender_must_be_trusted = True  # Most should only be accepted if sender is trusted
-        self.unrecognised_signature_ok = False # Normally an unrecognised signature is not ok
+        self.original_payload = None # Perhaps the original payload is needed later
         self.should_be_relayed = False
         self.timestamp = None
         self.body = {}
@@ -122,8 +121,8 @@ class Message:
         print("Enc type '%s'" % enc_type)
 
         # Extract payload
-        payload = chomper.get_field_with_length(4)
-        print("Payload '%s'" % repr(payload))
+        enc_payload = chomper.get_field_with_length(4)
+        print("Payload '%s'" % repr(enc_payload))
         magic = chomper.get_string(len(Message.MAGIC_TOKEN))
         print("End magic '%s'" % magic)
         if magic != Message.MAGIC_TOKEN:
@@ -133,21 +132,24 @@ class Message:
             return None   # spurious data at the end?
 
         # Check checksum
-        calculated_check = Message.make_checksum(payload)
+        calculated_check = Message.make_checksum(enc_payload)
         if calculated_check != checksum:
             return None        # checksum doesn't match
 
-        sig_id = None
         if decrypter:
-            payload, sig_id = decrypter.decrypt(payload, enc_type)
+            payload, sig_id = decrypter.decrypt(enc_payload, enc_type)
+        else:
+            payload, sig_id = (enc_payload, None)
 
         msg = None
         if enc_type == Message.ENCTYPE_NONE:
-            msg = UnencryptedMessage.from_received_data(payload)
+            msg = UnencryptedMessage.from_received_payload(payload)
         elif enc_type == Message.ENCTYPE_ASYM:
-            msg = AsymmetricMessage.from_received_data(payload)
+            msg = AsymmetricMessage.from_received_payload(payload)
             if sig_id:
                 msg.set_field(msg.FIELD_SIGNATURE_KEYID, sig_id)
+            elif msg:
+                msg.original_payload = enc_payload
         elif enc_type == Message.ENCTYPE_RELAY:
             pass
         return msg
@@ -243,7 +245,7 @@ class UnencryptedMessage(Message):
         self.sender_must_be_trusted = False  # ok if sender unknown
 
     @staticmethod
-    def from_received_data(payload):
+    def from_received_payload(payload):
         '''Given the payload, construct an appropriate subtype'''
         if payload:
             msg = None
@@ -326,7 +328,7 @@ class AsymmetricMessage(Message):
         return bytearray(token)
 
     @staticmethod
-    def from_received_data(payload):
+    def from_received_payload(payload):
         '''Given the decrypted payload, construct an appropriate subtype'''
         if payload:
             msg = None
@@ -399,7 +401,6 @@ class ContactAcceptMessage(AsymmetricMessage):
     def __init__(self):
         AsymmetricMessage.__init__(self, Message.TYPE_CONTACT_RESPONSE)
         self.sender_must_be_trusted = False  # ok if sender unknown
-        self.unrecognised_signature_ok = True # Special: an unrecognised signature might be ok here
 
     def get_body_fields(self):
         '''Get which fields should be packed in body'''
