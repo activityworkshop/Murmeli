@@ -2,6 +2,7 @@
 
 import unittest
 from murmeli.pages import PageServer, MurmeliPageServer
+from murmeli.system import System, Component
 
 
 class FakeView:
@@ -100,6 +101,36 @@ class PageServerTest(unittest.TestCase):
         self.assertFalse("Watermelon" in fake_view.html, "watermelon page not served")
         server.serve_page(fake_view, "/papaya/juice.html", [])
         self.assertTrue("fancyheader" in fake_view.html, "home page served for unknown domain")
+
+
+class FakeI18n(Component):
+    '''Fake internationalisation'''
+    def __init__(self, parent):
+        Component.__init__(self, parent, System.COMPNAME_I18N)
+
+    def get_text(self, key):
+        '''Get the i18n of the key if found, otherwise return the key'''
+        _ = key
+        return "ChickenChickenChicken"
+
+    def get_all_texts(self):
+        '''Not needed for these tests'''
+        return None
+
+
+class PoultryPageServerTest(unittest.TestCase):
+    '''Tests for the i18n of the page server'''
+
+    def test_home_page(self):
+        '''Check that accessing the home page with a fake i18n gives chickens'''
+        system = System()
+        i18n = FakeI18n(system)
+        system.add_component(i18n)
+        server = MurmeliPageServer(system)
+        # don't add the page server to the system, as it's not a component
+        fake_view = FakeView()
+        server.serve_page(fake_view, "/chicken/tikka/massala", [])
+        self.assertTrue("ChickenChickenChicken" in fake_view.html, "wow that's a lot of chickens")
 
 
 if __name__ == "__main__":

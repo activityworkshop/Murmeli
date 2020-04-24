@@ -1,5 +1,7 @@
 '''Module for the pages provided by the system'''
 
+import os
+import shutil
 from murmeli.pagetemplate import PageTemplate
 
 
@@ -57,11 +59,36 @@ class PageSet:
         self.domain = domain
         self.std_head = ("<html><head>"
                          "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">"
+                         "<link href='file:///" + self.get_web_cache_dir() + "/default.css'"
+                         " type='text/css' rel='stylesheet'>"
                          "</script></head>")
+
+    def require_resource(self, resource):
+        '''Require that the specified resource should be copied from web to the cache directory'''
+        cache_dir = self.get_web_cache_dir()
+        if cache_dir:
+            os.makedirs(cache_dir, exist_ok=True)
+            dest_path = os.path.join(cache_dir, resource)
+            if not os.path.exists(dest_path):
+                # dest file doesn't exist
+                # (if it exists we assume it's still valid as these resources shouldn't change)
+                source_path = os.path.join("web", resource)
+                if os.path.exists(source_path):
+                    shutil.copy(source_path, dest_path)
+                else:
+                    print("OUCH - failed to copy resource '%s' from web!" % resource)
+
+    def get_web_cache_dir(self):
+        '''Get the web cache directory from the config'''
+        cache = None
+        if self.system:
+            cache = self.system.invoke_call(self.system.COMPNAME_CONFIG, "get_web_cache_dir")
+        return cache or ""
 
     def build_page(self, params):
         '''General page-building method using a standard template
            and filling in the gaps using the given dictionary'''
+        self.require_resource("default.css")
         return ''.join([self.std_head,
                         "<body>",
                         "<table border='0' width='100%%'>"
@@ -71,6 +98,19 @@ class PageSet:
                         "<div class='overlay' id='overlay' onclick='hideOverlay()'></div>",
                         "<div class='popuppanel' id='popup'>Here's the message</div>",
                         "</body></html>"]) % params
+
+    def i18n(self, key):
+        '''Use the i18n component to translate the given key'''
+        if self.system:
+            return self.system.invoke_call(self.system.COMPNAME_I18N, "get_text", key=key)
+        return None
+
+    def get_all_i18n(self):
+        '''Use the i18n component to get all the texts'''
+        texts = None
+        if self.system:
+            texts = self.system.invoke_call(self.system.COMPNAME_I18N, "get_all_texts")
+        return texts or {}
 
     def get_page_title(self, _):
         '''Get the page title for any path by default'''
@@ -85,9 +125,11 @@ class DefaultPageSet(PageSet):
 
     def serve_page(self, view, url, params):
         '''Serve a page to the given view'''
+        self.require_resource('avatar-none.jpg')
         _ = (url, params)
-        page_title = "home.title"
+        page_title = self.i18n("home.title") or ""
+        tokens = self.get_all_i18n()
         contents = self.build_page({'pageTitle':page_title,
-                                    'pageBody':self.hometemplate.get_html({}),
+                                    'pageBody':self.hometemplate.get_html(tokens),
                                     'pageFooter':"<p>Footer</p>"})
         view.set_html(contents)
