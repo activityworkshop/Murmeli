@@ -1,6 +1,7 @@
 # coding=utf-8
 '''Module for testing the image utils'''
 
+import os
 import unittest
 from murmeli import imageutils
 
@@ -51,6 +52,16 @@ class ImageUtilsTest(unittest.TestCase):
         self.assertEqual(str1, "5177c80300090037", "string should match the expected one")
         ba2 = imageutils.string_to_bytes(str1)
         self.assertEqual(ba1, ba2, "byte array should be equal after conversion to string and back")
+
+    def test_thumbnail(self):
+        '''Testing the loading of an avatar jpeg from file and making a thumbnail image'''
+        input_path = os.path.join("test", "inputdata", "example-avatar.jpg")
+        thumbnail_bytes = imageutils.make_thumbnail_binary(input_path)
+        self.assertEqual(2325, len(thumbnail_bytes), "correct number of bytes")
+        thumb_str = imageutils.bytes_to_string(thumbnail_bytes)
+        self.assertEqual(4650, len(thumb_str), "correct string length")
+        out_bytes = imageutils.string_to_bytes(thumb_str)
+        self.assertEqual(thumbnail_bytes, out_bytes, "byte arrays equal")
 
 
 if __name__ == "__main__":
