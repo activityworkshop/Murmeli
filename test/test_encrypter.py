@@ -105,6 +105,17 @@ class EncryptedPayloadTest(unittest.TestCase):
         self.assertIsNotNone(back_again, "Message built")
         self.assertTrue(isinstance(back_again, message.ContactAcceptMessage), "Correct type")
         self.assertIsNone(back_again.get_field(req.FIELD_SIGNATURE_KEYID), "Sig id absent")
+        self.assertIsNotNone(back_again.original_payload, "Payload stored")
+        self.assertFalse("Nadolig".encode("utf-8") in back_again.original_payload, "encrypted")
+        # Try to recover, should fail
+        recovered = message.Message.from_encrypted_payload(back_again.original_payload, encrypter)
+        self.assertIsNone(recovered, "Message can't be built yet")
+        # store the original payload, meanwhile the key is added to the keyring
+        encrypter.key_present = True
+        recovered = message.Message.from_encrypted_payload(back_again.original_payload, encrypter)
+        self.assertIsNotNone(recovered, "Message built")
+        self.assertTrue(isinstance(recovered, message.ContactAcceptMessage), "Correct type")
+        self.assertIsNotNone(recovered.get_field(req.FIELD_SIGNATURE_KEYID), "Sig id now present")
 
 
 if __name__ == "__main__":

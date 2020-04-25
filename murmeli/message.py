@@ -154,6 +154,18 @@ class Message:
             pass
         return msg
 
+    @staticmethod
+    def from_encrypted_payload(data, decrypter):
+        '''Using an encrypted payload stored from a message,
+           reconstruct it into a Message object'''
+        if decrypter:
+            payload, sig_id = decrypter.decrypt(data, Message.ENCTYPE_ASYM)
+            if sig_id:
+                msg = AsymmetricMessage.from_received_payload(payload)
+                msg.set_field(msg.FIELD_SIGNATURE_KEYID, sig_id)
+                return msg
+        return None
+
     def create_output(self, encrypter=None):
         '''Create the whole output packet from the internal fields'''
         payload = self.create_payload()
