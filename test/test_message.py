@@ -274,5 +274,37 @@ class AsymmMessageTest(unittest.TestCase):
         self.assertEqual(1, reconstructed.version_number, "Version 1")
 
 
+class RelayMessageTest(unittest.TestCase):
+    '''Tests for the relaying messages'''
+
+    def test_pack_for_sending(self):
+        '''Test the packing of arbitrary content inside a Relay message'''
+        signed_output = "This should be a signed message".encode("utf-8")
+        wrapped = message.RelayingMessage.wrap_outgoing_message(signed_output)
+        self.assertTrue("murmeli".encode("utf-8") in wrapped, "Header present")
+        self.assertTrue("signed message".encode("utf-8") in wrapped, "Payload present")
+
+    def test_unpack_regular_message(self):
+        '''Test that a regular message can be wrapped and unwrapped'''
+        reg = message.RegularMessage()
+        msg_body = "Smörgåsbord"
+        reg.set_field(reg.FIELD_MSGBODY, msg_body)
+        unenc_output = reg.create_output(encrypter=None)
+        wrapped = message.RelayingMessage.wrap_outgoing_message(unenc_output)
+        back_again = message.Message.from_received_data(wrapped)
+        self.assertTrue(isinstance(back_again, message.RegularMessage), "Correct type")
+        self.assertEqual(back_again.body[back_again.FIELD_MSGBODY], msg_body, "Content match")
+        self.assertEqual(1, back_again.version_number, "Version 1")
+
+    def test_unpack_unknown_message(self):
+        '''Test that an unknown message can be forwarded'''
+        signed_output = "This should be a signed message".encode("utf-8")
+        wrapped = message.RelayingMessage.wrap_outgoing_message(signed_output)
+        back_again = message.Message.from_received_data(wrapped)
+        self.assertTrue(isinstance(back_again, message.RelayingMessage), "Correct type")
+        forwarded_output = back_again.create_output(encrypter=None)
+        self.assertEqual(signed_output, forwarded_output, "Forwarded data correct")
+
+
 if __name__ == "__main__":
     unittest.main()

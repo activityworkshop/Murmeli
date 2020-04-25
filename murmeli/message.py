@@ -147,11 +147,15 @@ class Message:
         elif enc_type == Message.ENCTYPE_ASYM:
             msg = AsymmetricMessage.from_received_payload(payload)
             if sig_id:
+                # print("AsymMsg got signature key id: '%s'" % sig_id)
                 msg.set_field(msg.FIELD_SIGNATURE_KEYID, sig_id)
             elif msg:
                 msg.original_payload = enc_payload
         elif enc_type == Message.ENCTYPE_RELAY:
-            pass
+            msg = RelayingMessage.unpack_payload(payload, decrypter)
+            if sig_id:
+                # print("Relay msg got signature key id: '%s'" % sig_id)
+                msg.set_field(msg.FIELD_SIGNATURE_KEYID, sig_id)
         return msg
 
     @staticmethod
@@ -541,3 +545,44 @@ class ContactReferralMessage(AsymmetricMessage):
     def get_required_body_fields(self):
         '''Get which fields are necessary for the message to be valid'''
         return [self.FIELD_FRIEND_ID, self.FIELD_FRIEND_NAME, self.FIELD_FRIEND_KEY]
+
+
+class RelayingMessage(Message):
+    '''A relaying message is some (unknown) kind of binary message which we cannot decrypt
+       but we can check the signature and relay it to our contacts'''
+
+    def __init__(self):
+        Message.__init__(self, Message.ENCTYPE_RELAY, Message.TYPE_RELAYED_MESSAGE)
+        self.parcel = None
+        self.received_bytes = None
+
+    @staticmethod
+    def wrap_outgoing_message(msg_bytes):
+        '''Create a relay wrapper around an existing outgoing message'''
+        relay_msg = RelayingMessage()
+        relay_msg.parcel = msg_bytes
+        return relay_msg.create_output() if msg_bytes else None
+
+    def create_payload(self):
+        '''If we were given a parcel, then this is the payload we need'''
+        assert self.parcel
+        return self.parcel
+
+    def create_output(self, encrypter=None):
+        '''Override the regular header packing if we've got the wrapped message'''
+        if self.received_bytes:
+            return self.received_bytes
+        return Message.create_output(self, encrypter)
+
+    @staticmethod
+    def unpack_payload(payload, crypto):
+        '''Use the crypto object to unpack the given payload into a message'''
+        if payload:
+            msg_for_me = Message.from_received_data(payload, crypto)
+            if msg_for_me:
+                return msg_for_me
+            # message isn't for me, but I can store a wrapped version
+            msg = RelayingMessage()
+            msg.received_bytes = payload
+            return msg
+        return None
