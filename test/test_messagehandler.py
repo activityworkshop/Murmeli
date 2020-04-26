@@ -16,7 +16,7 @@ class MockDatabase(Component):
         self.outbox = []
         self.profiles = []
 
-    def add_message_to_outbox(self, msg):
+    def add_row_to_outbox(self, msg):
         '''React to storing messages in the outbox'''
         self.outbox.append(msg)
 
@@ -24,15 +24,19 @@ class MockDatabase(Component):
         '''React to storing messages in the inbox'''
         self.inbox.append(msg)
 
+    def get_profile(self, torid=None):
+        '''Get a dummy profile for this torid'''
+        return {"torid":(torid or "own_id"), "keyid":"dummy_keyid", "status":"trusted"}
+
     def get_profiles_with_status(self, status):
         '''Return list of profiles with the given status'''
-        if self.profiles:
-            return self.profiles[0]
+        if self.profiles and status:
+            return [self.profiles[0]]
         return None
 
-    def add_or_update_profile(self, prof):
+    def add_or_update_profile(self, profile):
         '''Add or update the given profile'''
-        self.profiles.append(prof)
+        self.profiles.append(profile)
 
 
 class MockCrypto(Component):
@@ -43,6 +47,10 @@ class MockCrypto(Component):
     def import_public_key(self, strkey):
         '''Fake the import of a key, return a fake keyid'''
         return strkey + "_keyid"
+
+    def get_public_key(self, key_id):
+        '''Fake the retrieval of a key from its id'''
+        return "key_of_" + key_id
 
 
 class MockContacts(Component):
@@ -96,10 +104,11 @@ class RobotHandlerTest(unittest.TestCase):
         self.robot.receive(pong)
         self.assertEqual(len(self.fakedb.outbox), 1, "outbox now has one message")
         reply = self.fakedb.outbox.pop()
-        self.assertTrue(isinstance(reply, StatusNotifyMessage), "reply is a notify")
-        self.assertEqual(reply.get_field(reply.FIELD_PING), 0, "reply is a pong")
-        self.assertTrue(reply.get_field(reply.FIELD_ONLINE), "reply is online")
-        self.assertEqual(reply.recipients, ["abcdefg"], "reply is for abcdefg")
+        self.assertTrue(isinstance(reply, dict), "reply exists as a dict")
+        # TODO: Test contents of output message after encryption, if possible
+        # self.assertFalse(reply.get_field(reply.FIELD_PING), "reply is a pong")
+        # self.assertTrue(reply.get_field(reply.FIELD_ONLINE), "reply is online")
+        # self.assertEqual(reply.recipients, ["abcdefg"], "reply is for abcdefg")
 
     def test_sending_conreqs_to_robot(self):
         '''Check that contact requests are handled properly by robot'''
@@ -116,26 +125,8 @@ class RobotHandlerTest(unittest.TestCase):
         self.robot.receive(req)
         self.assertEqual(len(self.fakedb.outbox), 1, "outbox now has one message")
         reply = self.fakedb.outbox.pop()
-        self.assertTrue(isinstance(reply, ContactAcceptMessage), "reply is a contactaccept")
-
-    def test_conreferral_to_robot(self):
-        '''Check that contact referrals are handled properly by robot'''
-        owner_id = "b83jdn100uviva33"
-        req = ContactReferralMessage()
-        # database has no owner set, so any referrals should be ignored
-        req.set_field(req.FIELD_SENDER_ID, owner_id)
-        req.set_field(req.FIELD_FRIEND_NAME, "Bruce Wayne")
-        req.set_field(req.FIELD_FRIEND_ID, "802.11ac")
-        req.set_field(req.FIELD_FRIEND_KEY, "Really quite a rather long string of digits")
-        self.robot.receive(req)
-        self.assertFalse(self.fakedb.outbox, "outbox still empty after invalid referral")
-        # Now add an owner to the db
-        self.fakedb.profiles.append({"status":"owner", "torid":owner_id})
-        self.robot.receive(req)
-        self.assertEqual(len(self.fakedb.outbox), 1, "outbox now has one message")
-        self.assertEqual(len(self.fakedb.profiles), 2, "now two profiles")
-        reply = self.fakedb.outbox.pop()
-        self.assertTrue(isinstance(reply, ContactAcceptMessage), "reply is a contactaccept")
+        # TODO: How to check contents of encrypted, stored dictionary in the outbox?
+        self.assertTrue(isinstance(reply, dict), "reply exists")
 
 
 class RegularHandlerTest(unittest.TestCase):

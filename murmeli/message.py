@@ -189,6 +189,7 @@ class Message:
         '''Check if all the required fields are non-empty for sending'''
         for field in self.get_required_body_fields():
             if not self.body.get(field):
+                print("Missing field:", field)
                 return False
         return True
 
@@ -450,7 +451,7 @@ class StatusNotifyMessage(AsymmetricMessage):
 
     def get_required_body_fields(self):
         '''Get which fields are necessary for the message to be valid'''
-        return [self.FIELD_PING, self.FIELD_ONLINE, self.FIELD_PROFILE_HASH]
+        return [self.FIELD_PROFILE_HASH]
 
 
 class InfoMessage(AsymmetricMessage):

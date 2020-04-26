@@ -45,6 +45,24 @@ def get_own_tor_id(database):
     own_profile = database.get_profile() if database else None
     return own_profile.get('torid') if own_profile else None
 
+def create_profile(database, tor_id, in_profile, pic_output_path=None):
+    '''Creates a new profile with the given torid, which should not yet exist.
+       Also exports the avatar to the given output path'''
+    in_profile['torid'] = tor_id
+    if database:
+        existing_profile = database.get_profile(tor_id)
+        if existing_profile:
+            if existing_profile.get("status") not in ["deleted", "requested", None]:
+                print("Don't need to create profile, exists already!")
+        if not database.add_or_update_profile(in_profile):
+            print("FAILED to create profile, call failed!")
+        if pic_output_path:
+            # TODO: Export avatar jpeg to pic_output_path
+            pass
+        if in_profile.get("status") == "trusted":
+            # TODO: Get friends-see-friends setting out of the config, use to update contact list
+            pass
+
 def get_messageable_profiles(database):
     '''Return list of profiles to whom we can send a message'''
     if database:

@@ -3,6 +3,7 @@
 from murmeli.system import System, Component
 from murmeli.config import Config
 from murmeli import message
+from murmeli import dbutils
 
 
 class MessageHandler(Component):
@@ -49,12 +50,24 @@ class MessageHandler(Component):
         '''Receive a status notification'''
         # If it's a ping, reply with a pong
         if msg.get_field(msg.FIELD_PING) and msg.get_field(msg.FIELD_ONLINE):
+            if not self.is_from_trusted_contact(msg):
+                return
             # Create new pong for the sender and pass to outbox
             sender_of_ping = msg.get_field(msg.FIELD_SENDER_ID)
-            pong = message.StatusNotifyMessage()
-            pong.set_field(pong.FIELD_PING, 0)
-            pong.recipients = [sender_of_ping]
-            self.call_component(System.COMPNAME_DATABASE, "add_message_to_outbox", msg=pong)
+            pong = self._create_pong(sender_of_ping)
+            dbutils.add_message_to_outbox(pong, self.get_component(System.COMPNAME_CRYPTO),
+                                          self.get_component(System.COMPNAME_DATABASE))
+
+    def _create_pong(self, recipient):
+        '''Create a StatusNotify pong message for the given recipient'''
+        pong = message.StatusNotifyMessage()
+        pong.set_field(pong.FIELD_PING, 0)
+        pong.recipients = [recipient]
+        # Calculate profile hash and add to msg
+        database = self.get_component(System.COMPNAME_DATABASE)
+        own_hash = dbutils.calculate_hash(database.get_profile())
+        pong.set_field(pong.FIELD_PROFILE_HASH, own_hash)
+        return pong
 
     def receive_info_request(self, msg):
         '''Receive an info request'''
@@ -77,6 +90,23 @@ class MessageHandler(Component):
         # TODO: Validate, then save in database
         pass
 
+    def is_from_trusted_contact(self, msg):
+        '''Return true if given message is from a contact with trusted status'''
+        return self._get_sender_status(msg) in ['trusted', 'robot']
+
+    def _get_sender_status(self, msg):
+        '''Return status of the sender of the given message from the database'''
+        sender_id = msg.get_field(msg.FIELD_SENDER_ID) if msg else None
+        return self._get_contact_status(sender_id)
+
+    def _get_contact_status(self, tor_id):
+        '''Return status of the sender of the given message from the database'''
+        if tor_id:
+            profile = self.call_component(System.COMPNAME_DATABASE, "get_profile", torid=tor_id)
+            if profile:
+                return profile.get('status')
+        return None
+
     def _add_message_to_inbox(self, msg):
         self.call_component(System.COMPNAME_DATABASE, "add_message_to_inbox", msg=msg)
 
@@ -95,20 +125,32 @@ class RobotMessageHandler(MessageHandler):
         if sender_keyid == owner_keyid and sender_keyid:
             sender_id = msg.get_field(msg.FIELD_SENDER_ID)
             # Check if owner already set, if so then don't change it
-            if not self.call_component(System.COMPNAME_DATABASE, "get_profiles_with_status",
-                                       status="owner"):
+            database = self.get_component(System.COMPNAME_DATABASE)
+            if not database:
+                return
+            crypto = self.get_component(System.COMPNAME_CRYPTO)
+            if not database.get_profiles_with_status(status="owner"):
                 # update db with SENDER_ID
-                owner_profile = {"torid":sender_id, 'status':'owner', 'keyId':owner_keyid}
-                self.call_component(System.COMPNAME_DATABASE, "add_or_update_profile",
-                                    prof=owner_profile)
-            # NOTE: Make sure that just the keyid is sent, not the whole key - special for robot
+                owner_profile = {"torid":sender_id, 'status':'owner', 'keyid':owner_keyid}
+                # NOTE: For conreq to robot, only the keyid is sent, not the whole key
+                database.add_or_update_profile(profile=owner_profile)
+            # Send an automatic accept message
             resp = message.ContactAcceptMessage()
             resp.recipients = [sender_id]
-            self.call_component(System.COMPNAME_DATABASE, "add_message_to_outbox", msg=resp)
+            own_profile = database.get_profile()
+            resp.set_field(resp.FIELD_MESSAGE, "I'm your robot")
+            resp.set_field(resp.FIELD_SENDER_NAME, "Robot")
+            own_keyid = own_profile.get('keyid')
+            own_publickey = crypto.get_public_key(own_keyid) if crypto else None
+            resp.set_field(resp.FIELD_SENDER_KEY, own_publickey)
+            dbutils.add_message_to_outbox(resp, crypto, database)
+        else:
+            print("Contact request wasn't from our owner so I'll ignore it")
 
     def receive_friend_referral(self, msg):
         '''Receive a friend referral'''
         if self._is_message_from_owner(msg):
+            print("Friend referral is from my owner so I'll process it")
             # Get referred friend out of message
             new_friend_id = msg.get_field(msg.FIELD_FRIEND_ID)
             new_friend_key = msg.get_field(msg.FIELD_FRIEND_KEY)
@@ -117,20 +159,17 @@ class RobotMessageHandler(MessageHandler):
                                                strkey=new_friend_key)
             if friend_keyid:
                 # Update database
-                profile = {"torid":new_friend_id, 'status':'trusted', 'keyId':friend_keyid}
-                self.call_component(System.COMPNAME_DATABASE, "add_or_update_profile",
-                                    prof=profile)
-                # accept automatically
-                resp = message.ContactAcceptMessage()
-                resp.recipients = [new_friend_id]
-                self.call_component(System.COMPNAME_DATABASE, "add_message_to_outbox", msg=resp)
+                profile = {'status':'trusted', 'keyid':friend_keyid}
+                database = self.get_component(System.COMPNAME_DATABASE)
+                dbutils.create_profile(database, new_friend_id, profile)
 
     def _is_message_from_owner(self, msg):
         '''Return true if message is from this robot's owner'''
         sender_id = msg.get_field(msg.FIELD_SENDER_ID)
-        owner_profile = self.call_component(System.COMPNAME_DATABASE,
-                                            "get_profiles_with_status",
-                                            status="owner")
+        owner_profiles = self.call_component(System.COMPNAME_DATABASE,
+                                             "get_profiles_with_status",
+                                             status="owner")
+        owner_profile = owner_profiles[0] if owner_profiles else None
         owner_id = owner_profile.get('torid') if owner_profile else None
         return owner_id and sender_id == owner_id
 
