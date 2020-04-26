@@ -3,6 +3,8 @@
 import json    # for converting strings to and from json
 import hashlib # for calculating checksums
 from murmeli import imageutils
+from murmeli import message
+from murmeli import inbox
 
 
 def get_profile_as_string(profile):
@@ -68,6 +70,14 @@ def get_messageable_profiles(database):
     if database:
         return [profile for profile in database.get_profiles_with_status(["trusted", "untrusted"])]
     return []
+
+def add_message_to_inbox(msg, database, context):
+    '''Unpack the given message and add it to the inbox according to the context.'''
+    if msg and database:
+        assert isinstance(msg, message.Message)
+        # Make a dictionary using the given context
+        db_row = inbox.create_row(msg, context)
+        database.add_row_to_inbox(db_row)
 
 def add_message_to_outbox(msg, crypto, database, dont_relay=None):
     '''Unpack the given message and add it to the outbox.

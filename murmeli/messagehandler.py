@@ -4,6 +4,7 @@ from murmeli.system import System, Component
 from murmeli.config import Config
 from murmeli import message
 from murmeli import dbutils
+from murmeli import inbox
 
 
 class MessageHandler(Component):
@@ -107,9 +108,6 @@ class MessageHandler(Component):
                 return profile.get('status')
         return None
 
-    def _add_message_to_inbox(self, msg):
-        self.call_component(System.COMPNAME_DATABASE, "add_message_to_inbox", msg=msg)
-
 
 class RobotMessageHandler(MessageHandler):
     '''Message handler subclass for robot system'''
@@ -196,7 +194,8 @@ class RegularMessageHandler(MessageHandler):
         # Check config to see whether we accept untrusted contact requests
         if self.call_component(System.COMPNAME_CONFIG, "get_property",
                                key=Config.KEY_ALLOW_FRIEND_REQUESTS):
-            self._add_message_to_inbox(msg)
+            dbutils.add_message_to_inbox(msg, self.get_component(System.COMPNAME_DATABASE),
+                                         inbox.MC_CONREQ_INCOMING)
 
     def receive_contact_response(self, msg):
         '''Receive a contact response'''
@@ -227,4 +226,3 @@ class RegularMessageHandler(MessageHandler):
         '''Receive a regular message'''
         # TODO: Validate, then save in database
         pass
-

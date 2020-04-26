@@ -5,7 +5,7 @@ from murmeli.messagehandler import RobotMessageHandler, RegularMessageHandler
 from murmeli.system import System, Component
 from murmeli.config import Config
 from murmeli.message import (StatusNotifyMessage, ContactRequestMessage,
-                             ContactAcceptMessage, ContactReferralMessage)
+                             ContactReferralMessage)
 
 
 class MockDatabase(Component):
@@ -20,7 +20,7 @@ class MockDatabase(Component):
         '''React to storing messages in the outbox'''
         self.outbox.append(msg)
 
-    def add_message_to_inbox(self, msg):
+    def add_row_to_inbox(self, msg):
         '''React to storing messages in the inbox'''
         self.inbox.append(msg)
 
@@ -43,9 +43,11 @@ class MockCrypto(Component):
     '''Use a pretend crypto system for the tests instead of a real one'''
     def __init__(self, parent):
         Component.__init__(self, parent, System.COMPNAME_CRYPTO)
+        self.last_imported_key = None
 
     def import_public_key(self, strkey):
         '''Fake the import of a key, return a fake keyid'''
+        self.last_imported_key = strkey
         return strkey + "_keyid"
 
     def get_public_key(self, key_id):
@@ -127,6 +129,23 @@ class RobotHandlerTest(unittest.TestCase):
         reply = self.fakedb.outbox.pop()
         # TODO: How to check contents of encrypted, stored dictionary in the outbox?
         self.assertTrue(isinstance(reply, dict), "reply exists")
+
+    def test_conreferral_to_robot(self):
+        '''Check that contact referrals are handled properly by robot'''
+        owner_id = "b83jdn100uviva33"
+        req = ContactReferralMessage()
+        # database has no owner set, so any referrals should be ignored
+        req.set_field(req.FIELD_SENDER_ID, owner_id)
+        req.set_field(req.FIELD_FRIEND_NAME, "Bruce Wayne")
+        req.set_field(req.FIELD_FRIEND_ID, "802.11ac")
+        req.set_field(req.FIELD_FRIEND_KEY, "Really quite a rather long string of digits")
+        self.robot.receive(req)
+        self.assertFalse(self.fakedb.outbox, "outbox still empty after invalid referral")
+        # Now add an owner to the db
+        self.fakedb.profiles.append({"status":"owner", "torid":owner_id})
+        self.robot.receive(req)
+        self.assertEqual(len(self.fakedb.profiles), 2, "now two profiles")
+        self.assertIsNotNone(self.fakecrypto.last_imported_key, "key imported")
 
 
 class RegularHandlerTest(unittest.TestCase):
