@@ -251,14 +251,31 @@ class AsymmMessageTest(unittest.TestCase):
         self.assertEqual(back_again.body[back_again.FIELD_FRIEND_ID], friend_id, "Id match")
         self.assertEqual(back_again.body[back_again.FIELD_FRIEND_NAME], friend_name, "Name match")
         self.assertEqual(back_again.body[back_again.FIELD_FRIEND_KEY], friend_key, "Key match")
+        self.assertTrue(back_again.is_normal_referral(), "Correct type of referral")
         self.assertEqual(1, back_again.version_number, "Version 1")
+
+    def test_referral_message_types(self):
+        '''Test the types of the contact referral message'''
+        referral = message.ContactReferralMessage()
+        self.assertTrue(referral.is_normal_referral(), "Correct type of referral")
+        self.assertFalse(referral.is_robot_referral(), "Not a robot referral")
+        self.assertFalse(referral.is_robot_removal(), "Not a robot removal")
+        referral.set_field(referral.FIELD_REFERRAL_TYPE, referral.REFERTYPE_ROBOT)
+        self.assertFalse(referral.is_normal_referral(), "Not normal referral")
+        self.assertTrue(referral.is_robot_referral(), "Robot referral")
+        self.assertFalse(referral.is_robot_removal(), "Not a robot removal")
+        referral.set_field(referral.FIELD_REFERRAL_TYPE, referral.REFERTYPE_REMOVEROBOT)
+        self.assertFalse(referral.is_normal_referral(), "Not normal referral")
+        self.assertFalse(referral.is_robot_referral(), "Not a robot referral")
+        self.assertTrue(referral.is_robot_removal(), "Robot removal")
+
 
     def test_request_referral(self):
         '''Test the contact referral request message (still without encryption)'''
         request = message.ContactReferRequestMessage()
         self.assertTrue(isinstance(request, message.ContactReferRequestMessage), "Correct type")
         msg_body = "(brackets and [bytes])"
-        friend_id = "Crankleberries00"
+        friend_id = "Crankleberries01234567890"
         request.set_field(request.FIELD_MSGBODY, msg_body)
         request.set_field(request.FIELD_FRIEND_ID, friend_id)
         unenc_output = request.create_output(encrypter=None)

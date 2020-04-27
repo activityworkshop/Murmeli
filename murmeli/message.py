@@ -535,18 +535,37 @@ class ContactReferralMessage(AsymmetricMessage):
     FIELD_FRIEND_ID = "friendId"
     FIELD_FRIEND_NAME = "friendName"
     FIELD_FRIEND_KEY = "friendKey"
+    FIELD_REFERRAL_TYPE = "referType"
+
+    # Type of referral, as referrals of robots need to be handled differently
+    REFERTYPE_NORMAL = ""
+    REFERTYPE_ROBOT = "robot"
+    REFERTYPE_REMOVEROBOT = "removerobot"
+
 
     def __init__(self):
         AsymmetricMessage.__init__(self, Message.TYPE_FRIEND_REFERRAL)
 
     def get_body_fields(self):
         '''Get which fields should be packed in body'''
-        return [self.FIELD_MSGBODY, self.FIELD_FRIEND_ID,
+        return [self.FIELD_REFERRAL_TYPE, self.FIELD_MSGBODY, self.FIELD_FRIEND_ID,
                 self.FIELD_FRIEND_NAME, self.FIELD_FRIEND_KEY]
 
     def get_required_body_fields(self):
         '''Get which fields are necessary for the message to be valid'''
         return [self.FIELD_FRIEND_ID, self.FIELD_FRIEND_NAME, self.FIELD_FRIEND_KEY]
+
+    def is_normal_referral(self):
+        '''Return true if this is a normal referral, not a robot referral'''
+        return not self.get_field(self.FIELD_REFERRAL_TYPE)
+
+    def is_robot_referral(self):
+        '''Return true if this is a referral of a robot from its owner'''
+        return self.get_field(self.FIELD_REFERRAL_TYPE) == self.REFERTYPE_ROBOT
+
+    def is_robot_removal(self):
+        '''Return true if this is an instruction to remove a robot from its owner'''
+        return self.get_field(self.FIELD_REFERRAL_TYPE) == self.REFERTYPE_REMOVEROBOT
 
 
 class ContactReferRequestMessage(AsymmetricMessage):
