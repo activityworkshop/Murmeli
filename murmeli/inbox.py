@@ -1,5 +1,6 @@
 '''Specifics about how rows are stored in the inbox'''
 
+from murmeli.message import RegularMessage
 
 # Message contexts
 MC_CONREQ_INCOMING = 2
@@ -36,8 +37,31 @@ FN_REPLY_ALL = 'replyAll'
 FN_SENT_TIME_STR = "sentTimeStr"
 
 
+def _create_base_row(msg_type, from_id, msg_body, timestamp, recipients, already_read=False,
+                     already_replied=False):
+    '''Create the row with the given fields'''
+    return {FN_MSG_TYPE:msg_type, FN_FROM_ID:from_id, FN_MSG_BODY:msg_body, FN_TIMESTAMP:timestamp,
+            FN_RECIPIENTS:recipients, FN_BEEN_READ:already_read, FN_REPLIED:already_replied}
+
+
 def create_row(msg, context):
     '''Create a row to insert into the inbox from the given message and context'''
     row = {}
-    print("Generate inbox row for msg:", msg, ", context:", context)
+    if msg and context:
+        # Ensure we have a valid timestamp string
+        timestamp = msg.timestamp if msg.timestamp else msg.make_current_timestamp()
+        if isinstance(timestamp, float):
+            timestamp = msg.timestamp_to_string(timestamp)
+
+        if context in [MC_NORMAL_INCOMING, MC_NORMAL_SENT] and isinstance(msg, RegularMessage):
+            # Incoming regular message or a copy of one which we sent
+            from_id = msg.get_field(msg.FIELD_SENDER_ID)
+            already_read = True if context == MC_NORMAL_SENT else False
+            row = _create_base_row(msg_type="normal",
+                                   from_id=from_id,
+                                   msg_body=msg.get_field(msg.FIELD_MSGBODY),
+                                   timestamp=timestamp,
+                                   recipients=msg.get_field(msg.FIELD_RECIPIENTS),
+                                   already_read=already_read)
+            row[FN_PARENT_HASH] = msg.get_field(msg.FIELD_REPLYHASH)
     return row
