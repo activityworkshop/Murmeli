@@ -189,7 +189,6 @@ class Message:
         '''Check if all the required fields are non-empty for sending'''
         for field in self.get_required_body_fields():
             if not self.body.get(field):
-                print("Missing field:", field)
                 return False
         return True
 
@@ -366,6 +365,8 @@ class AsymmetricMessage(Message):
                 msg = RegularMessage()
             elif msg_type == Message.TYPE_FRIEND_REFERRAL:
                 msg = ContactReferralMessage()
+            elif msg_type == Message.TYPE_FRIENDREFER_REQUEST:
+                msg = ContactReferRequestMessage()
             if msg:
                 msg.timestamp = msg.string_to_timestamp(timestr)
                 msg.version_number = msg_version
@@ -546,6 +547,24 @@ class ContactReferralMessage(AsymmetricMessage):
     def get_required_body_fields(self):
         '''Get which fields are necessary for the message to be valid'''
         return [self.FIELD_FRIEND_ID, self.FIELD_FRIEND_NAME, self.FIELD_FRIEND_KEY]
+
+
+class ContactReferRequestMessage(AsymmetricMessage):
+    '''Class to request a contact referral from a friend'''
+
+    FIELD_MSGBODY = "messageBody"
+    FIELD_FRIEND_ID = "friendId"
+
+    def __init__(self):
+        AsymmetricMessage.__init__(self, Message.TYPE_FRIENDREFER_REQUEST)
+
+    def get_body_fields(self):
+        '''Get which fields should be packed in body'''
+        return [self.FIELD_MSGBODY, self.FIELD_FRIEND_ID]
+
+    def get_required_body_fields(self):
+        '''Get which fields are necessary for the message to be valid'''
+        return [self.FIELD_FRIEND_ID]
 
 
 class RelayingMessage(Message):

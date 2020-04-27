@@ -253,6 +253,21 @@ class AsymmMessageTest(unittest.TestCase):
         self.assertEqual(back_again.body[back_again.FIELD_FRIEND_KEY], friend_key, "Key match")
         self.assertEqual(1, back_again.version_number, "Version 1")
 
+    def test_request_referral(self):
+        '''Test the contact referral request message (still without encryption)'''
+        request = message.ContactReferRequestMessage()
+        self.assertTrue(isinstance(request, message.ContactReferRequestMessage), "Correct type")
+        msg_body = "(brackets and [bytes])"
+        friend_id = "Crankleberries00"
+        request.set_field(request.FIELD_MSGBODY, msg_body)
+        request.set_field(request.FIELD_FRIEND_ID, friend_id)
+        unenc_output = request.create_output(encrypter=None)
+        back_again = message.Message.from_received_data(unenc_output)
+        self.assertTrue(isinstance(back_again, message.ContactReferRequestMessage), "Correct type")
+        self.assertEqual(back_again.body[back_again.FIELD_MSGBODY], msg_body, "Content match")
+        self.assertEqual(back_again.body[back_again.FIELD_FRIEND_ID], friend_id, "Id match")
+        self.assertEqual(1, back_again.version_number, "Version 1")
+
     def test_reconstructing_message(self):
         '''Test the reconstruction of the contact accept message'''
         req = message.ContactAcceptMessage()
