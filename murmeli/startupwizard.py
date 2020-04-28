@@ -723,7 +723,7 @@ class FinishedPanel(WizardPanel):
     def __init__(self, system):
         WizardPanel.__init__(self, system.get_component(System.COMPNAME_I18N))
         self.system = system
-        self.yourid_label = None
+        self.yourid_edit = None
 
     def get_name(self):
         return "finished"
@@ -733,15 +733,17 @@ class FinishedPanel(WizardPanel):
         panel = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout()
         self.labels = {}
-        for k in ["heading", "congrats", "nowstart"]:
+        for k in ["heading", "congrats", "nowstart", "yourid"]:
             self.labels[k] = QtWidgets.QLabel()
         self._make_label_heading(self.labels["heading"])
         layout.addWidget(self.labels["heading"])
         layout.addStretch(1)
         layout.addWidget(self.labels["congrats"])
         layout.addWidget(self.labels["nowstart"])
-        self.yourid_label = QtWidgets.QLabel()
-        layout.addWidget(self.yourid_label)
+        layout.addWidget(self.labels["yourid"])
+        self.yourid_edit = QtWidgets.QLineEdit()
+        self.yourid_edit.setReadOnly(True)
+        layout.addWidget(self.yourid_edit)
         layout.addStretch(1)
         panel.setLayout(layout)
         return panel
@@ -749,10 +751,7 @@ class FinishedPanel(WizardPanel):
     def prepare(self):
         '''Prepare the final panel'''
         torid = self.system.invoke_call(System.COMPNAME_TRANSPORT, "get_own_torid")
-        text = self.get_text("startupwizard.finished.yourid") % torid
-        self.yourid_label.setText(text)
-        # TODO: If this is just a label, then it can't be selected and copied
-        # - should it be a disabled text field instead?
+        self.yourid_edit.setText(torid)
 
     def get_button_keys(self):
         return ("back", "finish")

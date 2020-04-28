@@ -78,7 +78,7 @@ keygen.mighttakeawhile=Die Schlüsselgenerierung könnte ein paar Minuten in Ans
 finished.heading=Aufsetzen abgeschlossen
 finished.congrats=Glückwunsch, Murmeli ist jetzt startbereit.
 finished.nowstart=Jetzt kannst du Murmeli starten und beginnen, Freunde zu kontaktieren.
-finished.yourid=Du kannst ihnen deinen Murmeli-Id geben: <big><code>%s</code></big>.
+finished.yourid=Du kannst ihnen deinen Murmeli-Id geben:
 
 [mainwindow]
 title=Murmeli

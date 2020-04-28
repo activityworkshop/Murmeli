@@ -80,7 +80,7 @@ keygen.mighttakeawhile=The key generation is complex and may take up to one or t
 finished.heading=Finished Setup
 finished.congrats=Congratulations, Murmeli is now ready to run.
 finished.nowstart=Now you can start Murmeli itself and start adding friends.
-finished.yourid=You can give your Murmeli id to them: <big><code>%s</code></big>.
+finished.yourid=You can give your Murmeli id to them:
 
 [mainwindow]
 title=Murmeli
