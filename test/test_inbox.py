@@ -4,6 +4,7 @@ import unittest
 from murmeli import inbox
 from murmeli.message import RegularMessage, ContactRequestMessage
 from murmeli.message import ContactAcceptMessage, ContactDenyMessage
+from murmeli.message import ContactReferralMessage, ContactReferRequestMessage
 
 
 class InboxTest(unittest.TestCase):
@@ -101,6 +102,44 @@ class InboxTest(unittest.TestCase):
         self.assertFalse(row.get(inbox.FN_BEEN_READ))
         # request was accepted
         self.assertTrue(row.get(inbox.FN_ACCEPTED))
+
+    def test_referral(self):
+        '''Check the creation of a row for a received contact referral'''
+        sender_torid = "someLongTorId-which-can-now-be-even-longer-than-before"
+        friend_torid = "another_Really_Long_Tor,Id"
+        friend_name = "Bätmän"
+        body_text = "this is the intro message, with :, ; and ."
+        key_text = "this is some string representation of the friend's public key"
+
+        msg = ContactReferralMessage()
+        msg.set_field(msg.FIELD_SENDER_ID, sender_torid)
+        msg.set_field(msg.FIELD_MSGBODY, body_text)
+        msg.set_field(msg.FIELD_FRIEND_NAME, friend_name)
+        msg.set_field(msg.FIELD_FRIEND_ID, friend_torid)
+        msg.set_field(msg.FIELD_FRIEND_KEY, key_text)
+        row = inbox.create_row(msg, inbox.MC_REFER_INCOMING)
+        self.assertEqual(row.get(inbox.FN_MSG_TYPE), 'contactrefer')
+        self.assertEqual(row.get(inbox.FN_FROM_ID), sender_torid)
+        self.assertEqual(row.get(inbox.FN_MSG_BODY), body_text)
+        self.assertEqual(row.get(inbox.FN_FRIEND_NAME), friend_name)
+        self.assertEqual(row.get(inbox.FN_FRIEND_ID), friend_torid)
+        self.assertEqual(row.get(inbox.FN_PUBLIC_KEY), key_text)
+
+    def test_referral_request(self):
+        '''Check the creation of a row for a received contact referral request'''
+        sender_torid = "someLongTorId-which-can-now-be-even-longer-than-before"
+        friend_torid = "another_Really_Long_Tor,Id"
+        body_text = "this is the intro message, with :, ; and ."
+
+        msg = ContactReferRequestMessage()
+        msg.set_field(msg.FIELD_SENDER_ID, sender_torid)
+        msg.set_field(msg.FIELD_MSGBODY, body_text)
+        msg.set_field(msg.FIELD_FRIEND_ID, friend_torid)
+        row = inbox.create_row(msg, inbox.MC_REFERREQ_INCOMING)
+        self.assertEqual(row.get(inbox.FN_MSG_TYPE), 'referrequest')
+        self.assertEqual(row.get(inbox.FN_FROM_ID), sender_torid)
+        self.assertEqual(row.get(inbox.FN_MSG_BODY), body_text)
+        self.assertEqual(row.get(inbox.FN_FRIEND_ID), friend_torid)
 
 
 if __name__ == "__main__":

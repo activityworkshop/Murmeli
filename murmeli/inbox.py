@@ -1,7 +1,7 @@
 '''Specifics about how rows are stored in the inbox'''
 
 from murmeli.message import (ContactRequestMessage, ContactAcceptMessage, ContactDenyMessage,
-                             RegularMessage)
+                             RegularMessage, ContactReferralMessage, ContactReferRequestMessage)
 
 # Message contexts
 MC_CONREQ_INCOMING = 2
@@ -87,4 +87,27 @@ def create_row(msg, context):
                                    recipients=msg.get_field(msg.FIELD_RECIPIENTS),
                                    already_read=already_read)
             row[FN_PARENT_HASH] = msg.get_field(msg.FIELD_REPLYHASH)
+
+        elif context == MC_REFER_INCOMING and isinstance(msg, ContactReferralMessage):
+            # Incoming contact referral
+            row = _create_base_row(msg_type="contactrefer",
+                                   from_id=msg.get_field(msg.FIELD_SENDER_ID),
+                                   msg_body=msg.get_field(msg.FIELD_MSGBODY),
+                                   timestamp=timestamp,
+                                   recipients=None)
+            row[FN_FRIEND_ID] = msg.get_field(msg.FIELD_FRIEND_ID)
+            row[FN_FRIEND_NAME] = msg.get_field(msg.FIELD_FRIEND_NAME)
+            row[FN_PUBLIC_KEY] = msg.get_field(msg.FIELD_FRIEND_KEY)
+
+        elif context == MC_REFERREQ_INCOMING and isinstance(msg, ContactReferRequestMessage):
+            # Incoming request for a contact referral
+            row = _create_base_row(msg_type="referrequest",
+                                   from_id=msg.get_field(msg.FIELD_SENDER_ID),
+                                   msg_body=msg.get_field(msg.FIELD_MSGBODY),
+                                   timestamp=timestamp,
+                                   recipients=None)
+            row[FN_FRIEND_ID] = msg.get_field(msg.FIELD_FRIEND_ID)
+
+        else:
+            print("Inbox doesn't recognise context:", context, "message type:", type(msg))
     return row
