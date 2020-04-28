@@ -79,8 +79,12 @@ class Component:
                 print("Component '%s' starting..." % self.name)
 
     def checked_start(self):
-        '''Called repeatedly until it returns True (child classes may rely on other components'''
+        '''Called repeatedly until it returns True (child classes may rely on other components)'''
         return True
+
+    def is_started(self):
+        '''Return True if the component was properly started'''
+        return self.started
 
     def stop(self):
         '''Stop this component'''

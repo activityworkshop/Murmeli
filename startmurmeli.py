@@ -17,6 +17,7 @@ from murmeli.system import System
 from murmeli.config import Config
 from murmeli.i18n import I18nManager
 from murmeli.supersimpledb import MurmeliDb
+from murmeli.startupwizard import StartupWizard
 
 
 def check_dependencies():
@@ -100,6 +101,7 @@ def launch_gui(system):
     else:
         # launch wizard (and pass half-built system)
         print("Can't launch gui, launch startup wizard instead")
+        win = StartupWizard(system)
     return win
 
 
