@@ -1,6 +1,7 @@
 '''Specifics about how rows are stored in the inbox'''
 
-from murmeli.message import RegularMessage
+from murmeli.message import (ContactRequestMessage, ContactAcceptMessage, ContactDenyMessage,
+                             RegularMessage)
 
 # Message contexts
 MC_CONREQ_INCOMING = 2
@@ -52,8 +53,30 @@ def create_row(msg, context):
         timestamp = msg.timestamp if msg.timestamp else msg.make_current_timestamp()
         if isinstance(timestamp, float):
             timestamp = msg.timestamp_to_string(timestamp)
+        if context == MC_CONREQ_INCOMING and isinstance(msg, ContactRequestMessage):
+            # Incoming contact request
+            row = _create_base_row(msg_type="contactrequest",
+                                   from_id=msg.get_field(msg.FIELD_SENDER_ID),
+                                   msg_body=msg.get_field(msg.FIELD_MESSAGE),
+                                   timestamp=timestamp, recipients=None)
+            row[FN_FROM_NAME] = msg.get_field(msg.FIELD_SENDER_NAME)
+            row[FN_PUBLIC_KEY] = msg.get_field(msg.FIELD_SENDER_KEY)
 
-        if context in [MC_NORMAL_INCOMING, MC_NORMAL_SENT] and isinstance(msg, RegularMessage):
+        elif context in [MC_CONRESP_REFUSAL, MC_CONRESP_ACCEPT, MC_CONRESP_ALREADY_ACCEPTED] \
+          and isinstance(msg, (ContactAcceptMessage, ContactDenyMessage)):
+            # Incoming contact response
+            accepted = context in [MC_CONRESP_ACCEPT, MC_CONRESP_ALREADY_ACCEPTED]
+            replied = context == MC_CONRESP_ALREADY_ACCEPTED
+            msg_body = msg.get_field(msg.FIELD_MESSAGE) if accepted else ""
+            row = _create_base_row(msg_type="contactresponse",
+                                   from_id=msg.get_field(msg.FIELD_SENDER_ID),
+                                   msg_body=msg_body, timestamp=timestamp,
+                                   recipients=None, already_replied=replied)
+            name_field = msg.FIELD_SENDER_NAME if accepted else msg.FIELD_SENDER_ID
+            row[FN_FROM_NAME] = msg.get_field(name_field)
+            row[FN_ACCEPTED] = accepted
+
+        elif context in [MC_NORMAL_INCOMING, MC_NORMAL_SENT] and isinstance(msg, RegularMessage):
             # Incoming regular message or a copy of one which we sent
             from_id = msg.get_field(msg.FIELD_SENDER_ID)
             already_read = True if context == MC_NORMAL_SENT else False
