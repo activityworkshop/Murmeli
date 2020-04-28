@@ -25,7 +25,7 @@ or using automatic test discovery:
 
 Linting can be done with any tool of course, for example:
 
-	pylint --max-line-length=100 murmeli
+	pylint3 murmeli
  
 All feedback and help is very welcome.
 
