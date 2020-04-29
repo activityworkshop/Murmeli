@@ -33,31 +33,14 @@ def check_dependencies():
         sys.exit(1)
     try:
         print("Found GnuPG version: %s" % pkgs.get_distribution("python-gnupg").version)
-    except Exception:
+    except pkgs.ResolutionError:
         print("Could not find GnuPG version")
-
-    found_qt = False
-    # Check Qt5
-    try:
-        from PyQt4 import QtCore as QtCore4
-        print("Found PyQt4, using Qt:", QtCore4.QT_VERSION_STR)
-        found_qt = True
-    except ImportError:
-        pass
-    # Check Qt4
-    if not found_qt:
-        try:
-            from PyQt5 import QtCore as QtCore5
-            print("Found PyQt5, using Qt:", QtCore5.QT_VERSION_STR)
-            found_qt = True
-        except ImportError:
-            print("Didn't find either PyQt4 or PyQt5.  No gui will be possible.")
 
 
 def check_config(system):
     '''Look for a config file, and load it if possible'''
     conf = Config(system)
-    conf.load()
+    system.add_component(conf)
     system.invoke_call(System.COMPNAME_I18N, "set_language")
     print(make_heading(system, "startupwizard.title"))
     # Select which language to use
@@ -75,6 +58,7 @@ def check_config(system):
 def check_keyring(system):
     '''Given the data directory, is there a keyring and are there keys in it?'''
     crypto = CryptoClient(system)
+    system.add_component(crypto)
     gpg_version = None
     while not gpg_version:
         gpg_version = crypto.get_gpg_version()
@@ -164,17 +148,22 @@ def select_keypair(system):
                                           private_keys=True)
     if num_private_keys < 1:
         print("The keyring has no private keys, wasn't one already generated?")
-    elif num_private_keys > 1:
-        private_keys = system.invoke_call(System.COMPNAME_CRYPTO, "get_keys", private_keys=True)
+        return None
+
+    private_keys = system.invoke_call(System.COMPNAME_CRYPTO, "get_keys", private_keys=True)
+    key_index = "1"
+    if num_private_keys > 1:
+        # Need to choose which key to use
         answers = []
         for key in private_keys:
             name = key['uids']
             name = str(name[0]) if isinstance(name, list) else name
             answers.append("%s (%s)" % (key['keyid'], name))
-        key_index = ask_question_raw(system, get_text(system, "setup.selectprivatekey"), answers)
+        question = get_text(system, "setup.selectprivatekey")
+        key_index = ask_question_raw(system, question, answers)
         check_abort(key_index, system)
-        return private_keys[int(key_index) - 1].get('keyid')
-    return None
+    return private_keys[int(key_index) - 1].get('keyid')
+
 
 def select_robot_status(system, private_keyid):
     '''Specify whether we're setting up a robot system or a real system'''
@@ -200,6 +189,7 @@ def select_robot_status(system, private_keyid):
     elif system_type == "2":
         return setup_robot_system(system, data_path, private_keyid)
     return None
+
 
 def setup_robot_system(system, data_path, private_keyid):
     '''Choose which key to use for the robot system's owner and save this choice'''
@@ -231,7 +221,7 @@ def setup_robot_system(system, data_path, private_keyid):
                 with open(os.path.join(data_path, file_to_load), "r") as keyfile:
                     key = "".join(keyfile.readlines())
                     key_id = system.invoke_call(System.COMPNAME_CRYPTO,
-                                                "import_public_key", key)
+                                                "import_public_key", strkey=key)
             else:
                 key_id = public_keys[key_index]['keyid']
             # Store owner key id in config
@@ -290,6 +280,7 @@ def setup_murmeli():
     check_dependencies()
     system = System()
     i18n = I18nManager(system)
+    system.add_component(i18n)
     check_config(system)
     check_data_path(system)
     tor_id = check_tor(system)
@@ -309,4 +300,3 @@ def setup_murmeli():
 
 if __name__ == "__main__":
     setup_murmeli()
-
