@@ -17,6 +17,7 @@ from murmeli.system import System
 from murmeli.config import Config
 from murmeli.i18n import I18nManager
 from murmeli.supersimpledb import MurmeliDb
+from murmeli.mainwindow import MainWindow
 from murmeli.startupwizard import StartupWizard
 
 
@@ -98,6 +99,7 @@ def launch_gui(system):
     if check_profile(system):
         # Skip wizard, launch actual GUI (and pass half-built system)
         print("Launch real GUI")
+        win = MainWindow(system)
     else:
         # launch wizard (and pass half-built system)
         print("Can't launch gui, launch startup wizard instead")
