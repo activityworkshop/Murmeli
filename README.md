@@ -11,11 +11,31 @@ Put briefly, the aim is to produce a way of sending encrypted messages from peer
 
 It uses Python3 and Qt for the desktop application, and it stores the messages inside a local file-based database.  It should be cross-platform, but until now it has only been tested on linux (Debian, Raspbian and Mint) with all dependencies available from the standard (stable) repositories.  Testing on Windows is ongoing.
 
-Please try out the code and report back any difficulties encountered.  The tool can be started with:
+Please try out the code and report back any difficulties encountered.  The main application (with gui) can be started with:
 
-	python3 startmurmeli.py
+	python3 start_murmeli.py
 
-and the tests can be run with (for example):
+which runs through the gui setup wizard if necessary.
+Alternatively, to setup and then run a robot relay system without a gui:
+
+	python3 setup_murmeli.py
+	python3 start_robot.py
+
+If you're running the setup script over ssh, it may be necessary to first run:
+
+	export GPG_TTY=$(tty)
+
+to allow GPG during key generation to prompt for a password using a text-based entry dialog instead of trying (and failing) to launch a gui dialog.  Especially for a robot system, using a password makes no sense, but also in the regular case it's much more convenient to leave it blank.
+
+Linting can be done with any tool of course, for example:
+
+	pylint3 murmeli
+ 
+All feedback and help is very welcome.
+
+## Tests
+
+The unit tests can be run with (for example):
 
 	python3 -m unittest test/test_system.py
 
@@ -23,11 +43,7 @@ or using automatic test discovery:
 
 	python3 -m unittest discover test
 
-Linting can be done with any tool of course, for example:
-
-	pylint3 murmeli
- 
-All feedback and help is very welcome.
+The same unit tests can also be run on a headless system like the scrollbot, but of course those tests which require Qt or Tempita will fail on those headless systems.  Similarly, the 'show_trafficgraphs.py' demo will fail on regular systems which don't have the scrollbot LEDs.
 
 ## Known issues
 
