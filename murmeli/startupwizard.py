@@ -12,6 +12,7 @@ from murmeli.i18n import I18nManager
 from murmeli.cryptoclient import CryptoClient
 from murmeli.supersimpledb import MurmeliDb
 from murmeli.torclient import TorClient
+from murmeli.mainwindow import MainWindow
 
 
 class StartupWizard(QtWidgets.QMainWindow):
@@ -103,7 +104,8 @@ class StartupWizard(QtWidgets.QMainWindow):
                 self.enable_buttons(self.card_panels[curr_index + 1])
             except IndexError:  # we've gone past the end of the wizard, time to quit
                 # Launch Murmeli
-                print("Launching Murmeli now...")
+                self.murmeli_window = MainWindow(self.system)
+                self.murmeli_window.show()
                 # close this wizard but keep Tor, Db running
                 self.close()
 

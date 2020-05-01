@@ -4,6 +4,7 @@
 from murmeli.gui import GuiWindow
 from murmeli.config import Config
 from murmeli.i18n import I18nManager
+from murmeli.pages import MurmeliPageServer
 from murmeli.system import System
 
 
@@ -18,6 +19,8 @@ class MainWindow(GuiWindow):
                                         key="mainwindow.title")
         self.setWindowTitle(title or "Cannot get texts")
         self.show_page("<html><body><h1>Murmeli</h1><p>Welcome to Murmeli.</p></body></html>")
+        self.set_page_server(MurmeliPageServer(self.system))
+        self.navigate_to("/")
 
     def finish(self):
         '''Close the window, finish off'''

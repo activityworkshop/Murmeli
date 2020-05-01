@@ -39,8 +39,22 @@ class GuiWindow(QMainWindow):
         icon.addPixmap(QtGui.QPixmap("images/window-icon.png"), QtGui.QIcon.Normal,
                        QtGui.QIcon.Off)
         self.setWindowIcon(icon)
+        self.page_server = None
+
+    def set_page_server(self, server):
+        '''Set the page server'''
+        self.page_server = server
 
     def show_page(self, contents):
         '''Set the html contents'''
         self.show()
         self.webpane.set_html(contents)
+
+    def navigate_to(self, path, params=None):
+        '''Navigate to the given path with the given params, using our page server'''
+        if path in ('/closewindow', 'http://murmeli/closewindow') and not params:
+            self.close()
+        elif self.page_server and path:
+            self.page_server.serve_page(self.webpane, path, params)
+        else:
+            print("Cannot navigate to:", path)
