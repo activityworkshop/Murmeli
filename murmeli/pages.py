@@ -50,6 +50,8 @@ class MurmeliPageServer(PageServer):
     def __init__(self, system):
         PageServer.__init__(self)
         self.add_page_set(DefaultPageSet(system))
+        self.add_page_set(ContactsPageSet(system))
+        self.add_page_set(MessagesPageSet(system))
 
 
 class PageSet:
@@ -131,5 +133,36 @@ class DefaultPageSet(PageSet):
         tokens = self.get_all_i18n()
         contents = self.build_page({'pageTitle':page_title,
                                     'pageBody':self.hometemplate.get_html(tokens),
+                                    'pageFooter':"<p>Footer</p>"})
+        view.set_html(contents)
+
+class ContactsPageSet(PageSet):
+    '''Contacts page server, for showing list of contacts etc'''
+    def __init__(self, system):
+        PageSet.__init__(self, system, "contacts")
+
+    def serve_page(self, view, url, params):
+        '''Serve a page to the given view'''
+        print("Contacts serving page", url)
+        page_title = self.i18n("contacts.title") or "<contacts>"
+        page_body = "<p>Contacts page: '%s'</p><p><a href='/'>[back]</a></p>" % url
+        contents = self.build_page({'pageTitle':page_title,
+                                    'pageBody':page_body,
+                                    'pageFooter':"<p>Footer</p>"})
+        view.set_html(contents)
+
+
+class MessagesPageSet(PageSet):
+    '''Messages page set, for showing list of messages etc'''
+    def __init__(self, system):
+        PageSet.__init__(self, system, "messages")
+
+    def serve_page(self, view, url, params):
+        '''Serve a page to the given view'''
+        print("Messages serving page", url, "params:", params)
+        page_title = self.i18n("messages.title") or "<messages>"
+        page_body = "<p>Messages page: '%s'</p><p><a href='/'>[back]</a></p>" % url
+        contents = self.build_page({'pageTitle':page_title,
+                                    'pageBody':page_body,
                                     'pageFooter':"<p>Footer</p>"})
         view.set_html(contents)
