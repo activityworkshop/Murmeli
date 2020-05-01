@@ -13,9 +13,7 @@
 <td><input type='checkbox' name='allowfriendrequests' value='yes' {{allowfriendrequests}}></td></tr>
 <tr><td>{{langs['settings.showlogwindow']}}</td><td>:</td>
 <td><input type='checkbox' name='showlogwindow' value='yes' {{showlogwindow}}></td></tr>
-<tr><td colspan="3">
-<input type='submit' value='{{langs['button.change']}}' class='reverseButton'>
-</td></tr></table>
+</table>
 </form>
 
 <p><i>Other possible settings could include - relay messages Y/N, maximum size of relayed message, ...</i></p>

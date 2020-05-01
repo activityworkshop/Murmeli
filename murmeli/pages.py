@@ -52,6 +52,7 @@ class MurmeliPageServer(PageServer):
         self.add_page_set(DefaultPageSet(system))
         self.add_page_set(ContactsPageSet(system))
         self.add_page_set(MessagesPageSet(system))
+        self.add_page_set(SettingsPageSet(system))
 
 
 class PageSet:
@@ -114,6 +115,12 @@ class PageSet:
             texts = self.system.invoke_call(self.system.COMPNAME_I18N, "get_all_texts")
         return texts or {}
 
+    def get_config(self):
+        '''Get the config component, if any'''
+        if self.system:
+            return self.system.get_component(self.system.COMPNAME_CONFIG)
+        return None
+
     def get_page_title(self, _):
         '''Get the page title for any path by default'''
         return None
@@ -166,3 +173,36 @@ class MessagesPageSet(PageSet):
                                     'pageBody':page_body,
                                     'pageFooter':"<p>Footer</p>"})
         view.set_html(contents)
+
+class SettingsPageSet(PageSet):
+    '''Settings page server, for showing the current settings'''
+    def __init__(self, system):
+        PageSet.__init__(self, system, "settings")
+        self.form_template = PageTemplate('settingsform')
+
+    def serve_page(self, view, url, params):
+        '''Serve a page to the given view'''
+        print("Settings serving page", url, "params:", params)
+        config = self.get_config()
+        if not config:
+            view.set_html("Error: Settings didn't find the config!")
+            return
+        page_props = {"friendsseefriends" :
+                      self.check_from_config(config, config.KEY_LET_FRIENDS_SEE_FRIENDS),
+                      "allowfriendrequests" :
+                      self.check_from_config(config, config.KEY_ALLOW_FRIEND_REQUESTS),
+                      "showlogwindow" :
+                      self.check_from_config(config, config.KEY_SHOW_LOG_WINDOW),
+                      "language_en":"",
+                      "language_de":""}
+        page_props["language_" + config.get_property(config.KEY_LANGUAGE)] = "selected"
+        tokens = self.get_all_i18n()
+        contents = self.build_page({'pageTitle':self.i18n("settings.title"),
+                                    'pageBody':self.form_template.get_html(tokens, page_props),
+                                    'pageFooter':"<p>Footer</p>"})
+        view.set_html(contents)
+
+    @staticmethod
+    def check_from_config(config, key):
+        '''Get a string either "checked" or "" depending on the config flag'''
+        return "checked" if config.get_property(key) else ""

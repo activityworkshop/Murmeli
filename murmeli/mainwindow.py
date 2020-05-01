@@ -23,6 +23,7 @@ class MainWindow(GuiWindow):
             ("toolbar-home.png", self.on_home_clicked, "mainwindow.toolbar.home"),
             ("toolbar-people.png", self.on_contacts_clicked, "mainwindow.toolbar.contacts"),
             ("toolbar-messages.png", self.on_messages_clicked, "mainwindow.toolbar.messages"),
+            ("toolbar-settings.png", self.on_settings_clicked, "mainwindow.toolbar.settings")
         ])
         self.addToolBar(self.toolbar)
         self.setContextMenuPolicy(QtCore.Qt.NoContextMenu)
@@ -73,6 +74,9 @@ class MainWindow(GuiWindow):
     def on_messages_clicked(self):
         '''messages button on toolbar clicked'''
         self.navigate_to("/messages/")
+    def on_settings_clicked(self):
+        '''settings button on toolbar clicked'''
+        self.navigate_to("/settings/")
 
     def config_updated(self):
         '''React to changes in config by changing tooltips'''
