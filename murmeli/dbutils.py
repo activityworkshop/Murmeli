@@ -2,6 +2,8 @@
 
 import json    # for converting strings to and from json
 import hashlib # for calculating checksums
+import os      # for managing paths
+import shutil  # for managing files
 from murmeli import imageutils
 from murmeli import message
 from murmeli import inbox
@@ -41,6 +43,24 @@ def calculate_hash(db_row, used_fields=None):
                 val_str = key + ":" + found_val
                 hasher.update(val_str.encode('utf-8'))
     return hasher.hexdigest()
+
+def export_all_avatars(database, outputdir):
+    '''Export all the avatars for all contacts in the database to the given directory'''
+    if not database:
+        return
+    for profile in database.get_profiles():
+        outpath = os.path.join(outputdir, "avatar-" + profile.get('torid') + ".jpg")
+        if not os.path.exists(outpath):
+            # File doesn't exist, so get profilepic data
+            picstr = profile.get("profilepic")
+            if picstr:
+                # Convert string to bytes and write to file
+                pic_bytes = imageutils.string_to_bytes(picstr)
+                if pic_bytes:
+                    with open(outpath, "wb") as picfile:
+                        picfile.write(pic_bytes)
+            else:
+                shutil.copy(os.path.join(outputdir, "avatar-none.jpg"), outpath)
 
 def get_own_tor_id(database):
     '''Get our own tor id from the database'''

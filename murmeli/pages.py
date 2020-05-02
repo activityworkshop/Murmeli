@@ -4,6 +4,7 @@ import os
 import shutil
 import re
 from murmeli.pagetemplate import PageTemplate
+from murmeli import dbutils
 
 
 class Bean:
@@ -71,7 +72,7 @@ class PageSet:
                          "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">"
                          "<link href='file:///" + self.get_web_cache_dir() + "/default.css'"
                          " type='text/css' rel='stylesheet'>"
-                         "</script></head>")
+                         "</head>")
 
     def require_resource(self, resource):
         '''Require that the specified resource should be copied from web to the cache directory'''
@@ -187,15 +188,18 @@ class ContactsPageSet(PageSet):
     def __init__(self, system):
         PageSet.__init__(self, system, "contacts")
         self.list_template = PageTemplate('contactlist')
+        self.details_template = PageTemplate('contactdetails')
 
     def serve_page(self, view, url, params):
         '''Serve a page to the given view'''
         print("Contacts serving page", url)
-        self.require_resources(['button-addperson.png', 'button-drawgraph.png'])
+        self.require_resources(['button-addperson.png', 'button-drawgraph.png',
+                                'avatar-none.jpg'])
+        database = self.system.get_component(self.system.COMPNAME_DATABASE)
+        dbutils.export_all_avatars(database, self.get_web_cache_dir())
         commands = self.interpret_commands(url)
         userid = commands[1] if len(commands) == 2 else None
-        print("Commands:", commands, ", userid:", userid)
-        print("Params:", params)
+        print("Commands:", commands, ", userid:", userid, ", params:", params)
         contents = self.make_list_page(userid=userid)
         view.set_html(contents)
 
@@ -254,7 +258,13 @@ class ContactsPageSet(PageSet):
         tokens = self.get_all_i18n()
         lefttext = self.list_template.get_html(tokens, {'webcachedir':config.get_web_cache_dir(),
                                                         'contacts':userboxes})
-        righttext = "<p>details pane...</p>"
+
+        page_props = {"webcachedir":config.get_web_cache_dir(), 'person':selectedprofile}
+        page_props["sharedcontacts"] = []
+        page_props["posscontactsforthem"] = []
+        page_props["posscontactsforme"] = []
+        righttext = self.details_template.get_html(tokens, page_props)
+
 
         # Put left side and right side together
         contents = self.build_two_column_page({'pageTitle':self.i18n("contacts.title"),
