@@ -16,6 +16,10 @@ class MainWindow(GuiWindow):
         '''Constructor'''
         GuiWindow.__init__(self)
         self.system = self.ensure_system(system)
+        # we want to be notified of Config changes
+        self.system.invoke_call(System.COMPNAME_CONFIG,
+                                "add_listener", sub=self)
+        self.toolbar_actions = []
         title = self.system.invoke_call(System.COMPNAME_I18N, "get_text",
                                         key="mainwindow.title")
         self.setWindowTitle(title or "Cannot get texts")

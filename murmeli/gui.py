@@ -18,7 +18,8 @@ class Webpage(QWebEnginePage):
     def acceptNavigationRequest(self, url, navtype, ismain):
         '''Override parent method to intercept clicks'''
         navigation_type_link_clicked = 0
-        if url and navtype == navigation_type_link_clicked:
+        navigation_type_form = 2
+        if url and navtype in (navigation_type_link_clicked, navigation_type_form):
             self.linkClickSignal.emit(url)
             return False
         return True
