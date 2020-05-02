@@ -75,6 +75,7 @@ def check_profile(system):
     db_file_path = system.invoke_call(System.COMPNAME_CONFIG, "get_ss_database_file")
     if os.path.exists(db_file_path):
         database = MurmeliDb(system, db_file_path)
+        system.add_component(database)
         own_profile = None
         try:
             own_profile = database.get_profile()

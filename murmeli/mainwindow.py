@@ -1,11 +1,13 @@
 '''Main window for Murmeli GUI
    Copyright activityworkshop.net and released under the GPL v2.'''
 
+import os
 from PyQt5 import QtWidgets, QtGui, QtCore
 from murmeli.gui import GuiWindow
 from murmeli.config import Config
 from murmeli.i18n import I18nManager
 from murmeli.pages import MurmeliPageServer
+from murmeli.supersimpledb import MurmeliDb
 from murmeli.system import System
 
 
@@ -51,6 +53,12 @@ class MainWindow(GuiWindow):
         if not my_system.has_component(System.COMPNAME_CONFIG):
             config = Config(my_system)
             my_system.add_component(config)
+        # Add database
+        if not my_system.has_component(System.COMPNAME_DATABASE):
+            db_file_path = my_system.invoke_call(System.COMPNAME_CONFIG, "get_ss_database_file")
+            if os.path.exists(db_file_path):
+                database = MurmeliDb(system, db_file_path)
+                my_system.add_component(database)
         # Use config to activate current language
         my_system.invoke_call(System.COMPNAME_I18N, "set_language")
         return my_system
