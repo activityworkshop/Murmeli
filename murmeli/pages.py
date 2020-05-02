@@ -53,6 +53,7 @@ class MurmeliPageServer(PageServer):
         self.add_page_set(ContactsPageSet(system))
         self.add_page_set(MessagesPageSet(system))
         self.add_page_set(SettingsPageSet(system))
+        self.add_page_set(TestPageSet(system))
 
 
 class PageSet:
@@ -224,3 +225,23 @@ class SettingsPageSet(PageSet):
     def check_from_config(config, key):
         '''Get a string either "checked" or "" depending on the config flag'''
         return "checked" if config.get_property(key) else ""
+
+
+class TestPageSet(PageSet):
+    '''Example page server, used for testing and providing diagnostics'''
+    def __init__(self, system):
+        PageSet.__init__(self, system, "test")
+
+    def serve_page(self, view, url, params):
+        '''Serve a page to the given view'''
+        print("URL= '%s', params='%s'" % (url, repr(params)))
+        if url == "jquery":
+            self.require_resource("jquery-3.5.0.slim.js")
+            jsfile = "file:///" + self.get_web_cache_dir() + "/jquery-3.5.0.slim.js"
+            page = "<html><head>" \
+                   "<script src='" + jsfile + "'></script></head>" \
+                   "<body><h2>jQuery</h2>" \
+                   "<script>document.write('<p>Version: \"' + $.fn.jquery + '\"</p>');</script>" \
+                   "<hr/></body></html>"
+        print(page)
+        view.set_html(page)

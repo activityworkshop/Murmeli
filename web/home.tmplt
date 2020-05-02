@@ -1,3 +1,4 @@
 <p>This is the home page.</p>
 
 <p>It's not yet clear exactly what will be shown here, but there might be links to <a href="/contacts/">your contacts</a>, or <a href="/messages/">your messages</a> or to <a href="/new/compose/start">send a new message</a>.</p>
+<p>For <i>testing</i> there's also a <a href='/test/jquery'>jquery page</a>.</p>
