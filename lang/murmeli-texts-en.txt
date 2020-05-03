@@ -101,9 +101,12 @@ offlinesince=offline since %s
 adduser.intro=Enter the id of the user to request contact with, and a message so they can tell it's from you.
 adduser.checkuserid=The user id should be 16 characters long, and alphanumeric, like yours.
 adduser.notownuserid=The user id you want to contact should be different from your own.
-adduser.useridfield=User id (16 chars)
+adduser.useridfield=User id (the long identifier)
 adduser.displaynamefield=Display name
 adduser.messagefield=Message to identify yourself
+exportkey.intro=To setup your robot, you need to first export your public key to a file, and copy it to the robot.
+exportkey.buttonpreamble=Use this button to export your public key to your data directory
+addrobot.intro=Enter or paste the id of the robot to add.  The robot must already know your public key.
 details.name=Name
 details.displayname=Display for me as
 details.owndescription=Describe yourself
@@ -191,6 +194,7 @@ reply=Reply
 addall=+ All
 removeall=- All
 search=Search
+export=Export
 
 [gui]
 dialogtitle.error=Error

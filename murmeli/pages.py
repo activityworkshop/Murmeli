@@ -192,6 +192,7 @@ class ContactsPageSet(PageSet):
         self.list_template = PageTemplate('contactlist')
         self.details_template = PageTemplate('contactdetails')
         self.editowndetails_template = PageTemplate('editcontactself')
+        self.addrobot_template = PageTemplate('addrobot')
 
     def serve_page(self, view, url, params):
         '''Serve a page to the given view'''
@@ -204,6 +205,10 @@ class ContactsPageSet(PageSet):
         commands = self.interpret_commands(url)
         userid = commands[1] if len(commands) == 2 else None
         print("Commands:", commands, ", userid:", userid, ", params:", params)
+        if commands[0] == "exportkey":
+            print("Export the key now!")
+            # TODO: Show javascript alert to confirm that export was done
+            return
         if commands[0] == "addrobot":
             contents = self.make_add_robot_page()
         elif commands[0] == "edit":
@@ -298,11 +303,14 @@ class ContactsPageSet(PageSet):
     def make_add_robot_page(self):
         '''Build the form page for adding a new robot, using the template'''
         own_profile = self.system.invoke_call(self.system.COMPNAME_DATABASE, "get_profile") or {}
-        own_tor_id = own_profile.get("torid") or "(not set)"
-        robot_id = own_profile.get("robotid") or "(not set)"
-        return "<html><body><p>TODO: Make page to add robot.</p>" \
-           + "<p>Own Torid: " + own_tor_id + "</p>" \
-           + "<p>Currently set robot id: " + robot_id + "</p></body></html>"
+        own_tor_id = own_profile.get("torid")
+        robot_id = own_profile.get("robotid")
+        bodytext = self.addrobot_template.get_html(self.get_all_i18n(),
+                                                   {"owntorid":own_tor_id or "",
+                                                    "robotid":robot_id or ""})
+        return self.build_page({'pageTitle':self.i18n("contacts.title"),
+                                'pageBody':bodytext,
+                                'pageFooter':"<p>Footer</p>"})
 
 
 class MessagesPageSet(PageSet):

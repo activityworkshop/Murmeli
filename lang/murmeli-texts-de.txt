@@ -99,9 +99,12 @@ offlinesince=seit %s abwesend
 adduser.intro=Gib bitte die Id des Benutzers ein, und eine Nachricht um dich vorzustellen.
 adduser.checkuserid=Die Benutzerid sollte 16 Character lang und alphanumerisch sein.
 adduser.notownuserid=Die Benutzerid sollte nicht identisch sein wie deiner.
-adduser.useridfield=Benutzerid (16 Chars)
+adduser.useridfield=Benutzerid (die lange Id)
 adduser.displaynamefield=Name der angezeigt wird
 adduser.messagefield=Nachricht, um dich vorzustellen
+exportkey.intro=Um deinen Roboter aufzusetzen, musst du deinen öffentlichen Schlüssel zuerst exportieren und auf den Roboter kopieren.
+exportkey.buttonpreamble=Mit diesem Knopf kannst du den öffentlichen Schlüsseln nach deinem Data-Ordner exportieren
+addrobot.intro=Gib bitte die Id des Roboters ein.  Der Roboter musst deinen Schlüssel schon kennen.
 details.name=Name
 details.displayname=Für mich so anzeigen
 details.owndescription=Wer bist du?
@@ -189,6 +192,7 @@ reply=Beantworten
 addall=+ Alle
 removeall=- Alle
 search=Suchen
+export=Exportieren
 
 [gui]
 dialogtitle.error=Fehler
