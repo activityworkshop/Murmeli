@@ -85,6 +85,13 @@ def create_profile(database, tor_id, in_profile, pic_output_path=None):
             # TODO: Get friends-see-friends setting out of the config, use to update contact list
             pass
 
+def update_profile(database, tor_id, in_profile):
+    '''Updates the profile with the given torid, which should exist already.'''
+    in_profile['torid'] = tor_id
+    if database:
+        if not database.get_profile(tor_id) or not database.add_or_update_profile(in_profile):
+            print("FAILED to update profile!")
+
 def get_messageable_profiles(database):
     '''Return list of profiles to whom we can send a message'''
     if database:
