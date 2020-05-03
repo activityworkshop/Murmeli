@@ -4,6 +4,7 @@
 		document.getElementById('profilepicpath').value = fname;
 	}
 </script>
+<style>th {text-align:left}</style>
 <div class='genericbox' style='float:left;margin:10px'><img src='file:///{{webcachedir}}/avatar-{{person['torid']}}.jpg' width='128' height='128' id='nailpic'><br style='clear:both'>
 <a href='/special/selectprofilepic'>{{langs['button.change']}}</a></div>
 
@@ -11,16 +12,24 @@
 <p>This is the page for <big><b>my own</b></big> details, so these are more editable than most!  All are optional, but at least a name (or nickname) and an avatar picture would be useful for your friends...</p>
 <form name="detailsform" method="get" action="http://murmeli/contacts/{{person['torid']}}/submitedit">
 <table style="border:1px solid #a87">
-	<tr><td>{{langs['contacts.details.name']}}</td>
+	<tr><th>{{langs['contacts.details.name']}}</td>
 		<td><input type="text" value="{{person['name']}}" name="name"></td></tr>
-	<tr><td>{{langs['contacts.details.displayname']}}</td>
+	<tr><th>{{langs['contacts.details.displayname']}}</td>
 		<td><input type="text" value="{{person['displayName']}}" name="displayName"></td></tr>
-	<tr><td>{{langs['contacts.details.owndescription']}}</td>
+	<tr><th>{{langs['contacts.details.owndescription']}}</td>
 		<td><textarea name="description">{{person['description']}}</textarea></td></tr>
-	<tr><td>{{langs['contacts.details.interests']}}</td>
+	<tr><th>{{langs['contacts.details.interests']}}</td>
 		<td><textarea name="interests">{{person['interests']}}</textarea></td></tr>
-	<tr><td>{{langs['contacts.details.birthday']}}</td>
+	<tr><th>{{langs['contacts.details.birthday']}}</td>
 		<td><input type="text" value="{{person['birthday']}}" name="birthday"></td></tr>
+	<tr><th>{{langs['contacts.details.robotid']}}</td>
+		<td>{{langs['contacts.details.robotid.none']}}</td></tr>
+{{if not robotset}}
+	<tr><td>&nbsp;</td>
+		<td><div class="genericbox" style='float:right; width:140px;'>
+	<div style='float:left;margin-right:5px'><a href='/contacts/addrobot'><img src='file:///{{webcachedir}}/button-addrobot.png' title='{{langs['contacts.link.addrobot']}}'></a></div>
+	<a href='/contacts/addrobot'>{{langs['contacts.link.addrobot']}}</a></div></div></td></tr>
+{{endif}}
 </table>
 <input type="hidden" name="profilepicpath" id="profilepicpath" value="">
 <p><a class='reversebutton' href='/contacts/{{person['torid']}}'>{{langs['button.cancel']}}</a>

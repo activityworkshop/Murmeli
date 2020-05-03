@@ -196,15 +196,17 @@ class ContactsPageSet(PageSet):
     def serve_page(self, view, url, params):
         '''Serve a page to the given view'''
         print("Contacts serving page", url)
-        self.require_resources(['button-addperson.png', 'button-drawgraph.png',
-                                'avatar-none.jpg'])
+        self.require_resources(['button-addperson.png', 'button-addrobot.png',
+                                'button-drawgraph.png', 'avatar-none.jpg'])
         database = self.system.get_component(self.system.COMPNAME_DATABASE)
         dbutils.export_all_avatars(database, self.get_web_cache_dir())
         contents = None
         commands = self.interpret_commands(url)
         userid = commands[1] if len(commands) == 2 else None
         print("Commands:", commands, ", userid:", userid, ", params:", params)
-        if commands[0] == "edit":
+        if commands[0] == "addrobot":
+            contents = self.make_add_robot_page()
+        elif commands[0] == "edit":
             contents = self.make_list_page(do_edit=True, userid=userid)
         elif commands[0] == "submitedit":
             dbutils.update_profile(self.system.get_component(self.system.COMPNAME_DATABASE),
@@ -276,6 +278,7 @@ class ContactsPageSet(PageSet):
         page_props["sharedcontacts"] = []
         page_props["posscontactsforthem"] = []
         page_props["posscontactsforme"] = []
+        page_props['robotset'] = False
 
         # Which template to use depends on whether we're just showing or also editing
         if do_edit and own_page:
@@ -291,6 +294,15 @@ class ContactsPageSet(PageSet):
                                                'rightColumn':righttext,
                                                'pageFooter':"<p>Footer</p>"})
         return contents
+
+    def make_add_robot_page(self):
+        '''Build the form page for adding a new robot, using the template'''
+        own_profile = self.system.invoke_call(self.system.COMPNAME_DATABASE, "get_profile") or {}
+        own_tor_id = own_profile.get("torid") or "(not set)"
+        robot_id = own_profile.get("robotid") or "(not set)"
+        return "<html><body><p>TODO: Make page to add robot.</p>" \
+           + "<p>Own Torid: " + own_tor_id + "</p>" \
+           + "<p>Currently set robot id: " + robot_id + "</p></body></html>"
 
 
 class MessagesPageSet(PageSet):
