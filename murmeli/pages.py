@@ -3,6 +3,7 @@
 import os
 import shutil
 import re
+from PyQt5.QtWidgets import QFileDialog # for file selection
 from murmeli.pagetemplate import PageTemplate
 from murmeli import dbutils
 
@@ -60,6 +61,7 @@ class MurmeliPageServer(PageServer):
         self.add_page_set(ContactsPageSet(system))
         self.add_page_set(MessagesPageSet(system))
         self.add_page_set(SettingsPageSet(system))
+        self.add_page_set(SpecialFunctions(system))
         self.add_page_set(TestPageSet(system))
 
 
@@ -206,7 +208,8 @@ class ContactsPageSet(PageSet):
             contents = self.make_list_page(do_edit=True, userid=userid)
         elif commands[0] == "submitedit":
             dbutils.update_profile(self.system.get_component(self.system.COMPNAME_DATABASE),
-                                   tor_id=userid, in_profile=params)
+                                   tor_id=userid, in_profile=params,
+                                   pic_output_path=self.get_web_cache_dir())
         # If we haven't got any contents yet, then do a show details
         if not contents:
             contents = self.make_list_page(do_edit=False, userid=userid)
@@ -355,6 +358,30 @@ class SettingsPageSet(PageSet):
     def check_from_config(config, key):
         '''Get a string either "checked" or "" depending on the config flag'''
         return "checked" if config.get_property(key) else ""
+
+
+class SpecialFunctions(PageSet):
+    '''Not delivering pages, but calling special Qt functions such as select file'''
+    def __init__(self, system):
+        PageSet.__init__(self, system, "special")
+
+    def serve_page(self, view, url, params):
+        '''Serve a special function using the given view'''
+        if url == "selectprofilepic":
+            # Get home directory for file dialog
+            homedir = os.path.expanduser("~/")
+            fname, _ = QFileDialog.getOpenFileName(view, self.i18n("gui.dialogtitle.openimage"),
+                                                   homedir,
+                                                   self.i18n("gui.fileselection.filetypes.jpg"))
+            if fname:
+                # If selected filename has apostrophes in it, these need to be escaped
+                if "'" in fname:
+                    fname = fname.replace("'", "\\'")
+                view.page().runJavaScript("updateProfilePic('%s');" % fname)
+        elif url == "friendstorm":
+            print("Generate friendstorm")
+        else:
+            print("Special function:", url, "params:", params)
 
 
 class TestPageSet(PageSet):

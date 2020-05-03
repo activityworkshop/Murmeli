@@ -54,6 +54,7 @@ def export_all_avatars(database, outputdir):
             # File doesn't exist, so get profilepic data
             picstr = profile.get("profilepic")
             if picstr:
+                print("Debug: exportAvatar using bytes to", outpath)
                 # Convert string to bytes and write to file
                 pic_bytes = imageutils.string_to_bytes(picstr)
                 if pic_bytes:
@@ -79,18 +80,45 @@ def create_profile(database, tor_id, in_profile, pic_output_path=None):
         if not database.add_or_update_profile(in_profile):
             print("FAILED to create profile, call failed!")
         if pic_output_path:
-            # TODO: Export avatar jpeg to pic_output_path
-            pass
+            _update_avatar(database, tor_id, pic_output_path)
         if in_profile.get("status") == "trusted":
             # TODO: Get friends-see-friends setting out of the config, use to update contact list
             pass
 
-def update_profile(database, tor_id, in_profile):
-    '''Updates the profile with the given torid, which should exist already.'''
+def update_profile(database, tor_id, in_profile, pic_output_path=None):
+    '''Updates the profile with the given torid, which should exist already.
+       Also exports the avatar to the given output path if changed'''
+    # If the profile pic path has changed, then we need to load the file
+    given_picpath = in_profile.get('profilepicpath')
+    pic_changed = False
+    if given_picpath and os.path.exists(given_picpath):
+        pic_changed = True
+        # check if it's the same path as already stored
+        stored_profile = database.get_profile(tor_id) if database else None
+        if not stored_profile or stored_profile['profilepicpath'] != given_picpath:
+            # file path has been given, so need to make a string from the bytes
+            pic_bytes = imageutils.make_thumbnail_binary(given_picpath)
+            in_profile['profilepic'] = imageutils.bytes_to_string(pic_bytes)
+    elif in_profile.get('profilepic'):
+        pic_changed = True
     in_profile['torid'] = tor_id
     if database:
         if not database.get_profile(tor_id) or not database.add_or_update_profile(in_profile):
             print("FAILED to update profile!")
+    if pic_changed and pic_output_path:
+        _update_avatar(database, tor_id, pic_output_path)
+
+def _update_avatar(database, user_id, output_dir):
+    '''Update the avatar for the given user id'''
+    picname = "avatar-%s.jpg" % user_id
+    outpath = os.path.join(output_dir, picname)
+    print("out path for update_avatar = ", outpath)
+    try:
+        os.remove(outpath)
+    except (FileNotFoundError, TypeError):
+        pass # it wasn't there anyway
+    # We export pics for all the contacts but only the ones whose jpg doesn't exist already
+    export_all_avatars(database, output_dir)
 
 def get_messageable_profiles(database):
     '''Return list of profiles to whom we can send a message'''
