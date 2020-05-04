@@ -9,12 +9,19 @@ class MockDatabase:
     '''Use a pretend database for the tests instead of a real one'''
     def __init__(self):
         self.profiles = []
+        self.outbox = []
 
     def get_profile(self, torid=None):
         '''Get the profile for this torid'''
-        for profile in self.profiles:
-            if profile and profile.get('torid') == torid:
-                return profile
+        if torid:
+            for profile in self.profiles:
+                if profile and profile.get('torid') == torid:
+                    return profile
+        else:
+            # No id given, so get our own profile
+            for profile in self.profiles:
+                if profile and profile.get("status") == "self":
+                    return profile
         return None
 
     def get_profiles_with_status(self, status):
@@ -25,6 +32,21 @@ class MockDatabase:
             return [i for i in self.profiles if i.get("status") == status]
         # status is empty, so return empty list
         return []
+
+    def add_or_update_profile(self, inprofile):
+        '''add or update the given profile'''
+        for profile in self.profiles:
+            if profile and profile.get('torid') == inprofile.get('torid'):
+                profile.update(inprofile)
+                return True
+        if inprofile and inprofile.get('torid'):
+            self.profiles.append(inprofile)
+            return True
+        return False
+
+    def add_row_to_outbox(self, inrow):
+        '''add a row to the outbox'''
+        self.outbox.append(inrow)
 
 
 class ReferralCalculationsTest(unittest.TestCase):
@@ -140,6 +162,52 @@ class ReferralCalculationsTest(unittest.TestCase):
         self.assertEqual(1, len(shared_ids), "first id is shared contact")
         self.assertFalse(ids_for_them, "no suggestions for them")
         self.assertFalse(ids_for_me, "no suggestions for me either")
+
+
+class InitiateWithRobotTest(unittest.TestCase):
+    '''Tests for initiating contact with a robot'''
+
+    def test_noid_fail(self):
+        '''Test that initiating contact with an empty or invalid robot id fails'''
+        database = MockDatabase()
+        own_id = "ABCD1234EFGH5678ANDcanbeLONGERTHANTHATTOO"
+        database.profiles.append({'torid':own_id, 'status':'self'})
+        manager = ContactManager(database, None)
+        self.assertFalse(manager.handle_initiate(None, 'robot', robot=True))
+        self.assertFalse(manager.handle_initiate("", 'robot', robot=True))
+        self.assertFalse(manager.handle_initiate(own_id, 'robot', robot=True))
+
+    def test_request_new_robot_success(self):
+        '''Test that initiating contact with valid robot id succeeds'''
+        database = MockDatabase()
+        own_id = "ABCD1234EFGH5678ANDcanEVENbeLONGERTHANTHAT"
+        own_keyid = "KeyIdForMe"
+        robot_id = "some other alphanumeric string even with spaces in"
+        database.profiles.append({'torid':own_id, 'keyid':own_keyid, 'status':'self'})
+        manager = ContactManager(database, None)
+        self.assertTrue(manager.handle_initiate(robot_id, 'robot', robot=True))
+        # profiles should be updated
+        own_profile = database.get_profile()
+        self.assertEqual(own_profile.get('robot'), robot_id)
+        self.assertEqual(2, len(database.profiles))
+        # message should be waiting in outbox
+        self.assertEqual(1, len(database.outbox))
+
+    def test_request_robot_existing_fail(self):
+        '''Test that initiating contact with an existing contact fails'''
+        database = MockDatabase()
+        own_id = "ABCD1234EFGH5678ANDcanEVENbeLONGERTHANTHAT"
+        own_keyid = "KeyIdForMe"
+        robot_id = "some other alphanumeric string even with spaces in"
+        database.profiles.append({'torid':own_id, 'keyid':own_keyid, 'status':'self'})
+        database.profiles.append({'torid':robot_id, 'status':'trusted'})
+        manager = ContactManager(database, None)
+        self.assertFalse(manager.handle_initiate(robot_id, 'robot', robot=True))
+        # no profile added, no message for outbox
+        self.assertEqual(2, len(database.profiles))
+        other_profile = database.get_profile(robot_id)
+        self.assertEqual('trusted', other_profile.get('status'))
+        self.assertEqual(0, len(database.outbox))
 
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@
 
 from murmeli import contactutils
 from murmeli import dbutils
+from murmeli.message import ContactRequestMessage
 
 
 class ContactManager:
@@ -13,6 +14,50 @@ class ContactManager:
         self._database = database
         self._crypto = crypto
 
+    def handle_initiate(self, tor_id, display_name, robot=False):
+        '''We have requested contact with another id, so we can set up
+           this new contact's name with the right status'''
+        own_torid = dbutils.get_own_tor_id(self._database)
+        if not tor_id or tor_id == own_torid:
+            return False
+        allowed_status = ['robot'] if robot else ['deleted']
+        new_status = 'reqrobot' if robot else 'requested'
+        result = self._handle_initiate(tor_id, display_name, allowed_status, new_status)
+        if robot and result:
+            dbutils.update_profile(self._database, own_torid, {'robot':tor_id})
+            self._send_request_to_robot(tor_id)
+        return result
+
+    def _handle_initiate(self, tor_id, display_name, allowed_status, new_status):
+        '''We have requested contact with another id, so we can set up
+           this new contact's name with a status of "requested"'''
+        # If row already exists then get status (and name/displayname) and error with it
+        if self._database:
+            curr_status = dbutils.get_status(self._database, tor_id)
+            if curr_status and curr_status != new_status and curr_status not in allowed_status:
+                print("Initiate contact with '%s' but status is already '%s' ?"
+                      % (tor_id, curr_status))
+                return False
+        # Add new row in db with id, name and new status
+        if tor_id and tor_id != dbutils.get_own_tor_id(self._database):
+            display_name = display_name or tor_id
+            profile = {'displayName':display_name, 'name':display_name,
+                       'status':new_status}
+            dbutils.create_profile(self._database, tor_id, profile)
+            return True
+        return False
+
+    def _send_request_to_robot(self, robot_id):
+        '''Send a contact request to the given robot'''
+        own_profile = self._database.get_profile()
+        own_keyid = own_profile.get('keyid')
+        own_torid = own_profile.get('torid')
+        outmsg = ContactRequestMessage()
+        outmsg.set_field(outmsg.FIELD_SENDER_KEY, own_keyid)
+        outmsg.set_field(outmsg.FIELD_SENDER_ID, own_torid)
+        outmsg.set_field(outmsg.FIELD_SENDER_NAME, own_torid)
+        outmsg.recipients = [robot_id]
+        dbutils.add_message_to_outbox(outmsg, self._crypto, self._database)
 
     def get_shared_possible_contacts(self, tor_id):
         '''Check which contacts we share with the given torid

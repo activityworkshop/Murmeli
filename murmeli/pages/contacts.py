@@ -3,6 +3,7 @@
 from murmeli.pages.base import PageSet, Bean
 from murmeli.pagetemplate import PageTemplate
 from murmeli import dbutils
+from murmeli.contactmgr import ContactManager
 
 
 class ContactsPageSet(PageSet):
@@ -20,6 +21,7 @@ class ContactsPageSet(PageSet):
         self.require_resources(['button-addperson.png', 'button-addrobot.png',
                                 'button-drawgraph.png', 'avatar-none.jpg'])
         database = self.system.get_component(self.system.COMPNAME_DATABASE)
+        crypto = self.system.get_component(self.system.COMPNAME_CRYPTO)
         dbutils.export_all_avatars(database, self.get_web_cache_dir())
         contents = None
         commands = self.interpret_commands(url)
@@ -35,7 +37,9 @@ class ContactsPageSet(PageSet):
             robot_id = params.get('murmeliid') if params else None
             if robot_id:
                 print("Requested robot_id = '%s'" % robot_id)
-                # TODO: initiate contact with robot, update database, send ContactRequestMessage
+                # initiate contact with robot
+                if ContactManager(database, crypto).handle_initiate(robot_id, "", True):
+                    print("Initiated contact")
         elif commands[0] == "edit":
             contents = self.make_list_page(do_edit=True, userid=userid)
         elif commands[0] == "submitedit":

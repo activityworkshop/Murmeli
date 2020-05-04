@@ -126,6 +126,11 @@ def get_messageable_profiles(database):
         return [profile for profile in database.get_profiles_with_status(["trusted", "untrusted"])]
     return []
 
+def get_status(database, tor_id):
+    '''Return the status of the given tor_id'''
+    profile = database.get_profile(tor_id) if database else None
+    return profile.get('status') if profile else None
+
 def add_message_to_inbox(msg, database, context):
     '''Unpack the given message and add it to the inbox according to the context.'''
     if msg and database:
