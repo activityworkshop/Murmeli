@@ -6,7 +6,7 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 from murmeli.gui import GuiWindow
 from murmeli.config import Config
 from murmeli.i18n import I18nManager
-from murmeli.pages import MurmeliPageServer
+from murmeli.pageserver import MurmeliPageServer
 from murmeli.supersimpledb import MurmeliDb
 from murmeli.system import System
 

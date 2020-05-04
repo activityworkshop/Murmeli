@@ -1,7 +1,7 @@
 ''''Testing of the page server'''
 
 import unittest
-from murmeli.pages import PageServer, MurmeliPageServer
+from murmeli.pageserver import PageServer, MurmeliPageServer
 from murmeli.system import System, Component
 
 
