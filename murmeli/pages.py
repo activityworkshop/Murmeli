@@ -10,7 +10,11 @@ from murmeli import dbutils
 
 class Bean:
     '''Class for interacting with page templates by adding properties'''
-    pass
+    def set(self, name, value):
+        '''Set a property of the object'''
+        self.__dict__[name] = value
+    def __getattr__(self, name):
+        return self.__dict__.get(name, '')
 
 
 class PageServer:
@@ -283,12 +287,13 @@ class ContactsPageSet(PageSet):
         for profile in database.get_profiles():
             if profile['status'] in ['requested', 'untrusted', 'trusted', 'self']:
                 box = Bean()
-                box.disp_name = profile['displayName']
+                box.set('disp_name', profile['displayName'])
                 tor_id = profile['torid']
-                box.torid = tor_id
-                box.tilestyle = "contacttile" + ("selected" if profile['torid'] == userid else "")
-                box.status = profile['status']
-                box.last_seen = ""
+                box.set('torid', tor_id)
+                tile_selected = profile['torid'] == userid
+                box.set('tilestyle', "contacttile" + ("selected" if tile_selected else ""))
+                box.set('status', profile['status'])
+                box.set('last_seen', "")
                 userboxes.append(box)
         # build list of contacts on left of page using these boxes
         tokens = self.get_all_i18n()
