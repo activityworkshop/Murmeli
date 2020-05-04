@@ -74,7 +74,16 @@ class PageSet:
                          "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">"
                          "<link href='file:///" + self.get_web_cache_dir() + "/default.css'"
                          " type='text/css' rel='stylesheet'>"
-                         "</head>")
+                         "<script type='text/javascript'>"
+                         "function hideOverlay(){"
+                         " showLayer('overlay',false);showLayer('popup',false)}"
+                         " function showLayer(lname,show){"
+                         " document.getElementById(lname).style.visibility="
+                         "(show?'visible':'hidden');}"
+                         " function showMessage(mess){"
+                         " document.getElementById('popup').innerHTML=mess;"
+                         " showLayer('overlay',true); showLayer('popup', true);}"
+                         "</script></head>")
 
     def require_resource(self, resource):
         '''Require that the specified resource should be copied from web to the cache directory'''
@@ -134,6 +143,8 @@ class PageSet:
                         "<tr><td colspan='2'>"
                         "<div class='footer'>%(pageFooter)s</div></td></tr>"
                         "</table>",
+                        "<div class='overlay' id='overlay' onclick='hideOverlay()'></div>",
+                        "<div class='popuppanel' id='popup'>Here's the message</div>",
                         "</body></html>"]) % params
 
     def i18n(self, key):
@@ -211,6 +222,11 @@ class ContactsPageSet(PageSet):
             return
         if commands[0] == "addrobot":
             contents = self.make_add_robot_page()
+        elif commands[0] == "submitaddrobot":
+            robot_id = params.get('murmeliid') if params else None
+            if robot_id:
+                print("Requested robot_id = '%s'" % robot_id)
+                # TODO: initiate contact with robot, update database, send ContactRequestMessage
         elif commands[0] == "edit":
             contents = self.make_list_page(do_edit=True, userid=userid)
         elif commands[0] == "submitedit":
