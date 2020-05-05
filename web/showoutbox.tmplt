@@ -1,0 +1,21 @@
+<h1>Outbox</h1>
+<p>This shows the details of the outbox, mainly for debugging purposes.</p>
+
+{{if mails}}
+<h3>Mails in outbox</h3>
+<table border='1'>
+    <tr><th colspan="2">Type</th><th colspan="2">Recipients</th><th>Relays</th></tr>
+{{for m in mails}}
+	<tr>
+		<td>EncType: {{m.get('encType')}}</td>
+		<td>MsgType: {{m.get('msgType')}}</td>
+		<td>Recipient: {{m.get('recipient')}}</td>
+		<td>Recipients: {{m.get('recipientList')}}</td>
+		<td>Relays: {{m.get('relays')}}</td>
+	</tr>
+</table>
+{{endfor}}
+{{else}}
+	<p><i>Outbox empty</i></p>
+{{endif}}
+<p><a href='/test/showoutbox'>Refresh</a> or <a href='/test/deleteoutbox'>delete everything</a> from the outbox.</p>

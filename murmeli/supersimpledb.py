@@ -148,7 +148,7 @@ class MurmeliDb(Component):
         tab = self.db.get_table(MurmeliDb.TABLE_PROFILES)
         if isinstance(status, list):
             return [Profile(i) for i in tab if i and i.get("status") in status]
-        elif status:
+        if status:
             return [Profile(i) for i in tab if i and i.get("status") == status]
         # status is empty, so return empty list
         return []
@@ -182,8 +182,8 @@ class MurmeliDb(Component):
     def delete_from_pending_contacts(self, sender_id):
         '''Delete all the pending contact messages from the given senderId'''
         with threading.Condition(self.db_write_lock):
-            for i, pc in enumerate(self.db.get_table(MurmeliDb.TABLE_PENDING)):
-                if pc and pc.get("fromId", None) == sender_id:
+            for i, prow in enumerate(self.db.get_table(MurmeliDb.TABLE_PENDING)):
+                if prow and prow.get("fromId") == sender_id:
                     self.db.delete_from_table(MurmeliDb.TABLE_PENDING, i)
 
     def get_pending_contact_messages(self):
@@ -232,6 +232,12 @@ class MurmeliDb(Component):
         '''Delete the message at the given index from the outbox, return True on success'''
         with threading.Condition(self.db_write_lock):
             return self.db.delete_from_table(MurmeliDb.TABLE_OUTBOX, index)
+
+    def delete_all_from_outbox(self):
+        '''Delete all the messages from the outbox'''
+        num_rows = len(self.db.get_table(MurmeliDb.TABLE_OUTBOX))
+        for index in range(num_rows):
+            self.delete_from_outbox(index)
 
     def update_outbox_message(self, index, props):
         '''Update the outbox message at the given index'''

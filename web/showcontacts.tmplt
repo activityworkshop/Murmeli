@@ -1,0 +1,20 @@
+<h1>Contacts</h1>
+<p>This shows the details of the current contacts, mainly for debugging purposes.</p>
+
+{{if profiles}}
+<h3>Profiles table</h3>
+<table border='1'>
+    <tr><th>Id</th><th>Name</th><th>Status</th><th>Contacts</th></tr>
+{{for p in profiles}}
+	<tr>
+		<td>{{p['torid']}}</td>
+		<td>{{p['displayName']}}</td>
+		<td>{{p.get('status')}}</td>
+		<td>{{p.get('contactlist')}}</td>
+	</tr>
+{{endfor}}
+</table>
+{{else}}
+	<p><i>Profiles table empty</i></p>
+{{endif}}
+<p><a href='/test/showcontacts'>Refresh</a>.</p>
