@@ -2,7 +2,7 @@
 function validateForm(){
 enteredId=(document.getElementById('murmeliidfield')?document.getElementById('murmeliidfield').value:'');
 matchedstr=enteredId.match(/[a-zA-Z0-9]+/);
-formOk=matchedstr != null && matchedstr[0].length==16;
+formOk=matchedstr != null && matchedstr[0].length==enteredId.length && enteredId.length >= 16;
 if (!formOk) {showMessage('{{langs['contacts.adduser.checkuserid']}}'); return false;}
 formOk=matchedstr[0] != '{{owntorid}}';
 if (!formOk) {showMessage('{{langs['contacts.adduser.notownuserid']}}'); return false;}
@@ -11,9 +11,9 @@ return formOk;
 </script>
 <p>{{langs['contacts.adduser.intro']}}</p>
 <div style='margin:10px; padding:10px; border:3px solid a87; border-radius:5px; width:80%;'>
-<form action='http://murmeli/contacts/submitaddrequest' method='get'>
+<form action='http://murmeli/contacts/submitadd' method='get'>
 <table border='0'><tr><td>{{langs['contacts.adduser.useridfield']}}</td>
-	<td><input type='text' name='murmeliid' maxlength='16' id='murmeliidfield'></td><tr>
+	<td><input type='text' name='murmeliid' maxlength='56' id='murmeliidfield'></td><tr>
 <tr><td>{{langs['contacts.adduser.displaynamefield']}}</td>
 	<td><input type='text' name='displayname'></td></tr>
 <tr><td>{{langs['contacts.adduser.messagefield']}}</td>

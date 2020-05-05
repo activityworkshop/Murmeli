@@ -14,7 +14,7 @@ class ContactManager:
         self._database = database
         self._crypto = crypto
 
-    def handle_initiate(self, tor_id, display_name, robot=False):
+    def handle_initiate(self, tor_id, display_name, intro_msg, robot=False):
         '''We have requested contact with another id, so we can set up
            this new contact's name with the right status'''
         own_torid = dbutils.get_own_tor_id(self._database)
@@ -23,9 +23,12 @@ class ContactManager:
         allowed_status = ['robot'] if robot else ['deleted']
         new_status = 'reqrobot' if robot else 'requested'
         result = self._handle_initiate(tor_id, display_name, allowed_status, new_status)
-        if robot and result:
-            dbutils.update_profile(self._database, own_torid, {'robot':tor_id})
-            self._send_request_to_robot(tor_id)
+        if result:
+            if robot:
+                dbutils.update_profile(self._database, own_torid, {'robot':tor_id})
+                self._send_request_to_robot(tor_id)
+            else:
+                self._send_request(tor_id, intro_msg)
         return result
 
     def _handle_initiate(self, tor_id, display_name, allowed_status, new_status):
@@ -53,10 +56,26 @@ class ContactManager:
         own_keyid = own_profile.get('keyid')
         own_torid = own_profile.get('torid')
         outmsg = ContactRequestMessage()
+        # note: when requesting contact to a robot, only the keyid is sent, not the key
         outmsg.set_field(outmsg.FIELD_SENDER_KEY, own_keyid)
         outmsg.set_field(outmsg.FIELD_SENDER_ID, own_torid)
         outmsg.set_field(outmsg.FIELD_SENDER_NAME, own_torid)
         outmsg.recipients = [robot_id]
+        dbutils.add_message_to_outbox(outmsg, self._crypto, self._database)
+
+    def _send_request(self, friend_id, intro_msg):
+        '''Send a contact request to the specified user'''
+        own_profile = self._database.get_profile()
+        own_keyid = own_profile.get('keyid')
+        own_torid = own_profile.get('torid')
+        outmsg = ContactRequestMessage()
+        # note: when requesting contact to a regular user, the whole public key is sent
+        own_publickey = self._crypto.get_public_key(own_keyid) if self._crypto else None
+        outmsg.set_field(outmsg.FIELD_SENDER_KEY, own_publickey)
+        outmsg.set_field(outmsg.FIELD_SENDER_ID, own_torid)
+        outmsg.set_field(outmsg.FIELD_SENDER_NAME, own_profile['name'])
+        outmsg.set_field(outmsg.FIELD_MESSAGE, intro_msg)
+        outmsg.recipients = [friend_id]
         dbutils.add_message_to_outbox(outmsg, self._crypto, self._database)
 
     def get_shared_possible_contacts(self, tor_id):

@@ -173,9 +173,9 @@ class InitiateWithRobotTest(unittest.TestCase):
         own_id = "ABCD1234EFGH5678ANDcanbeLONGERTHANTHATTOO"
         database.profiles.append({'torid':own_id, 'status':'self'})
         manager = ContactManager(database, None)
-        self.assertFalse(manager.handle_initiate(None, 'robot', robot=True))
-        self.assertFalse(manager.handle_initiate("", 'robot', robot=True))
-        self.assertFalse(manager.handle_initiate(own_id, 'robot', robot=True))
+        self.assertFalse(manager.handle_initiate(None, 'robot', '', robot=True))
+        self.assertFalse(manager.handle_initiate("", 'robot', '', robot=True))
+        self.assertFalse(manager.handle_initiate(own_id, 'robot', '', robot=True))
 
     def test_request_new_robot_success(self):
         '''Test that initiating contact with valid robot id succeeds'''
@@ -185,7 +185,7 @@ class InitiateWithRobotTest(unittest.TestCase):
         robot_id = "some other alphanumeric string even with spaces in"
         database.profiles.append({'torid':own_id, 'keyid':own_keyid, 'status':'self'})
         manager = ContactManager(database, None)
-        self.assertTrue(manager.handle_initiate(robot_id, 'robot', robot=True))
+        self.assertTrue(manager.handle_initiate(robot_id, 'robot', '', robot=True))
         # profiles should be updated
         own_profile = database.get_profile()
         self.assertEqual(own_profile.get('robot'), robot_id)
@@ -202,7 +202,7 @@ class InitiateWithRobotTest(unittest.TestCase):
         database.profiles.append({'torid':own_id, 'keyid':own_keyid, 'status':'self'})
         database.profiles.append({'torid':robot_id, 'status':'trusted'})
         manager = ContactManager(database, None)
-        self.assertFalse(manager.handle_initiate(robot_id, 'robot', robot=True))
+        self.assertFalse(manager.handle_initiate(robot_id, 'robot', '', robot=True))
         # no profile added, no message for outbox
         self.assertEqual(2, len(database.profiles))
         other_profile = database.get_profile(robot_id)

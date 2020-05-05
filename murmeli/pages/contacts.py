@@ -14,6 +14,7 @@ class ContactsPageSet(PageSet):
         self.list_template = PageTemplate('contactlist')
         self.details_template = PageTemplate('contactdetails')
         self.editowndetails_template = PageTemplate('editcontactself')
+        self.add_template = PageTemplate('addcontact')
         self.addrobot_template = PageTemplate('addrobot')
 
     def serve_page(self, view, url, params):
@@ -37,14 +38,22 @@ class ContactsPageSet(PageSet):
                 print("FAILED to export public key")
             # TODO: Show javascript alert to confirm that export was done
             return
-        if commands[0] == "addrobot":
+        if commands[0] == "add":
+            contents = self.make_add_page()
+        elif commands[0] == "submitadd":
+            req_id = params.get('murmeliid') if params else None
+            if req_id:
+                disp_name = params.get('displayname', '') if params else None
+                intro_msg = params.get('intromessage', '') if params else None
+                if ContactManager(database, crypto).handle_initiate(req_id, disp_name, intro_msg):
+                    print("Initiated contact")
+        elif commands[0] == "addrobot":
             contents = self.make_add_robot_page()
         elif commands[0] == "submitaddrobot":
-            robot_id = params.get('murmeliid') if params else None
-            if robot_id:
-                print("Requested robot_id = '%s'" % robot_id)
+            req_id = params.get('murmeliid') if params else None
+            if req_id:
                 # initiate contact with robot
-                if ContactManager(database, crypto).handle_initiate(robot_id, "", True):
+                if ContactManager(database, crypto).handle_initiate(req_id, "", "", True):
                     print("Initiated contact")
         elif commands[0] == "edit":
             contents = self.make_list_page(do_edit=True, userid=userid)
@@ -135,6 +144,16 @@ class ContactsPageSet(PageSet):
                                                'rightColumn':righttext,
                                                'pageFooter':"<p>Footer</p>"})
         return contents
+
+    def make_add_page(self):
+        '''Build the form page for adding a new contact, using the template'''
+        own_profile = self.system.invoke_call(self.system.COMPNAME_DATABASE, "get_profile")
+        own_tor_id = own_profile.get("torid") if own_profile else None
+        tokens = self.get_all_i18n()
+        bodytext = self.add_template.get_html(tokens, {"owntorid":own_tor_id or ""})
+        return self.build_page({'pageTitle':self.i18n("contacts.title"),
+                                'pageBody':bodytext,
+                                'pageFooter':"<p>Footer</p>"})
 
     def make_add_robot_page(self):
         '''Build the form page for adding a new robot, using the template'''

@@ -66,6 +66,7 @@ class MainWindow(GuiWindow):
             my_system.add_component(crypto)
         # Use config to activate current language
         my_system.invoke_call(System.COMPNAME_I18N, "set_language")
+        print("Using system:", list(my_system.components))
         return my_system
 
     def make_toolbar(self, deflist):
