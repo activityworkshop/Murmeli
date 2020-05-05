@@ -4,6 +4,7 @@ from murmeli.pages.base import PageSet, Bean
 from murmeli.pagetemplate import PageTemplate
 from murmeli import dbutils
 from murmeli.contactmgr import ContactManager
+from murmeli import cryptoutils
 
 
 class ContactsPageSet(PageSet):
@@ -28,7 +29,12 @@ class ContactsPageSet(PageSet):
         userid = commands[1] if len(commands) == 2 else None
         print("Commands:", commands, ", userid:", userid, ", params:", params)
         if commands[0] == "exportkey":
-            print("Export the key now!")
+            own_keyid = dbutils.get_own_key_id(database)
+            data_dir = self.get_config().get_data_dir()
+            if cryptoutils.export_public_key(own_keyid, data_dir, crypto):
+                print("Exported public key")
+            else:
+                print("FAILED to export public key")
             # TODO: Show javascript alert to confirm that export was done
             return
         if commands[0] == "addrobot":

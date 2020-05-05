@@ -68,6 +68,11 @@ def get_own_tor_id(database):
     own_profile = database.get_profile() if database else None
     return own_profile.get('torid') if own_profile else None
 
+def get_own_key_id(database):
+    '''Get our own key id from the database'''
+    own_profile = database.get_profile() if database else None
+    return own_profile.get('keyid') if own_profile else None
+
 def create_profile(database, tor_id, in_profile, pic_output_path=None):
     '''Creates a new profile with the given torid, which should not yet exist.
        Also exports the avatar to the given output path'''

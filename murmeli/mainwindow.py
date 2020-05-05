@@ -5,6 +5,7 @@ import os
 from PyQt5 import QtWidgets, QtGui, QtCore
 from murmeli.gui import GuiWindow
 from murmeli.config import Config
+from murmeli.cryptoclient import CryptoClient
 from murmeli.i18n import I18nManager
 from murmeli.pageserver import MurmeliPageServer
 from murmeli.supersimpledb import MurmeliDb
@@ -59,6 +60,10 @@ class MainWindow(GuiWindow):
             if os.path.exists(db_file_path):
                 database = MurmeliDb(system, db_file_path)
                 my_system.add_component(database)
+        # Add crypto
+        if not my_system.has_component(System.COMPNAME_CRYPTO):
+            crypto = CryptoClient(my_system)
+            my_system.add_component(crypto)
         # Use config to activate current language
         my_system.invoke_call(System.COMPNAME_I18N, "set_language")
         return my_system
