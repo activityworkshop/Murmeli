@@ -13,8 +13,8 @@
 		<td>Recipients: {{m.get('recipientList')}}</td>
 		<td>Relays: {{m.get('relays')}}</td>
 	</tr>
-</table>
 {{endfor}}
+</table>
 {{else}}
 	<p><i>Outbox empty</i></p>
 {{endif}}

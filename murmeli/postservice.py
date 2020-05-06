@@ -189,7 +189,7 @@ class PostService(Component):
         if not msg_bytes:
             return self.RC_MESSAGE_INVALID
         print("Send_message (%d bytes) to '%s'" % (len(msg_bytes), whoto))
-        if not whoto or not isinstance(whoto, str) or len(whoto) != 16:
+        if not whoto or not isinstance(whoto, str) or len(whoto) < 16:
             print("whoto no good, returning invalid")
             return self.RC_MESSAGE_INVALID
         database = self.get_component(System.COMPNAME_DATABASE)

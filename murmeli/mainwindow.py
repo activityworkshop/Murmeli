@@ -8,8 +8,10 @@ from murmeli.config import Config
 from murmeli.cryptoclient import CryptoClient
 from murmeli.i18n import I18nManager
 from murmeli.pageserver import MurmeliPageServer
+from murmeli.postservice import PostService
 from murmeli.supersimpledb import MurmeliDb
 from murmeli.system import System
+from murmeli.torclient import TorClient
 
 
 class MainWindow(GuiWindow):
@@ -64,6 +66,16 @@ class MainWindow(GuiWindow):
         if not my_system.has_component(System.COMPNAME_CRYPTO):
             crypto = CryptoClient(my_system)
             my_system.add_component(crypto)
+        # Add tor proxy service
+        if not my_system.has_component(System.COMPNAME_TRANSPORT):
+            config = my_system.get_component(System.COMPNAME_CONFIG)
+            tor_client = TorClient(my_system, config.get_tor_dir(),
+                                   config.get_property(config.KEY_TOR_EXE))
+            my_system.add_component(tor_client)
+        # Add post service
+        if not my_system.has_component(System.COMPNAME_POSTSERVICE):
+            post = PostService(my_system)
+            my_system.add_component(post)
         # Use config to activate current language
         my_system.invoke_call(System.COMPNAME_I18N, "set_language")
         print("Using system:", list(my_system.components))
