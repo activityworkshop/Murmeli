@@ -5,7 +5,9 @@ from murmeli.system import System
 from murmeli.config import Config
 from murmeli.i18n import I18nManager
 from murmeli.torclient import TorClient
+from murmeli.cryptoclient import CryptoClient
 from murmeli.supersimpledb import MurmeliDb
+from murmeli.messagehandler import RobotMessageHandler
 try:
     from murmeli.scrollbot import ScrollbotGuiNotifier as RobotNotifier
 except ImportError:
@@ -51,14 +53,23 @@ class Robot:
         print("Own torid: '%s', own keyid: '%s'" % (own_profile['torid'], own_profile['keyid']))
         print("Owner's keyid: '%s'" % robot_owner_keyid)
 
-        # TODO: Instantiate crypto using config.get_keyring_dir
-
+        # Instantiate crypto if necessary
+        if not self.system.has_component(System.COMPNAME_CRYPTO):
+            new_crypto = CryptoClient(self.system, config.get_keyring_dir())
+            self.system.add_component(new_crypto)
+        if not self.system.invoke_call(System.COMPNAME_CRYPTO, "check_gpg"):
+            print("Crypto couldn't be initialised, please run the setup_murmeli")
+            self.stop()
+            return
         # Add a tor service if not already present
         if not self.system.has_component(System.COMPNAME_TRANSPORT):
             tor_client = TorClient(self.system, config.get_tor_dir(),
                                    config.get_property(config.KEY_TOR_EXE))
             self.system.add_component(tor_client)
-        # TODO: Add a message handler if not already present
+        # Add a message handler if not already present
+        if not self.system.has_component(System.COMPNAME_MSG_HANDLER):
+            msg_handler = RobotMessageHandler(self.system)
+            self.system.add_component(msg_handler)
         # Add gui notifier
         self.system.remove_component(System.COMPNAME_GUI)
         notifier = RobotNotifier(self.system)

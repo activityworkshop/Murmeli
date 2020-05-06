@@ -189,6 +189,7 @@ class Message:
         '''Check if all the required fields are non-empty for sending'''
         for field in self.get_required_body_fields():
             if not self.body.get(field):
+                print("Message is missing field:", field)
                 return False
         return True
 

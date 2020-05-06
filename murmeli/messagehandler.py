@@ -120,8 +120,10 @@ class RobotMessageHandler(MessageHandler):
         # Compare incoming keyid with owner id in Config, ignore all others
         sender_keyid = msg.get_field(msg.FIELD_SENDER_KEY)
         owner_keyid = self.get_config_property(Config.KEY_ROBOT_OWNER_KEY)
+        print("Contact request was from '%s', my owner is '%s'" % (sender_keyid, owner_keyid))
         if sender_keyid == owner_keyid and sender_keyid:
             sender_id = msg.get_field(msg.FIELD_SENDER_ID)
+            print("Contact request from my owner with id '%s'" % sender_id)
             # Check if owner already set, if so then don't change it
             database = self.get_component(System.COMPNAME_DATABASE)
             if not database:
@@ -142,6 +144,7 @@ class RobotMessageHandler(MessageHandler):
             own_publickey = crypto.get_public_key(own_keyid) if crypto else None
             resp.set_field(resp.FIELD_SENDER_KEY, own_publickey)
             dbutils.add_message_to_outbox(resp, crypto, database)
+            print("Contact response added to outbox")
         else:
             print("Contact request wasn't from our owner so I'll ignore it")
 
