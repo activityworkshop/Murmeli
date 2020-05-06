@@ -43,6 +43,8 @@ class ScrollbotGuiNotifier(Component):
             elif notify_type == guinotification.NOTIFY_MSG_RECEIVED:
                 self.traffic_data.add_message_received()
             self.show_traffic()
+            if notify_type == guinotification.NOTIFY_MSG_RECEIVING:
+                self.show_receiving()
 
     def show_m(self):
         '''Show the Murmeli 'M' logo'''
@@ -74,4 +76,10 @@ class ScrollbotGuiNotifier(Component):
         for col_index, received_val in enumerate(receive_data):
             pixy = 6 - min(6, received_val)
             scrollphathd.pixel(col_index, pixy, 1.0)
+        scrollphathd.show()
+
+    @staticmethod
+    def show_receiving():
+        '''Light the central pixel to show that a message is being received'''
+        scrollphathd.pixel(8, 3, 1.0)
         scrollphathd.show()

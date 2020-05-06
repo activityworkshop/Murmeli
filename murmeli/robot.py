@@ -59,6 +59,10 @@ class Robot:
                                    config.get_property(config.KEY_TOR_EXE))
             self.system.add_component(tor_client)
         # TODO: Add a message handler if not already present
+        # Add gui notifier
+        self.system.remove_component(System.COMPNAME_GUI)
+        notifier = RobotNotifier(self.system)
+        self.system.add_component(notifier)
         # Use config to activate current language
         self.system.invoke_call(System.COMPNAME_I18N, "set_language")
 

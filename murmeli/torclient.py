@@ -9,6 +9,7 @@ import socket
 import random
 from murmeli.system import System, Component
 from murmeli.message import Message
+from murmeli import guinotification
 
 
 class TorClient(Component):
@@ -161,6 +162,8 @@ class SocketBroker(threading.Thread):
                 print("Waiting for connection")
                 conn, address = self.socket.accept()
                 print("Accepted new connection from ", address, ", now start a new thread...")
+                self.parent.call_component(System.COMPNAME_GUI, "notify_gui",
+                                           notify_type=guinotification.NOTIFY_MSG_RECEIVING)
                 # Start new listener thread with this conn
                 # (address is meaningless, just comes from proxy)
                 SocketListener(conn, self.parent)
@@ -227,6 +230,8 @@ class SocketListener(threading.Thread):
                 # Note: should reply with ACK/NACK, but this doesn't work through the proxy
         # close socket
         self.conn.close()
+        self.component.call_component(System.COMPNAME_GUI, "notify_gui",
+                                      notify_type=guinotification.NOTIFY_MSG_RECEIVED)
         print("closed connection, exiting listener thread")
 
     @staticmethod
