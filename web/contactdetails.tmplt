@@ -34,8 +34,7 @@
 	<tr><th>{{langs['contacts.details.description']}}</td><td>:</td><td>{{person['description']}}</td></tr>
 	<tr><th>{{langs['contacts.details.interests']}}</td><td>:</td><td>{{person['interests']}}</td></tr>
 	<tr><th>{{langs['contacts.details.birthday']}}</td><td>:</td><td>{{person['birthday']}}</td></tr>
-	<tr><th>{{langs['contacts.details.robotid']}}</td><td>:</td>
-		<td>{{langs['contacts.details.robotid.none']}}</td></tr>
+	<tr><th>{{langs['contacts.details.robotstatus']}}</td><td>:</td><td>{{robotstatus}}</td></tr>
 </table>
 {{if person['status']=='untrusted'}}
 <div class='warningbox' style='margin-top:5px'>
@@ -46,7 +45,7 @@
 {{if person['status']!='self'}}
 <div style="float:right"><a href='' onclick='deleteContact();return false;' class='reversebutton'>{{langs['button.delete']}}</a></div>
 {{endif}}
-<div style="float:center">{{langs['contacts.details.editlink.before']}} <a href="/contacts/{{person['torid']}}/edit" class='reversebutton'>{{langs['button.edit']}}</a> {{langs['contacts.details.editlink.after']}}</div>
+<div style="float:center;margin-top:10px">{{langs['contacts.details.editlink.before']}} <a href="/contacts/{{person['torid']}}/edit" class='reversebutton'>{{langs['button.edit']}}</a> {{langs['contacts.details.editlink.after']}}</div>
 {{if "fingerprint_check_failed" in locals()}}
 	<script type='text/javascript'>window.alert("{{langs['contacts.error.fingerprintcheckfailed']}}");</script>
 {{elif "message_sent" in locals()}}

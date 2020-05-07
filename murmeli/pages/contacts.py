@@ -128,7 +128,9 @@ class ContactsPageSet(PageSet):
         page_props["sharedcontacts"] = []
         page_props["posscontactsforthem"] = []
         page_props["posscontactsforme"] = []
-        page_props['robotset'] = False
+        robot_status = dbutils.get_robot_status(database, userid, None)
+        page_props['robotstatus'] = self.i18n("contacts.details.robotstatus." + robot_status)
+        page_props['robotset'] = (robot_status != 'none')
 
         # Which template to use depends on whether we're just showing or also editing
         if do_edit and own_page:

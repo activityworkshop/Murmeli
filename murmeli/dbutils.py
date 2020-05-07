@@ -136,6 +136,23 @@ def get_status(database, tor_id):
     profile = database.get_profile(tor_id) if database else None
     return profile.get('status') if profile else None
 
+def get_robot_status(database, tor_id, contacts):
+    '''Return string describing robot status'''
+    profile = database.get_profile(tor_id) if database else None
+    robot_id = profile.get('robot') if profile else None
+    if not robot_id:
+        return "none"
+    robot_profile = database.get_profile(robot_id)
+    robot_status = robot_profile.get('status') if robot_profile else None
+    result_key = "none"
+    if robot_status == "reqrobot":
+        result_key = "requested"
+    elif robot_status == "robot":
+        result_key = "enabled"
+        if tor_id == get_own_tor_id(database) and contacts:
+            result_key += (".online" if contacts.is_online(robot_id) else ".offline")
+    return result_key
+
 def add_message_to_inbox(msg, database, context):
     '''Unpack the given message and add it to the inbox according to the context.'''
     if msg and database:

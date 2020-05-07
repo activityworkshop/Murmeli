@@ -22,8 +22,8 @@
 		<td><textarea name="interests">{{person['interests']}}</textarea></td></tr>
 	<tr><th>{{langs['contacts.details.birthday']}}</td>
 		<td><input type="text" value="{{person['birthday']}}" name="birthday"></td></tr>
-	<tr><th>{{langs['contacts.details.robotid']}}</td>
-		<td>{{langs['contacts.details.robotid.none']}}</td></tr>
+	<tr><th>{{langs['contacts.details.robotstatus']}}</td>
+		<td>{{robotstatus}}</td></tr>
 {{if not robotset}}
 	<tr><td>&nbsp;</td>
 		<td><div class="genericbox" style='float:right; width:140px;'>
