@@ -227,6 +227,8 @@ class MurmeliDb(Component):
             msg['_id'] = len(outbox)
             # print("Adding message to outbox:", repr(msg))
             outbox.append(msg)
+        # Inform postman that a flush can be made now
+        self.call_component(System.COMPNAME_POSTSERVICE, "request_flush")
 
     def delete_from_outbox(self, index):
         '''Delete the message at the given index from the outbox, return True on success'''
