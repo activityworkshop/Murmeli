@@ -2,6 +2,7 @@
 
 from murmeli.system import System, Component
 from murmeli.config import Config
+from murmeli.contactmgr import ContactManager
 from murmeli import message
 from murmeli import dbutils
 from murmeli import inbox
@@ -201,9 +202,21 @@ class RegularMessageHandler(MessageHandler):
                                          inbox.MC_CONREQ_INCOMING)
 
     def receive_contact_response(self, msg):
-        '''Receive a contact response'''
-        # TODO: Check if this is a response from our robot, if so then treat differently
-        pass
+        '''Receive a contact response (either accept or refuse)'''
+        sender_id = msg.get_field(msg.FIELD_SENDER_ID)
+        database = self.get_component(System.COMPNAME_DATABASE)
+        if isinstance(msg, message.ContactAcceptMessage):
+            print("  MessageHandler process Accept from '%s'" % sender_id)
+            sender_status = dbutils.get_status(database, sender_id)
+            if sender_status in ['pending', 'requested', 'reqrobot', 'untrusted']:
+                sender_name = msg.get_field(msg.FIELD_SENDER_NAME) or sender_id
+                key_str = msg.get_field(msg.FIELD_SENDER_KEY)
+                crypto = self.get_component(System.COMPNAME_CRYPTO)
+                manager = ContactManager(database, crypto)
+                from_robot = manager.is_robot_id(sender_id)
+                print("Accept from name '%s' with key '%s'" % (sender_name, key_str))
+                if from_robot:
+                    print("Recognised accept from robot - need to check connections")
 
     def receive_info_request(self, msg):
         '''Receive an info request'''

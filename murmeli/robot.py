@@ -8,6 +8,7 @@ from murmeli.torclient import TorClient
 from murmeli.cryptoclient import CryptoClient
 from murmeli.supersimpledb import MurmeliDb
 from murmeli.messagehandler import RobotMessageHandler
+from murmeli.postservice import PostService
 try:
     from murmeli.scrollbot import ScrollbotGuiNotifier as RobotNotifier
 except ImportError:
@@ -70,6 +71,11 @@ class Robot:
         if not self.system.has_component(System.COMPNAME_MSG_HANDLER):
             msg_handler = RobotMessageHandler(self.system)
             self.system.add_component(msg_handler)
+        # Add post service
+        if not self.system.has_component(System.COMPNAME_POSTSERVICE):
+            post = PostService(self.system)
+            post.should_broadcast = False
+            self.system.add_component(post)
         # Add gui notifier
         self.system.remove_component(System.COMPNAME_GUI)
         notifier = RobotNotifier(self.system)

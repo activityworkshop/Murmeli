@@ -78,6 +78,22 @@ class ContactManager:
         outmsg.recipients = [friend_id]
         dbutils.add_message_to_outbox(outmsg, self._crypto, self._database)
 
+    def handle_accept(self, tor_id):
+        '''We want to accept a contact request, so we need to find the request(s),
+           and use it/them to update our keyring and our database entry'''
+        print("ContactMgr.handle_accept for id '%s'" % tor_id)
+
+    def is_robot_id(self, tor_id):
+        '''Return True if this tor_id is configured as our robot'''
+        if not self._database:
+            return False
+        own_profile = self._database.get_profile(None)
+        if not own_profile or own_profile.get('robot') != tor_id:
+            return False
+        # Now check other profile
+        robot_status = dbutils.get_status(self._database, tor_id)
+        return robot_status in ['robot', 'reqrobot']
+
     def get_shared_possible_contacts(self, tor_id):
         '''Check which contacts we share with the given torid
            and which ones we could recommend to each other'''

@@ -7,6 +7,7 @@ from murmeli.gui import GuiWindow
 from murmeli.config import Config
 from murmeli.cryptoclient import CryptoClient
 from murmeli.i18n import I18nManager
+from murmeli.messagehandler import RegularMessageHandler
 from murmeli.pageserver import MurmeliPageServer
 from murmeli.postservice import PostService
 from murmeli.supersimpledb import MurmeliDb
@@ -66,6 +67,9 @@ class MainWindow(GuiWindow):
         if not my_system.has_component(System.COMPNAME_CRYPTO):
             crypto = CryptoClient(my_system)
             my_system.add_component(crypto)
+        if not my_system.has_component(System.COMPNAME_MSG_HANDLER):
+            msg_handler = RegularMessageHandler(my_system)
+            my_system.add_component(msg_handler)
         # Add tor proxy service
         if not my_system.has_component(System.COMPNAME_TRANSPORT):
             config = my_system.get_component(System.COMPNAME_CONFIG)

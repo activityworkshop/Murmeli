@@ -209,6 +209,19 @@ class InitiateWithRobotTest(unittest.TestCase):
         self.assertEqual('trusted', other_profile.get('status'))
         self.assertEqual(0, len(database.outbox))
 
+    def test_check_robotid(self):
+        '''Test that checking robot id succeeds'''
+        database = MockDatabase()
+        own_id = "ABCD1234EFGH5678ANDcanEVENbeLONGERTHANTHAT"
+        own_keyid = "KeyIdForMe"
+        robot_id = "some other alphanumeric string even with spaces in"
+        database.profiles.append({'torid':own_id, 'keyid':own_keyid, 'status':'self',
+                                  'robot':robot_id})
+        database.profiles.append({'torid':robot_id, 'status':'reqrobot'})
+        manager = ContactManager(database, None)
+        self.assertTrue(manager.is_robot_id(robot_id))
+        self.assertFalse(manager.is_robot_id("Some other id"))
+
 
 if __name__ == "__main__":
     unittest.main()
