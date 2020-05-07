@@ -1,8 +1,12 @@
+{{py:
+def limit_name_length(name):
+   return (name[:18]+"...") if len(name)>20 else name
+}}
 {{for c in contacts}}
 	<div class='{{c.tilestyle}}'>
 		<img src='file:///{{webcachedir}}/avatar-{{c.torid}}.jpg' width='36' height='36' style='float:left; margin:2px'>
-		<img src='file:///{{webcachedir}}/status-{{c.status}}.png' title='{{c.status}}' width='24' height='24' style='float:right'>
-		<p><b><a href='/contacts/{{c.torid}}'>{{c.disp_name}}</a></b><br>
+		<div style='float:right'><img src='file:///{{webcachedir}}/status-{{c.status}}.png' title='{{c.status}}' width='24' height='24'>{{if c.has_robot}}<br><img src='file:///{{webcachedir}}/status-robot.png' title='{{langs['contacts.details.robotstatus']}}' width='24' height='12' style='margin-top:2px'>{{endif}}</div>
+		<p><b><a href='/contacts/{{c.torid}}'>{{c.disp_name | limit_name_length}}</a></b><br>
 		{{if c.last_seen}}<small>({{c.last_seen}})</small>{{endif}}<br clear="all"></p>
 	</div>
 {{endfor}}

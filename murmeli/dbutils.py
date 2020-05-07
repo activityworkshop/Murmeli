@@ -153,6 +153,10 @@ def get_robot_status(database, tor_id, contacts):
             result_key += (".online" if contacts.is_online(robot_id) else ".offline")
     return result_key
 
+def has_robot(database, tor_id):
+    '''Return True if the user with the given tor_id has a robot'''
+    return get_robot_status(database, tor_id, None) == "enabled"
+
 def add_message_to_inbox(msg, database, context):
     '''Unpack the given message and add it to the inbox according to the context.'''
     if msg and database:

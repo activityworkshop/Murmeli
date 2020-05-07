@@ -94,6 +94,16 @@ class ContactManager:
         robot_status = dbutils.get_status(self._database, tor_id)
         return robot_status in ['robot', 'reqrobot']
 
+    def handle_receive_accept(self, tor_id, name, key_str):
+        '''We have requested contact with another id, and this has now been accepted.
+           So we can import their public key into our keyring and update their status
+           accordingly.'''
+        key_id = self._crypto.import_public_key(key_str)
+        print("Imported key into keyring, got id:", key_id)
+        new_status = 'robot' if self.is_robot_id(tor_id) else "untrusted"
+        profile = {'status':new_status, 'keyid':key_id, 'name':name}
+        dbutils.update_profile(self._database, tor_id, profile)
+
     def get_shared_possible_contacts(self, tor_id):
         '''Check which contacts we share with the given torid
            and which ones we could recommend to each other'''

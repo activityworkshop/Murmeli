@@ -93,7 +93,7 @@ class ContactsPageSet(PageSet):
     def make_list_page(self, do_edit=False, userid=None):
         '''Generate a page for listing all the contacts and showing the details of one of them'''
         self.require_resources(['status-self.png', 'status-requested.png', 'status-untrusted.png',
-                                'status-trusted.png', 'status-pending.png'])
+                                'status-trusted.png', 'status-pending.png', 'status-robot.png'])
         config = self.get_config()
         # Who are we showing?
         selectedprofile = self.system.invoke_call(self.system.COMPNAME_DATABASE, "get_profile",
@@ -118,6 +118,7 @@ class ContactsPageSet(PageSet):
                 box.set('tilestyle', "contacttile" + ("selected" if tile_selected else ""))
                 box.set('status', profile['status'])
                 box.set('last_seen', "")
+                box.set('has_robot', dbutils.has_robot(database, tor_id))
                 userboxes.append(box)
         # build list of contacts on left of page using these boxes
         tokens = self.get_all_i18n()

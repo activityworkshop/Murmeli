@@ -214,7 +214,7 @@ class RegularMessageHandler(MessageHandler):
                 crypto = self.get_component(System.COMPNAME_CRYPTO)
                 manager = ContactManager(database, crypto)
                 from_robot = manager.is_robot_id(sender_id)
-                print("Accept from name '%s' with key '%s'" % (sender_name, key_str))
+                manager.handle_receive_accept(sender_id, sender_name, key_str)
                 if from_robot:
                     print("Recognised accept from robot - need to check connections")
 
