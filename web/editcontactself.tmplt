@@ -24,12 +24,15 @@
 		<td><input type="text" value="{{person['birthday']}}" name="birthday"></td></tr>
 	<tr><th>{{langs['contacts.details.robotstatus']}}</td>
 		<td>{{robotstatus}}</td></tr>
-{{if not robotset}}
 	<tr><td>&nbsp;</td>
 		<td><div class="genericbox" style='float:right; width:140px;'>
+{{if robotset}}
+	<small>(option to remove / unconfigure robot?)</small>
+{{else}}
 	<div style='float:left;margin-right:5px'><a href='/contacts/addrobot'><img src='file:///{{webcachedir}}/button-addrobot.png' title='{{langs['contacts.link.addrobot']}}'></a></div>
-	<a href='/contacts/addrobot'>{{langs['contacts.link.addrobot']}}</a></div></div></td></tr>
+	<a href='/contacts/addrobot'>{{langs['contacts.link.addrobot']}}</a></div>
 {{endif}}
+</div></td></tr>
 </table>
 <input type="hidden" name="profilepicpath" id="profilepicpath" value="">
 <p><a class='reversebutton' href='/contacts/{{person['torid']}}'>{{langs['button.cancel']}}</a>

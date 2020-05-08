@@ -34,7 +34,7 @@
 	<tr><th>{{langs['contacts.details.description']}}</td><td>:</td><td>{{person['description']}}</td></tr>
 	<tr><th>{{langs['contacts.details.interests']}}</td><td>:</td><td>{{person['interests']}}</td></tr>
 	<tr><th>{{langs['contacts.details.birthday']}}</td><td>:</td><td>{{person['birthday']}}</td></tr>
-	<tr><th>{{langs['contacts.details.robotstatus']}}</td><td>:</td><td>{{robotstatus}}</td></tr>
+	<tr><th>{{langs['contacts.details.robotstatus']}}</th><td>:</td><td>{{robotstatus}}</td></tr>
 </table>
 {{if person['status']=='untrusted'}}
 <div class='warningbox' style='margin-top:5px'>

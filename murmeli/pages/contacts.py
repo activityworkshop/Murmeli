@@ -14,6 +14,7 @@ class ContactsPageSet(PageSet):
         self.list_template = PageTemplate('contactlist')
         self.details_template = PageTemplate('contactdetails')
         self.editowndetails_template = PageTemplate('editcontactself')
+        self.editdetails_template = PageTemplate('editcontact')
         self.add_template = PageTemplate('addcontact')
         self.addrobot_template = PageTemplate('addrobot')
 
@@ -134,8 +135,9 @@ class ContactsPageSet(PageSet):
         page_props['robotset'] = (robot_status != 'none')
 
         # Which template to use depends on whether we're just showing or also editing
-        if do_edit and own_page:
-            page_template = self.editowndetails_template
+        if do_edit:
+            # Use two different details templates, one for self and one for others
+            page_template = self.editowndetails_template if own_page else self.editdetails_template
         else:
             page_template = self.details_template
         righttext = page_template.get_html(tokens, page_props)
