@@ -5,8 +5,32 @@ import hashlib # for calculating checksums
 import os      # for managing paths
 import shutil  # for managing files
 from murmeli import imageutils
+from murmeli.cryptoclient import CryptoError
 from murmeli import message
 from murmeli import inbox
+
+
+class EncrypterShim:
+    '''Adapter class to provide messages with an encrypter object'''
+
+    def __init__(self, database, crypto, encrypt_key):
+        self.database = database
+        self.crypto = crypto
+        self.encrypt_key = encrypt_key
+
+    def encrypt(self, payload, enc_type):
+        '''Encrypt the given message'''
+        if enc_type == message.Message.ENCTYPE_NONE:
+            return payload
+        assert self.database
+        # get own key from database for signing
+        own_key = get_own_key_id(self.database)
+        if enc_type == message.Message.ENCTYPE_ASYM:
+            assert self.crypto
+            return self.crypto.encrypt_and_sign(message=payload, recipient=self.encrypt_key,
+                                                own_key=own_key)
+        # Unsupported encryption type
+        raise CryptoError()
 
 
 def get_profile_as_string(profile):
@@ -179,8 +203,25 @@ def add_message_to_outbox(msg, crypto, database, dont_relay=None):
         assert False
     if msg.recipients:
         for recpt in msg.recipients:
-            to_send = imageutils.bytes_to_string(msg.create_output(encrypter=None))
-            database.add_row_to_outbox({"recipient":recpt,
-                                        "message":to_send,
-                                        "queue":msg.should_be_queued,
-                                        "encType":msg.enc_type})
+            if isinstance(msg, message.UnencryptedMessage):
+                # If msg doesn't need encryption, then doesn't need a profile
+                encrypt_key = "notneeded"
+            else:
+                prof = database.get_profile(torid=recpt)
+                encrypt_key = prof.get("keyid") if prof else None
+
+            if encrypt_key:
+                try:
+                    encrypter = EncrypterShim(database=database, crypto=crypto,
+                                              encrypt_key=encrypt_key)
+                    to_send = imageutils.bytes_to_string(msg.create_output(encrypter=encrypter))
+                    if not to_send:
+                        print("WARN: message to send is empty for enc type:", msg.enc_type)
+                    database.add_row_to_outbox({"recipient":recpt,
+                                                "message":to_send,
+                                                "queue":msg.should_be_queued,
+                                                "encType":msg.enc_type})
+                except CryptoError as exc:
+                    print("CryptoError thrown: can't add message to Outbox!", exc)
+            else:
+                print("Profile for '%s' has no keyid so can't add message to outbox!" % recpt)

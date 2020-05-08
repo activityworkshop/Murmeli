@@ -9,6 +9,7 @@ import socket
 import random
 from murmeli.system import System, Component
 from murmeli.message import Message
+from murmeli.decrypter import DecrypterShim
 from murmeli import guinotification
 
 
@@ -218,8 +219,11 @@ class SocketListener(threading.Thread):
                     reply_to_send = "undergrowth (%d)" % random.Random().choice(range(10000))
                     self.conn.send(reply_to_send.encode("utf-8"))
             elif msg:
-                received_msg = Message.from_received_data(msg)
+                crypto = self.component.get_component(System.COMPNAME_CRYPTO)
+                received_msg = Message.from_received_data(msg, decrypter=DecrypterShim(crypto))
                 if received_msg:
+                    signature_keyid = received_msg.get_field(Message.FIELD_SIGNATURE_KEYID)
+                    print("Incoming message!  Signature key:", signature_keyid)
                     print("Incoming message!  Sender was '%s'"
                           % received_msg.get_field(received_msg.FIELD_SENDER_ID))
                     # Pass to the system's message handler
