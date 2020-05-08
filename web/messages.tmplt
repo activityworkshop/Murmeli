@@ -1,4 +1,3 @@
-<script src="file:///{{webcachedir}}/jquery-3.3.1.slim.js"></script>
 <script>
 	var _r=function(p,c){return p.replace(/%s/,c);};
 	function respondToContactRequest(id, name, accept)
@@ -22,31 +21,12 @@
 	{
 		if (msg == "") {msg = '{{langs['messages.delete']}}';}
 		showMessage(msg
-			+ "<form action='http://murmeli/messages/delete/' method='get'>"
+			+ "<form action='http://murmeli/messages/delete' method='get'>"
 			+ "<input type='hidden' name='msgId' value='" + id + "'>"
 			+ "<input type='submit' class='reversebutton' value='{{langs['button.delete']}}'>"
 			+ "</form>");
 	}
-	function searchMessages()
-	{
-		showMessage("{{langs['messages.searchfor']}}:"
-			+ "<form id='searchForm' action='http://murmeli/messages/search/' method='get'>"
-			+ "<input type='text' name='searchTerm' value='' required='required'>"
-			+ "<input type='submit' class='reversebutton' value='{{langs['button.search']}}' onclick='return checkSearch()'>"
-			+ "</form>");
-		$("#searchForm input[name=searchTerm]").focus();
-	}
-	function checkSearch()
-	{
-		var q = $("#searchForm input[name=searchTerm]").val();
-		return q.trim().length > 0;
-	}
 </script>
-
-<div class="genericbox" style='float:right; width:140px;'>
-<div style='float:left;margin-right:5px;font-size:80%%'><a href='/new/compose/start'><img src='file:///{{webcachedir}}/button-compose.png' title='{{langs['messages.createnew']}}'></a></div>
-<a href='/new/compose/start'>{{langs['messages.createnew']}}</a></div>
-<div class="genericbox" style='float:right;'><a href='' onclick='searchMessages();return false'>{{langs['messages.search']}}</a></div>
 
 {{if contactrequests}}
 <h3>{{langs['messages.contactrequests']}}</h3>
