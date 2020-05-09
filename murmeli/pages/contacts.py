@@ -130,7 +130,9 @@ class ContactsPageSet(PageSet):
         page_props["sharedcontacts"] = []
         page_props["posscontactsforthem"] = []
         page_props["posscontactsforme"] = []
-        robot_status = dbutils.get_robot_status(database, userid, None)
+        # Work out status of this contact's robot
+        contacts = self.system.get_component(self.system.COMPNAME_CONTACTS)
+        robot_status = dbutils.get_robot_status(database, userid, contacts)
         page_props['robotstatus'] = self.i18n("contacts.details.robotstatus." + robot_status)
         page_props['robotset'] = (robot_status != 'none')
 

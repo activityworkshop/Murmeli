@@ -5,6 +5,7 @@ import os
 from PyQt5 import QtWidgets, QtGui, QtCore
 from murmeli.gui import GuiWindow
 from murmeli.config import Config
+from murmeli.contacts import Contacts
 from murmeli.cryptoclient import CryptoClient
 from murmeli.i18n import I18nManager
 from murmeli.messagehandler import RegularMessageHandler
@@ -76,6 +77,10 @@ class MainWindow(GuiWindow):
             tor_client = TorClient(my_system, config.get_tor_dir(),
                                    config.get_property(config.KEY_TOR_EXE))
             my_system.add_component(tor_client)
+        # Add contact list
+        if not my_system.has_component(System.COMPNAME_CONTACTS):
+            contacts = Contacts(my_system)
+            my_system.add_component(contacts)
         # Add post service
         if not my_system.has_component(System.COMPNAME_POSTSERVICE):
             post = PostService(my_system)
