@@ -64,10 +64,12 @@
 		<table><tr valign="top">
 			<td valign="middle"><img src='file:///{{webcachedir}}/avatar-{{m["fromId"]}}.jpg' width="48" height="48" title="{{m["fromName"]}}"></td>
 			<td nowrap="1" style="font-size:85%">
-				<b>{{langs['messages.from']}}</b>: {{m["fromName"]}}
+				<b>{{langs['messages.from']}}</b>: {{m["fromName"]}}<br>
+				<b>{{langs['messages.sendtime']}}:</b> {{m["sentTimeStr"]}}<br>
+				{{if m["accepted"]}}<br>{{langs['messages.contactrequest.accepted']}}{{endif}}
 			</td>
 			<td style="padding-left:30px">{{m["messageBody"]|html}}</td>
-			<td valign="bottom"><a href='' onclick='deleteResponse("{{m["msgId"]}}", "{{m["fromName"]}}");return false' class='reversebutton'>{{langs['button.delete']}}</a></td>
+			<td valign="bottom"><a href='' onclick='deleteResponse("{{m["_id"]}}", "{{m["fromName"]}}");return false' class='reversebutton'>{{langs['button.delete']}}</a></td>
 			</tr></table>
 	</div><br clear="all">
  {{endfor}}

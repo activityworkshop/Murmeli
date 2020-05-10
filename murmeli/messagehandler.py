@@ -205,7 +205,10 @@ class RegularMessageHandler(MessageHandler):
         '''Receive a contact response (either accept or refuse)'''
         sender_id = msg.get_field(msg.FIELD_SENDER_ID)
         database = self.get_component(System.COMPNAME_DATABASE)
-        if isinstance(msg, message.ContactAcceptMessage):
+        if isinstance(msg, message.ContactDenyMessage):
+            ContactManager(database, None).handle_receive_deny(sender_id)
+            dbutils.add_message_to_inbox(msg, database, inbox.MC_CONRESP_REFUSAL)
+        elif isinstance(msg, message.ContactAcceptMessage):
             print("  MessageHandler process Accept from '%s'" % sender_id)
             sender_status = dbutils.get_status(database, sender_id)
             if sender_status in ['pending', 'requested', 'reqrobot', 'untrusted']:

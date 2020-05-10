@@ -2,7 +2,7 @@
 
 from murmeli import contactutils
 from murmeli import dbutils
-from murmeli.message import ContactRequestMessage
+from murmeli.message import ContactRequestMessage, ContactDenyMessage
 
 
 class ContactManager:
@@ -94,6 +94,23 @@ class ContactManager:
         robot_status = dbutils.get_status(self._database, tor_id)
         return robot_status in ['robot', 'reqrobot']
 
+    def handle_deny(self, tor_id):
+        '''We want to deny a contact request - update database and send reply'''
+        if not self._database:
+            return
+        # Delete all messages from this tor_id, from inbox and from pending
+        dbutils.delete_messages_from_inbox(tor_id, self._database)
+        # also construct and store response
+        outmsg = ContactDenyMessage()
+        outmsg.set_field(outmsg.FIELD_SENDER_ID, dbutils.get_own_tor_id(self._database))
+        outmsg.recipients = [tor_id]
+        dbutils.add_message_to_outbox(outmsg, None, self._database)
+
+    def delete_contact(self, tor_id):
+        '''Set the specified contact's status to deleted'''
+        print("ContactManager: set status of '%s' to 'deleted'" % tor_id)
+        dbutils.update_profile(self._database, tor_id, {'status':'deleted'})
+
     def handle_receive_accept(self, tor_id, name, key_str):
         '''We have requested contact with another id, and this has now been accepted.
            So we can import their public key into our keyring and update their status
@@ -103,6 +120,12 @@ class ContactManager:
         new_status = 'robot' if self.is_robot_id(tor_id) else "untrusted"
         profile = {'status':new_status, 'keyid':key_id, 'name':name}
         dbutils.update_profile(self._database, tor_id, profile)
+
+    def handle_receive_deny(self, tor_id):
+        '''We have requested contact with another id, but this has been denied.
+           So we need to update their status accordingly'''
+        self.delete_contact(tor_id)
+        print("ContactMgr received contact refusal from %s" % tor_id)
 
     def get_shared_possible_contacts(self, tor_id):
         '''Check which contacts we share with the given torid

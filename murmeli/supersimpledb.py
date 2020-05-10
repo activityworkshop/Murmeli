@@ -204,11 +204,12 @@ class MurmeliDb(Component):
 
     def delete_from_inbox(self, index):
         '''Delete the message at the given index from the inbox, return True on success'''
-        with threading.Condition(self.db_write_lock):
-            return self.db.delete_from_table(MurmeliDb.TABLE_INBOX, index)
+        return self.update_inbox_message(index, {'deleted':True})
 
     def update_inbox_message(self, index, props):
         '''Update the inbox message at the given index'''
+        if index is None or index < 0:
+            return False
         with threading.Condition(self.db_write_lock):
             inbox = self.db.get_table(MurmeliDb.TABLE_INBOX)
             if len(inbox) > index:

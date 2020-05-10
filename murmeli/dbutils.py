@@ -189,6 +189,13 @@ def add_message_to_inbox(msg, database, context):
         db_row = inbox.create_row(msg, context)
         database.add_row_to_inbox(db_row)
 
+def delete_messages_from_inbox(sender_id, database):
+    '''Find all messages in the inbox from the given sender and delete them all'''
+    if sender_id and database:
+        for msg in database.get_inbox():
+            if msg.get(inbox.FN_FROM_ID) == sender_id:
+                database.delete_from_inbox(msg.get('_id'))
+
 def add_message_to_outbox(msg, crypto, database, dont_relay=None):
     '''Unpack the given message and add it to the outbox.
        Note: this method takes a message object (with recipients and
