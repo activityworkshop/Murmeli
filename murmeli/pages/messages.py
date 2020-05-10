@@ -20,6 +20,8 @@ class MessagesPageSet(PageSet):
         for msg in message_list:
             if not msg or msg.get(inbox.FN_DELETED):
                 continue
+            timestamp = msg.get(inbox.FN_TIMESTAMP)
+            msg[inbox.FN_SENT_TIME_STR] = self.make_local_time_string(timestamp)
             if msg.get(inbox.FN_MSG_TYPE) == "contactrequest":
                 conreqs.append(msg)
         num_msgs = len(conreqs)

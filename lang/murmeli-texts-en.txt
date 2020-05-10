@@ -157,6 +157,7 @@ nomessages=You do not have any new messages.
 sender.unknown=Unknown sender
 recpt.unknown=<unknown>
 confirm.messagesent=Message sent.
+sendtime.yesterday=Yesterday
 
 [composemessage]
 title=New message

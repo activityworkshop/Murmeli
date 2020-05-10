@@ -51,8 +51,6 @@ def create_row(msg, context):
     if msg and context:
         # Ensure we have a valid timestamp string
         timestamp = msg.timestamp if msg.timestamp else msg.make_current_timestamp()
-        if isinstance(timestamp, float):
-            timestamp = msg.timestamp_to_string(timestamp)
         if context == MC_CONREQ_INCOMING and isinstance(msg, ContactRequestMessage):
             # Incoming contact request
             row = _create_base_row(msg_type="contactrequest",

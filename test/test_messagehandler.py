@@ -24,7 +24,8 @@ class MockDatabase(Component):
         '''React to storing messages in the inbox'''
         self.inbox.append(msg)
 
-    def get_profile(self, torid=None):
+    @staticmethod
+    def get_profile(torid=None):
         '''Get a dummy profile for this torid'''
         return {"torid":(torid or "own_id"), "keyid":"dummy_keyid", "status":"trusted"}
 
@@ -50,7 +51,14 @@ class MockCrypto(Component):
         self.last_imported_key = strkey
         return strkey + "_keyid"
 
-    def get_public_key(self, key_id):
+    @staticmethod
+    def encrypt_and_sign(message, recipient, own_key):
+        '''Fake the encryption of the given message for the given recipient'''
+        result = "'%s' for '%s' signed by '%s'" % (message, recipient, own_key)
+        return result.encode("utf-8")
+
+    @staticmethod
+    def get_public_key(key_id):
         '''Fake the retrieval of a key from its id'''
         return "key_of_" + key_id
 

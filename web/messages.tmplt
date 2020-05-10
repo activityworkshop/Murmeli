@@ -34,7 +34,8 @@
 		{{if m['messageType'] == 'contactrequest'}}
 			<div class="genericbox" style="float:left;margin-top:10px">
 				<table border="0"><tr>
-					<td><b>{{langs['messages.from']}}</b>: {{m["fromName"]}}</td>
+					<td><b>{{langs['messages.from']}}</b>: {{m["fromName"]}}<br>
+					<b>{{langs['messages.sendtime']}}:</b> {{m["sentTimeStr"]}}</td>
 					<td style="padding-left:30px"><p>{{m["messageBody"]}}</p></td>
 					<td><p><a href='' onclick='respondToContactRequest("{{m["fromId"]}}", "{{m["fromName"]}}", true);return false' class='reversebutton'>{{langs['button.accept']}}</a>
 						<a href='' onclick='respondToContactRequest("{{m["fromId"]}}", "{{m["fromName"]}}", false);return false' class='reversebutton'>{{langs['button.reject']}}</a></p></td>

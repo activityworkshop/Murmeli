@@ -2,6 +2,7 @@
 
 import os
 import shutil
+import datetime
 import re
 
 
@@ -95,6 +96,33 @@ class PageSet:
                         "<div class='overlay' id='overlay' onclick='hideOverlay()'></div>",
                         "<div class='popuppanel' id='popup'>Here's the message</div>",
                         "</body></html>"]) % params
+
+    def make_local_time_string(self, tstamp):
+        '''Convert a float (in UTC) to a string (in local timezone) for display'''
+        if not tstamp:
+            return ""
+        try:
+            send_time = datetime.datetime.fromtimestamp(tstamp)
+            # Check if it's today
+            now = datetime.datetime.now()
+            midnight = datetime.datetime(now.year, now.month, now.day, 0, 0, 0)
+            if send_time.timestamp() > midnight.timestamp():
+                # today, just show time
+                return "%02d:%02d" % (send_time.hour, send_time.minute)
+            # Check if it's yesterday
+            midnight -= datetime.timedelta(days=1)
+            if send_time.timestamp() > midnight.timestamp():
+                # yesterday, show 'Yesterday' and time
+                return self.i18n("messages.sendtime.yesterday") + \
+                       " %02d:%02d" % (send_time.hour, send_time.minute)
+            # Not today or yesterday, show full date and time
+            return "%d-%02d-%02d %02d:%02d" % (send_time.year, send_time.month, send_time.day,
+                                               send_time.hour, send_time.minute)
+        except TypeError:
+            print("Expected a float timestamp, found", type(tstamp), repr(tstamp))
+        if isinstance(tstamp, str):
+            return tstamp
+        return ""
 
     def i18n(self, key):
         '''Use the i18n component to translate the given key'''

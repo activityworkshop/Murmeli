@@ -24,10 +24,9 @@ class InboxTest(unittest.TestCase):
         self.assertTrue(isinstance(row, dict))
         self.assertEqual(row.get(inbox.FN_MSG_TYPE), 'normal')
         self.assertEqual(row.get(inbox.FN_FROM_ID), sender_torid)
-        # timestamp should be a generated string from the current time
+        # timestamp should be a generated double from the current time
         stamp = row.get(inbox.FN_TIMESTAMP)
-        self.assertTrue(isinstance(stamp, str))
-        self.assertEqual(len(stamp), 16)
+        self.assertTrue(isinstance(stamp, float))
         # check body
         self.assertEqual(row.get(inbox.FN_MSG_BODY), body_text)
         # just received so shouldn't have been read yet

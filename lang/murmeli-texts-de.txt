@@ -155,6 +155,7 @@ nomessages=Keine neue Nachrichten.
 sender.unknown=Absender unbekannt
 recpt.unknown=<unbekannt>
 confirm.messagesent=Nachricht geschickt.
+sendtime.yesterday=Gestern
 
 [composemessage]
 title=Neue Nachricht
