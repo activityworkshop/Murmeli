@@ -19,8 +19,12 @@ class MessagesPageSet(PageSet):
 
         if url == 'send':
             if params['messageType'] == "contactresponse":
-                if params.get('accept') == "0":
-                    ContactManager(database, None).handle_deny(params['sendTo'])
+                if params.get('accept') == "1":
+                    crypto = self.system.get_component(self.system.COMPNAME_CRYPTO)
+                    ContactManager(database, crypto).handle_accept(params.get('sendTo'),
+                                                                   params.get('messageBody'))
+                else:
+                    ContactManager(database, None).handle_deny(params.get('sendTo'))
 
         message_list = database.get_inbox() if database else []
         conreqs = []

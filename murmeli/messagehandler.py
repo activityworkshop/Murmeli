@@ -220,6 +220,13 @@ class RegularMessageHandler(MessageHandler):
                 manager.handle_receive_accept(sender_id, sender_name, key_str)
                 if from_robot:
                     print("Recognised accept from robot - need to check connections")
+                else:
+                    # Only add message to inbox if it's not from the robot
+                    dbutils.add_message_to_inbox(msg, database, inbox.MC_CONRESP_ACCEPT)
+            elif sender_status in [None, 'blocked', 'deleted']:
+                print("Received a contact response but I didn't send them a request!")
+        else:
+            assert False
 
     def receive_info_request(self, msg):
         '''Receive an info request'''

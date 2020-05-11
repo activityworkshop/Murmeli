@@ -2,7 +2,8 @@
 
 from murmeli import contactutils
 from murmeli import dbutils
-from murmeli.message import ContactRequestMessage, ContactDenyMessage
+from murmeli import inbox
+from murmeli.message import ContactRequestMessage, ContactAcceptMessage, ContactDenyMessage
 
 
 class ContactManager:
@@ -78,10 +79,41 @@ class ContactManager:
         outmsg.recipients = [friend_id]
         dbutils.add_message_to_outbox(outmsg, self._crypto, self._database)
 
-    def handle_accept(self, tor_id):
+    def handle_accept(self, tor_id, reply_text):
         '''We want to accept a contact request, so we need to find the request(s),
            and use it/them to update our keyring and our database entry'''
+        if not self._crypto:
+            return
         print("ContactMgr.handle_accept for id '%s'" % tor_id)
+        name, key_str = self.get_contact_request_details(tor_id)
+        key_valid = key_str and len(key_str) > 20
+        if key_valid:
+            # Get this person's current status from the db, if available
+            name = name or tor_id
+            print("ContactMgr.handle_accept for name '%s' with key '%s'" % (name, key_str[:15]))
+            status = dbutils.get_status(self._database, tor_id)
+            # also create ContactAcceptMessage and add to outbox
+            if status in [None, "requested", "deleted"]:
+                # Import the found key into the keyring
+                key_id = self._crypto.import_public_key(key_str)
+                print("Imported key into keyring, got id:", key_id)
+                dbutils.create_profile(self._database, tor_id,
+                                       {'displayName':name, 'name':name,
+                                        'status':'untrusted', 'keyid':key_id})
+                # send response
+                own_profile = self._database.get_profile()
+                own_publickey = self._crypto.get_public_key(own_profile.get('keyid'))
+                outmsg = ContactAcceptMessage()
+                outmsg.set_field(outmsg.FIELD_SENDER_KEY, own_publickey)
+                outmsg.set_field(outmsg.FIELD_SENDER_NAME, own_profile['name'])
+                outmsg.set_field(outmsg.FIELD_MESSAGE, reply_text or "")
+                outmsg.recipients = [tor_id]
+                dbutils.add_message_to_outbox(outmsg, self._crypto, self._database)
+            elif status == "pending":
+                print("Request already pending, nothing to do")
+            else:
+                # status could be untrusted, or trusted
+                print("Trying to handle an accept but status is already", status)
 
     def is_robot_id(self, tor_id):
         '''Return True if this tor_id is configured as our robot'''
@@ -126,6 +158,25 @@ class ContactManager:
            So we need to update their status accordingly'''
         self.delete_contact(tor_id)
         print("ContactMgr received contact refusal from %s" % tor_id)
+
+    def get_contact_request_details(self, tor_id):
+        '''Use all received contact requests for the given id, and summarize name and public key'''
+        found_names = set()
+        found_keys = set()
+        # Loop through all contact requests and contact refers for the given torid
+        for msg in self._database.get_inbox():
+            msg_type = msg.get(inbox.FN_MSG_TYPE) if msg else None
+            if msg_type == "contactrequest" and msg.get(inbox.FN_FROM_ID) == tor_id:
+                found_names.add(msg.get(inbox.FN_FROM_NAME))
+                found_keys.add(msg.get(inbox.FN_PUBLIC_KEY))
+            elif msg_type == "contactrefer" and msg.get(inbox.FN_FRIEND_ID) == tor_id:
+                found_names.add(msg.get(inbox.FN_FRIEND_NAME))
+                found_keys.add(msg.get(inbox.FN_PUBLIC_KEY))
+        supplied_key = found_keys.pop() if len(found_keys) == 1 else None
+        if supplied_key is None or len(supplied_key) < 80:
+            return (None, None)  # key missing or too short
+        supplied_name = found_names.pop() if len(found_names) == 1 else tor_id
+        return (supplied_name, supplied_key)
 
     def get_shared_possible_contacts(self, tor_id):
         '''Check which contacts we share with the given torid

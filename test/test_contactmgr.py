@@ -9,6 +9,7 @@ class MockDatabase:
     '''Use a pretend database for the tests instead of a real one'''
     def __init__(self):
         self.profiles = []
+        self.inbox = []
         self.outbox = []
 
     def get_profile(self, torid=None):
@@ -43,6 +44,15 @@ class MockDatabase:
             self.profiles.append(inprofile)
             return True
         return False
+
+    def get_inbox(self):
+        '''Get the whole inbox'''
+        return self.inbox
+
+    def delete_from_inbox(self, row_id):
+        '''Delete a single message from the inbox'''
+        if row_id is not None:
+            self.inbox[row_id].update({'deleted':True})
 
     def add_row_to_outbox(self, inrow):
         '''add a row to the outbox'''
@@ -221,6 +231,86 @@ class InitiateWithRobotTest(unittest.TestCase):
         manager = ContactManager(database, None)
         self.assertTrue(manager.is_robot_id(robot_id))
         self.assertFalse(manager.is_robot_id("Some other id"))
+
+
+class MockCrypto:
+    '''Pretend to be a crypto object'''
+    def __init__(self):
+        self.keys_imported = 0
+
+    @staticmethod
+    def get_public_key(_):
+        '''Return the specified public key'''
+        return "public key"
+
+    def import_public_key(self, key_str):
+        '''Pretend to import the key'''
+        self.keys_imported += 1
+        return "key-id" + key_str[:10]
+
+    @staticmethod
+    def encrypt_and_sign(message, recipient, own_key):
+        '''Encrypt and sign the given message'''
+        return message + recipient.encode('utf-8') + str(own_key).encode('utf-8')
+
+
+class ContactResponseTest(unittest.TestCase):
+    '''Tests for responding to a contact request'''
+
+    def test_reject_without_request(self):
+        '''Test that rejecting without a request sends a response'''
+        database = MockDatabase()
+        database.profiles.append({'torid':'pomegranate', 'status':'self'})
+        manager = ContactManager(database, None)
+        manager.handle_deny("abcde")
+        self.assertEqual(1, len(database.outbox))
+        self.assertEqual(1, len(database.profiles))
+
+
+    def test_reject(self):
+        '''Test that rejecting a request sends a reply and deletes the message'''
+        database = MockDatabase()
+        database.profiles.append({'torid':'pomegranate', 'status':'self'})
+        database.inbox.append({'fromId':'abcde', 'msg':'intro', '_id':0})
+        manager = ContactManager(database, None)
+        manager.handle_deny("abcde")
+        self.assertTrue(database.inbox[0].get('deleted'))
+        self.assertEqual(1, len(database.outbox))
+        self.assertEqual(1, len(database.profiles))
+
+    def test_accept_without_crypto(self):
+        '''Test that accepting without a crypto service does nothing'''
+        database = MockDatabase()
+        database.profiles.append({'torid':'cauliflower', 'status':'self'})
+        manager = ContactManager(database, None)
+        manager.handle_accept("abcde", "please")
+        self.assertEqual(0, len(database.outbox))
+        self.assertEqual(1, len(database.profiles))
+
+    def test_accept_without_request(self):
+        '''Test that accepting without a corresponding request does nothing'''
+        database = MockDatabase()
+        database.profiles.append({'torid':'cauliflower', 'status':'self'})
+        crypto = MockCrypto()
+        manager = ContactManager(database, crypto)
+        manager.handle_accept("abcde", "please")
+        self.assertEqual(0, len(database.outbox))
+        self.assertEqual(1, len(database.profiles))
+
+    def test_accept_with_request(self):
+        '''Test that accepting with a corresponding request sends a reply'''
+        database = MockDatabase()
+        database.profiles.append({'torid':'cauliflower', 'status':'self', 'name':'Me'})
+        public_key = "somelongkey" * 10
+        database.inbox.append({'fromId':'abcde', 'msg':'intro', '_id':0,
+                               'publicKey':public_key,
+                               'messageType':'contactrequest'})
+        crypto = MockCrypto()
+        manager = ContactManager(database, crypto)
+        manager.handle_accept("abcde", "please")
+        self.assertEqual(1, len(database.outbox))
+        self.assertEqual(2, len(database.profiles))
+        self.assertEqual(1, crypto.keys_imported)
 
 
 if __name__ == "__main__":
