@@ -10,8 +10,10 @@ def limit_name_length(name):
 		{{if c.last_seen}}<small>({{c.last_seen}})</small>{{endif}}<br clear="all"></p>
 	</div>
 {{endfor}}
+{{if has_friends}}
 <div class="genericbox" style='float:right; width:130px; clear:both; '>
 <div style='float:left;margin-right:5px'><a href='/special/friendstorm'><img
  src='file:///{{webcachedir}}/button-drawgraph.png' title='{{langs['contacts.link.showstorm']}}'></a></div>
 <a href='/special/friendstorm'>{{langs['contacts.link.showstorm']}}</a></div>
 <p style='clear:both;'>&nbsp;</p>
+{{endif}}

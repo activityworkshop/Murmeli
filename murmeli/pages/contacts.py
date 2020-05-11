@@ -108,6 +108,7 @@ class ContactsPageSet(PageSet):
 
         # Build list of contacts
         userboxes = []
+        has_friends = False
         database = self.system.get_component(self.system.COMPNAME_DATABASE)
         for profile in database.get_profiles():
             if profile['status'] in ['requested', 'untrusted', 'trusted', 'self']:
@@ -121,10 +122,13 @@ class ContactsPageSet(PageSet):
                 box.set('last_seen', "")
                 box.set('has_robot', dbutils.has_robot(database, tor_id))
                 userboxes.append(box)
+                if profile['status'] in ['untrusted', 'trusted']:
+                    has_friends = True
         # build list of contacts on left of page using these boxes
         tokens = self.get_all_i18n()
         lefttext = self.list_template.get_html(tokens, {'webcachedir':config.get_web_cache_dir(),
-                                                        'contacts':userboxes})
+                                                        'contacts':userboxes,
+                                                        'has_friends':has_friends})
 
         page_props = {"webcachedir":config.get_web_cache_dir(), 'person':selectedprofile}
         page_props["sharedcontacts"] = []

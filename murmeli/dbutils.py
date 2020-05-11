@@ -155,6 +155,10 @@ def get_messageable_profiles(database):
         return [profile for profile in database.get_profiles_with_status(["trusted", "untrusted"])]
     return []
 
+def has_friends(database):
+    '''Return True if there is at least one trusted or untrusted friend'''
+    return True if get_messageable_profiles(database) else False
+
 def get_status(database, tor_id):
     '''Return the status of the given tor_id'''
     profile = database.get_profile(tor_id) if database else None
