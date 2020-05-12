@@ -3,6 +3,7 @@
 from murmeli.pages.base import PageSet, Bean
 from murmeli.pagetemplate import PageTemplate
 from murmeli import dbutils
+from murmeli.fingerprints import FingerprintChecker
 from murmeli.contactmgr import ContactManager
 from murmeli import cryptoutils
 
@@ -17,6 +18,7 @@ class ContactsPageSet(PageSet):
         self.editdetails_template = PageTemplate('editcontact')
         self.add_template = PageTemplate('addcontact')
         self.addrobot_template = PageTemplate('addrobot')
+        self.fingerprintstemplate = PageTemplate('fingerprints')
 
     def serve_page(self, view, url, params):
         '''Serve a page to the given view'''
@@ -62,6 +64,8 @@ class ContactsPageSet(PageSet):
             dbutils.update_profile(self.system.get_component(self.system.COMPNAME_DATABASE),
                                    tor_id=userid, in_profile=params,
                                    pic_output_path=self.get_web_cache_dir())
+        elif commands[0] == "checkfingerprint":
+            contents = self.make_checkfinger_page(commands[1])
         # If we haven't got any contents yet, then do a show details
         if not contents:
             contents = self.make_list_page(do_edit=False, userid=userid)
@@ -156,6 +160,33 @@ class ContactsPageSet(PageSet):
                                                'pageFooter':"<p>Footer</p>"})
         return contents
 
+    def make_checkfinger_page(self, userid):
+        '''Generate a page for checking the fingerprint of the given user'''
+        # First, get the name of the user
+        person = self.system.invoke_call(self.system.COMPNAME_DATABASE, "get_profile",
+                                         torid=userid)
+        disp_name = person['displayName']
+        full_name = person['name']
+        if disp_name != full_name:
+            full_name = "%s (%s)" % (disp_name, full_name)
+        # check it's ok to generate
+        status = person.get('status')
+        if status not in ['untrusted', 'trusted']:
+            print("Not generating fingerprints page because status is", status)
+            return None
+        fingers = self._make_fingerprint_checker(userid)
+        # TODO: Provide way to choose another language, not just "en"
+        page_params = {"mywords":fingers.get_code_words(True, 0, "en"),
+                       "theirwords0":fingers.get_code_words(False, 0, "en"),
+                       "theirwords1":fingers.get_code_words(False, 1, "en"),
+                       "theirwords2":fingers.get_code_words(False, 2, "en"),
+                       "fullname":full_name, "shortname":disp_name, "userid":userid,
+                       "alreadychecked":status == "trusted"}
+        body_text = self.fingerprintstemplate.get_html(self.get_all_i18n(), page_params)
+        return self.build_page({'pageTitle':self.i18n("contacts.title"),
+                                'pageBody':body_text,
+                                'pageFooter':"<p>Footer</p>"})
+
     def make_add_page(self):
         '''Build the form page for adding a new contact, using the template'''
         own_profile = self.system.invoke_call(self.system.COMPNAME_DATABASE, "get_profile")
@@ -165,6 +196,19 @@ class ContactsPageSet(PageSet):
         return self.build_page({'pageTitle':self.i18n("contacts.title"),
                                 'pageBody':bodytext,
                                 'pageFooter':"<p>Footer</p>"})
+
+    def _make_fingerprint_checker(self, userid):
+        '''Use the given userid to make a FingerprintChecker between me and them'''
+        own_profile = self.system.invoke_call(self.system.COMPNAME_DATABASE, "get_profile",
+                                              torid=None)
+        own_fingerprint = self.system.invoke_call(self.system.COMPNAME_CRYPTO, "get_fingerprint",
+                                                  key_id=own_profile['keyid'])
+        person = self.system.invoke_call(self.system.COMPNAME_DATABASE, "get_profile",
+                                         torid=userid)
+        other_fingerprint = self.system.invoke_call(self.system.COMPNAME_CRYPTO, "get_fingerprint",
+                                                    key_id=person['keyid'])
+        assert own_fingerprint and other_fingerprint
+        return FingerprintChecker(own_fingerprint, other_fingerprint)
 
     def make_add_robot_page(self):
         '''Build the form page for adding a new robot, using the template'''

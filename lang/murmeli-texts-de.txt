@@ -128,11 +128,11 @@ confirmdelete=Willst du sicher diesen Kontakt löschen?  Ihr werdet nicht mehr m
 desc.confirmfingerprints=Dieser Schlüssel ist noch nicht bestätigt worden.  Um sicherzustellen, dass niemand einen anderen Schlüssel dazwischengefügt hat, musst du dies bestätigen.
 link.confirmfingerprints=Schlüssel bestätigen
 fingerprintcheck.intro1=Es ist ganz wichtig zu prüfen ob dieser Schlüssel der richtige ist, auch dann wenn du sicher bist, dass die Person stimmt!
-fingerprintcheck.intro2=Um das zu machen, brauchst du eine andere Kontaktmöglichkeit, (wie telefonisch, oder persönlich) und gibst der Kontakt die folgenden Wörter.  Das muss unbedingt abseits von Murmeli stattfinden für eine unabhängige Bestätigung.
+fingerprintcheck.intro2=Dafür brauchst du eine andere Kontaktmöglichkeit, (z.B. telefonisch, oder persönlich) und gibst der Person die folgenden Wörter.  Das muss unbedingt abseits von Murmeli stattfinden für eine unabhängige Bestätigung.
 fingerprintcheck.yourwords=Hier sind die fünf Wörter die du '%s' mitteilen solltest.
-fingerprintcheck.theirwords=Und '%s' sollte dir einen von diesen Wortreihen geben.
+fingerprintcheck.theirwords=Und '%s' sollte dir eine von diesen Wortreihen geben.
 fingerprintcheck.alreadydone=Du hast die Wörter von '%s' schon bestätigt.
-error.fingerprintcheckfailed=Die sind nicht die erwartete Wörter.  Bitte nochmals prüfen.
+error.fingerprintcheckfailed=Die sind nicht die erwartete Wörter.  Bitte nochmals (und vorsichtig!) prüfen.
 
 [messages]
 title=Nachrichten
