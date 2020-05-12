@@ -42,6 +42,11 @@
 	border:1px solid #a87;
 	border-radius:5px; padding:2px 25px;
 }
+.infobox {
+	background:#eef;
+	border:1px solid #a87;
+	border-radius:5px; padding:2px 25px;
+}
 a.reversebutton, input.reversebutton {
 	background:#a87;
 	border-radius:4px;

@@ -1,3 +1,7 @@
+{{py:
+def limit_id_length(torid):
+   return (torid[:18]+"...") if len(torid)>20 else torid
+}}
 <script>
 	function deleteContact()
 	{
@@ -30,7 +34,8 @@
 <table style="border:1px solid #a87">
 	<tr><th>{{langs['contacts.details.name']}}</td><td>:</td><td>{{person['name']}}</td></tr>
 	<tr><th>{{langs['contacts.details.displayname']}}</td><td>:</td><td>{{person['displayName']}}</td></tr>
-	<tr><th>{{langs['contacts.details.userid']}}</td><td>:</td><td>{{person['torid']}}</td></tr>
+	<tr><th>{{langs['contacts.details.status']}}</td><td>:</td><td>{{langs['contacts.details.status.'+person['status']]}}</td></tr>
+	<tr><th>{{langs['contacts.details.userid']}}</td><td>:</td><td>{{person['torid'] | limit_id_length}}</td></tr>
 	<tr><th>{{langs['contacts.details.description']}}</td><td>:</td><td>{{person['description']}}</td></tr>
 	<tr><th>{{langs['contacts.details.interests']}}</td><td>:</td><td>{{person['interests']}}</td></tr>
 	<tr><th>{{langs['contacts.details.birthday']}}</td><td>:</td><td>{{person['birthday']}}</td></tr>
@@ -39,6 +44,11 @@
 {{if person['status']=='untrusted'}}
 <div class='warningbox' style='margin-top:5px'>
 <p><img src='file:///{{webcachedir}}/status-untrusted.png' width='24' height='24'> {{langs['contacts.desc.confirmfingerprints']}}</p>
+<p><a href="/contacts/{{person['torid']}}/checkfingerprint">{{langs['contacts.link.confirmfingerprints']}}</a></p>
+</div>
+{{elif person['status']=='trusted'}}
+<div class='infobox' style='margin-top:5px'>
+<p><img src='file:///{{webcachedir}}/status-trusted.png' width='24' height='24'> {{langs['contacts.desc.reconfirmfingerprints']}}</p>
 <p><a href="/contacts/{{person['torid']}}/checkfingerprint">{{langs['contacts.link.confirmfingerprints']}}</a></p>
 </div>
 {{endif}}
