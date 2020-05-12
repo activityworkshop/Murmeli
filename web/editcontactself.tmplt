@@ -16,6 +16,8 @@
 		<td><input type="text" value="{{person['name']}}" name="name"></td></tr>
 	<tr><th>{{langs['contacts.details.displayname']}}</td>
 		<td><input type="text" value="{{person['displayName']}}" name="displayName"></td></tr>
+	<tr><th>{{langs['contacts.details.userid']}}</td>
+		<td><input type="text" value="{{person['torid']}}" name="dontsendthis" disabled="disabled"></td></tr>
 	<tr><th>{{langs['contacts.details.owndescription']}}</td>
 		<td><textarea name="description">{{person['description']}}</textarea></td></tr>
 	<tr><th>{{langs['contacts.details.interests']}}</td>

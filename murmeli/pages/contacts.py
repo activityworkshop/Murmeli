@@ -1,5 +1,6 @@
 '''Module for the contacts pageset'''
 
+from datetime import datetime
 from murmeli.pages.base import PageSet, Bean
 from murmeli.pagetemplate import PageTemplate
 from murmeli import dbutils
@@ -137,7 +138,11 @@ class ContactsPageSet(PageSet):
                 tile_selected = profile['torid'] == userid
                 box.set('tilestyle', "contacttile" + ("selected" if tile_selected else ""))
                 box.set('status', profile['status'])
-                box.set('last_seen', "")
+                is_online = self.system.invoke_call(self.system.COMPNAME_CONTACTS,
+                                                    "is_online", tor_id=tor_id)
+                last_time = self.system.invoke_call(self.system.COMPNAME_CONTACTS,
+                                                    "last_seen", tor_id=tor_id)
+                box.set('last_seen', self._make_lastseen_string(is_online, last_time))
                 box.set('has_robot', dbutils.has_robot(database, tor_id))
                 userboxes.append(box)
                 if profile['status'] in ['untrusted', 'trusted']:
@@ -176,6 +181,16 @@ class ContactsPageSet(PageSet):
                                                'rightColumn':righttext,
                                                'pageFooter':"<p>Footer</p>"})
         return contents
+
+    def _make_lastseen_string(self, online, last_time):
+        '''Make a string describing the online / offline status'''
+        curr_time = datetime.now()
+        if last_time and (curr_time-last_time).total_seconds() < 18000:
+            token = "contacts.onlinesince" if online else "contacts.offlinesince"
+            return self.i18n(token) % str(last_time.timetz())[:5]
+        if online:
+            return self.i18n("contacts.online")
+        return ""
 
     def make_checkfinger_page(self, userid):
         '''Generate a page for checking the fingerprint of the given user'''

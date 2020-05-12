@@ -9,6 +9,9 @@
 <table style="border:1px solid #a87">
 	<tr><th>{{langs['contacts.details.name']}}</th><td>:</td><td>{{person['name']}}</td></tr>
 	<tr><th>{{langs['contacts.details.displayname']}}</th><td>:</td><td><input type="text" value="{{person['displayName']}}" name="displayName"></td></tr>
+	<tr><th>{{langs['contacts.details.status']}}</td><td>:</td><td>{{langs['contacts.details.status.'+person['status']]}}</td></tr>
+	<tr><th>{{langs['contacts.details.userid']}}</td><td>:</td>
+		<td><input type="text" value="{{person['torid']}}" name="dontsendthis" disabled="disabled"></td></tr>
 	<tr><th>{{langs['contacts.details.description']}}</th><td>:</td><td>{{person['description']}}</td></tr>
 	<tr><th>{{langs['contacts.details.interests']}}</th><td>:</td><td>{{person['interests']}}</td></tr>
 	<tr><th>{{langs['contacts.details.birthday']}}</th><td>:</td><td>{{person['birthday']}}</td></tr>
