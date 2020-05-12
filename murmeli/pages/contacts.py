@@ -29,6 +29,7 @@ class ContactsPageSet(PageSet):
         crypto = self.system.get_component(self.system.COMPNAME_CRYPTO)
         dbutils.export_all_avatars(database, self.get_web_cache_dir())
         contents = None
+        page_params = {}
         commands = self.interpret_commands(url)
         userid = commands[1] if len(commands) == 2 else None
         print("Commands:", commands, ", userid:", userid, ", params:", params)
@@ -66,9 +67,22 @@ class ContactsPageSet(PageSet):
                                    pic_output_path=self.get_web_cache_dir())
         elif commands[0] == "checkfingerprint":
             contents = self.make_checkfinger_page(commands[1])
+        elif commands[0] == "checkedfingerprint":
+            given_answer = self.get_param_as_int(params, "answer", -1)
+            fingers = self._make_fingerprint_checker(userid)
+            expected_answer = fingers.get_correct_answer()
+            print("checked fingerprint with answer '%d', correct answer is '%d'" \
+                  % (given_answer, expected_answer))
+            # Compare with expected answer, generate appropriate page
+            if given_answer == expected_answer:
+                ContactManager(database, None).key_fingerprint_checked(userid)
+                # Show page again
+                contents = self.make_checkfinger_page(userid)
+            else:
+                page_params['fingerprint_check_failed'] = True
         # If we haven't got any contents yet, then do a show details
         if not contents:
-            contents = self.make_list_page(do_edit=False, userid=userid)
+            contents = self.make_list_page(do_edit=False, userid=userid, extra_params=page_params)
         view.set_html(contents)
 
     @staticmethod
@@ -95,7 +109,7 @@ class ContactsPageSet(PageSet):
                             return [command[1], command[0], command[2]]
         return ['show', None]
 
-    def make_list_page(self, do_edit=False, userid=None):
+    def make_list_page(self, do_edit=False, userid=None, extra_params=None):
         '''Generate a page for listing all the contacts and showing the details of one of them'''
         self.require_resources(['status-self.png', 'status-requested.png', 'status-untrusted.png',
                                 'status-trusted.png', 'status-pending.png', 'status-robot.png'])
@@ -135,6 +149,9 @@ class ContactsPageSet(PageSet):
                                                         'has_friends':has_friends})
 
         page_props = {"webcachedir":config.get_web_cache_dir(), 'person':selectedprofile}
+        # Add extra parameters if necessary
+        if extra_params:
+            page_props.update(extra_params)
         page_props["sharedcontacts"] = []
         page_props["posscontactsforthem"] = []
         page_props["posscontactsforme"] = []

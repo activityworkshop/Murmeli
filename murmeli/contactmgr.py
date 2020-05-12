@@ -159,6 +159,13 @@ class ContactManager:
         self.delete_contact(tor_id)
         print("ContactMgr received contact refusal from %s" % tor_id)
 
+    def key_fingerprint_checked(self, tor_id):
+        '''The fingerprint of this contact's key has been checked (over a separate channel)'''
+        # Check that userid exists and that status is ok
+        curr_status = dbutils.get_status(self._database, tor_id)
+        if curr_status == "untrusted":
+            dbutils.update_profile(self._database, tor_id, {'status':'trusted'})
+
     def get_contact_request_details(self, tor_id):
         '''Use all received contact requests for the given id, and summarize name and public key'''
         found_names = set()

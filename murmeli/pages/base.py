@@ -151,6 +151,20 @@ class PageSet:
         return False
 
     @staticmethod
+    def get_param_as_int(params, param_name, default_value=-1):
+        '''Get the value of the specified parameter as an int'''
+        if params and isinstance(params, dict) and param_name:
+            param_val = params.get(param_name)
+            if param_val and isinstance(param_val, str):
+                try:
+                    return int(param_val)
+                except ValueError:
+                    pass
+            if param_val is not None and isinstance(param_val, int):
+                return param_val
+        return default_value
+
+    @staticmethod
     def get_page_title(_):
         '''Get the page title for any path by default'''
         return None
