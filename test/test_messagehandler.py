@@ -98,7 +98,7 @@ class RobotHandlerTest(unittest.TestCase):
         self.assertFalse(self.fakedb.outbox, "outbox still empty")
 
     def test_sending_pongs_pings(self):
-        '''Check that pings are replied to and pongs are ignored'''
+        '''Check that both pings and pongs are ignored by the robot'''
         pong = StatusNotifyMessage()
         pong.set_field(pong.FIELD_PING, 0)
         pong.set_field(pong.FIELD_SENDER_ID, "abcdefg")
@@ -109,16 +109,10 @@ class RobotHandlerTest(unittest.TestCase):
         pong.set_field(pong.FIELD_ONLINE, 0)
         self.robot.receive(pong)
         self.assertFalse(self.fakedb.outbox, "outbox still empty after offline ping")
-        # online ping - should generate pong
+        # online ping - should be ignored also
         pong.set_field(pong.FIELD_ONLINE, 1)
         self.robot.receive(pong)
-        self.assertEqual(len(self.fakedb.outbox), 1, "outbox now has one message")
-        reply = self.fakedb.outbox.pop()
-        self.assertTrue(isinstance(reply, dict), "reply exists as a dict")
-        # TODO: Test contents of output message after encryption, if possible
-        # self.assertFalse(reply.get_field(reply.FIELD_PING), "reply is a pong")
-        # self.assertTrue(reply.get_field(reply.FIELD_ONLINE), "reply is online")
-        # self.assertEqual(reply.recipients, ["abcdefg"], "reply is for abcdefg")
+        self.assertFalse(self.fakedb.outbox, "outbox still empty after ping, as robot ignored it")
 
     def test_sending_conreqs_to_robot(self):
         '''Check that contact requests are handled properly by robot'''
@@ -135,8 +129,9 @@ class RobotHandlerTest(unittest.TestCase):
         self.robot.receive(req)
         self.assertEqual(len(self.fakedb.outbox), 1, "outbox now has one message")
         reply = self.fakedb.outbox.pop()
-        # TODO: How to check contents of encrypted, stored dictionary in the outbox?
         self.assertTrue(isinstance(reply, dict), "reply exists")
+        self.assertEqual("contactresponse", reply['msgType'], "reply is a contact response")
+        self.assertEqual("NOP456HAA", reply['recipient'], "reply is back to owner")
 
     def test_conreferral_to_robot(self):
         '''Check that contact referrals are handled properly by robot'''
@@ -172,7 +167,6 @@ class RegularHandlerTest(unittest.TestCase):
         self.sys.add_component(self.config)
         self.config.set_property(Config.KEY_ALLOW_FRIEND_REQUESTS, True)
 
-
     def test_sending_nonsense(self):
         '''Just check that nothing falls over when non-message objects are sent'''
         self.handler.receive(None)
@@ -181,6 +175,28 @@ class RegularHandlerTest(unittest.TestCase):
         self.handler.receive(3.5)
         self.handler.receive([3.5j, -1])
         self.assertFalse(self.fakedb.outbox, "outbox still empty")
+
+    def test_sending_pongs_pings(self):
+        '''Check that pings are replied to and pongs are ignored'''
+        pong = StatusNotifyMessage()
+        pong.set_field(pong.FIELD_PING, 0)
+        pong.set_field(pong.FIELD_SENDER_ID, "abcdefg")
+        self.handler.receive(pong)
+        self.assertFalse(self.fakedb.outbox, "outbox still empty after pong")
+        # ping but offline - should also be ignored
+        pong.set_field(pong.FIELD_PING, 1)
+        pong.set_field(pong.FIELD_ONLINE, 0)
+        self.handler.receive(pong)
+        self.assertFalse(self.fakedb.outbox, "outbox still empty after offline ping")
+        # online ping - should generate pong
+        pong.set_field(pong.FIELD_ONLINE, 1)
+        self.handler.receive(pong)
+        self.assertEqual(len(self.fakedb.outbox), 1, "outbox now has one message")
+        reply = self.fakedb.outbox.pop()
+        self.assertTrue(isinstance(reply, dict), "reply exists as a dict")
+        self.assertTrue(reply['message'], "reply has some kind of message")
+        self.assertEqual("statusnotify", reply['msgType'], "reply is also a status notify")
+        self.assertEqual("abcdefg", reply['recipient'], "reply is for abcdefg")
 
     def test_sendpong_contactsupdated(self):
         '''Check that pings to a regular message handler cause contacts to be updated'''
@@ -201,7 +217,6 @@ class RegularHandlerTest(unittest.TestCase):
         stranger_online = self.fakecontacts.contacts.get(stranger_id)
         self.assertFalse(friend_online, "friend is now offline")
         self.assertFalse(stranger_online, "stranger is still offline")
-
 
     def test_conreq_filterbyconfig(self):
         '''Check that config setting ignores incoming contact requests'''

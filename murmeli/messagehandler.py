@@ -48,17 +48,10 @@ class MessageHandler(Component):
         '''Receive a contact response'''
         pass
 
-    def receive_status_notify(self, msg):
+    @staticmethod
+    def receive_status_notify(msg):
         '''Receive a status notification'''
-        # If it's a ping, reply with a pong
-        if msg.get_field(msg.FIELD_PING) and msg.get_field(msg.FIELD_ONLINE):
-            if not self.is_from_trusted_contact(msg):
-                return
-            # Create new pong for the sender and pass to outbox
-            sender_of_ping = msg.get_field(msg.FIELD_SENDER_ID)
-            pong = self._create_pong(sender_of_ping)
-            dbutils.add_message_to_outbox(pong, self.get_component(System.COMPNAME_CRYPTO),
-                                          self.get_component(System.COMPNAME_DATABASE))
+        _ = msg # by default do nothing, the sender now knows we're online
 
     def _create_pong(self, recipient):
         '''Create a StatusNotify pong message for the given recipient'''
@@ -121,7 +114,7 @@ class RobotMessageHandler(MessageHandler):
         # Compare incoming keyid with owner id in Config, ignore all others
         sender_keyid = msg.get_field(msg.FIELD_SENDER_KEY)
         owner_keyid = self.get_config_property(Config.KEY_ROBOT_OWNER_KEY)
-        print("Contact request was from '%s', my owner is '%s'" % (sender_keyid, owner_keyid))
+        print("Contact request from key '%s', my owner has key '%s'" % (sender_keyid, owner_keyid))
         if sender_keyid == owner_keyid and sender_keyid:
             sender_id = msg.get_field(msg.FIELD_SENDER_ID)
             print("Contact request from my owner with id '%s'" % sender_id)
@@ -184,13 +177,20 @@ class RegularMessageHandler(MessageHandler):
 
     def receive_status_notify(self, msg):
         '''Receive a status notification'''
-        # Reply to a ping with a pong
-        MessageHandler.receive_status_notify(self, msg)
         # Update our list of who is online, offline
         sender_id = msg.get_field(msg.FIELD_SENDER_ID)
         is_online = msg.get_field(msg.FIELD_ONLINE)
         self.call_component(System.COMPNAME_CONTACTS, "set_online_status", tor_id=sender_id,
                             online=is_online)
+        # If it's a ping, reply with a pong
+        if msg.get_field(msg.FIELD_PING) and msg.get_field(msg.FIELD_ONLINE):
+            if not self.is_from_trusted_contact(msg):
+                return
+            # Create new pong for the sender and pass to outbox
+            sender_of_ping = msg.get_field(msg.FIELD_SENDER_ID)
+            pong = self._create_pong(sender_of_ping)
+            dbutils.add_message_to_outbox(pong, self.get_component(System.COMPNAME_CRYPTO),
+                                          self.get_component(System.COMPNAME_DATABASE))
 
     def receive_contact_request(self, msg):
         '''Receive a contact request'''

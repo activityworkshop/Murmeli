@@ -10,6 +10,7 @@ import random
 from murmeli.system import System, Component
 from murmeli.message import Message
 from murmeli.decrypter import DecrypterShim
+from murmeli import dbutils
 from murmeli import guinotification
 
 
@@ -216,22 +217,32 @@ class SocketListener(threading.Thread):
                 msg += received
                 if is_http_req:
                     print("Got Http request: ", msg)
-                    reply_to_send = "undergrowth (%d)" % random.Random().choice(range(10000))
+                    reply_to_send = "This is not the hidden service you are looking for (%d)" \
+                                    % random.Random().choice(range(10000))
                     self.conn.send(reply_to_send.encode("utf-8"))
+                    self.component.call_component(System.COMPNAME_LOGGING, "log",
+                                                  logstr="Received http request")
             elif msg:
                 crypto = self.component.get_component(System.COMPNAME_CRYPTO)
                 received_msg = Message.from_received_data(msg, decrypter=DecrypterShim(crypto))
                 if received_msg:
+                    # if msg has signature id, get corresponding sender id
                     signature_keyid = received_msg.get_field(Message.FIELD_SIGNATURE_KEYID)
-                    print("Incoming message!  Signature key:", signature_keyid)
-                    print("Incoming message!  Sender was '%s'"
-                          % received_msg.get_field(received_msg.FIELD_SENDER_ID))
+                    database = self.component.get_component(System.COMPNAME_DATABASE)
+                    sender_id = dbutils.user_id_from_key_id(database, signature_keyid)
+                    if sender_id:
+                        received_msg.set_field(Message.FIELD_SENDER_ID, sender_id)
+                    else:
+                        sender_id = received_msg.get_field(Message.FIELD_SENDER_ID)
                     logstr = "Received '%s' from '%s'" % (received_msg.describe_message_type(),
-                                                          signature_keyid)
+                                                          sender_id)
                     self.component.call_component(System.COMPNAME_LOGGING, "log", logstr=logstr)
                     # Pass to the system's message handler
                     self.component.call_component(System.COMPNAME_MSG_HANDLER, "receive",
                                                   msg=received_msg)
+                    own_tor_id = dbutils.get_own_tor_id(database)
+                    self.component.call_component(System.COMPNAME_CONTACTS, "come_online",
+                                                  tor_id=own_tor_id)
                 else:
                     print("Hang on, why is the incoming message None?")
                 # Note: should reply with ACK/NACK, but this doesn't work through the proxy
