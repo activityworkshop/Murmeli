@@ -8,6 +8,8 @@ from murmeli.config import Config
 from murmeli.contacts import Contacts
 from murmeli.cryptoclient import CryptoClient
 from murmeli.i18n import I18nManager
+from murmeli.logger import Logger, PlainLogSink
+from murmeli.loggergui import GuiLogSink
 from murmeli.messagehandler import RegularMessageHandler
 from murmeli.pageserver import MurmeliPageServer
 from murmeli.postservice import PostService
@@ -21,7 +23,8 @@ class MainWindow(GuiWindow):
 
     def __init__(self, system, *args):
         '''Constructor'''
-        GuiWindow.__init__(self)
+        self.log_panel = GuiLogSink()
+        GuiWindow.__init__(self, lower_item=self.log_panel)
         self.system = self.ensure_system(system)
         # we want to be notified of Config changes
         self.system.invoke_call(System.COMPNAME_CONFIG,
@@ -85,6 +88,12 @@ class MainWindow(GuiWindow):
         if not my_system.has_component(System.COMPNAME_POSTSERVICE):
             post = PostService(my_system)
             my_system.add_component(post)
+        # Add log
+        if not my_system.has_component(System.COMPNAME_LOGGING):
+            logger = Logger(my_system)
+            logger.add_sink(PlainLogSink())
+            logger.add_sink(self.log_panel)
+            my_system.add_component(logger)
         # Use config to activate current language
         my_system.invoke_call(System.COMPNAME_I18N, "set_language")
         print("Using system:", list(my_system.components))
@@ -123,3 +132,8 @@ class MainWindow(GuiWindow):
         for action in self.toolbar_actions:
             tip = self.system.invoke_call(System.COMPNAME_I18N, "get_text", key=action.tooltip_key)
             action.setToolTip(tip)
+        if self.system.invoke_call(System.COMPNAME_CONFIG, "get_property",
+                                   key=Config.KEY_SHOW_LOG_WINDOW):
+            self.log_panel.show()
+        else:
+            self.log_panel.hide()

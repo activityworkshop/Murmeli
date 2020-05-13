@@ -253,6 +253,19 @@ class Message:
         '''Create the payload from the message contents (will be overridden)'''
         return bytes()
 
+    def describe_message_type(self):
+        '''Return a string describing the message type (for diagnostics only)'''
+        typedescs = {self.TYPE_CONTACT_REQUEST:"contactrequest",
+                     self.TYPE_CONTACT_RESPONSE:"contactresponse",
+                     self.TYPE_STATUS_NOTIFY:"statusnotify",
+                     self.TYPE_INFO_REQUEST:"inforequest",
+                     self.TYPE_INFO_RESPONSE:"inforesponse",
+                     self.TYPE_FRIEND_REFERRAL:"referral",
+                     self.TYPE_FRIENDREFER_REQUEST:"referrequest",
+                     self.TYPE_REGULAR_MESSAGE:"regular",
+                     self.TYPE_RELAYED_MESSAGE:"relay"}
+        return typedescs.get(self.msg_type)
+
 
 class UnencryptedMessage(Message):
     '''Superclass for both unencrypted message types'''

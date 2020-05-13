@@ -226,6 +226,9 @@ class SocketListener(threading.Thread):
                     print("Incoming message!  Signature key:", signature_keyid)
                     print("Incoming message!  Sender was '%s'"
                           % received_msg.get_field(received_msg.FIELD_SENDER_ID))
+                    logstr = "Received '%s' from '%s'" % (received_msg.describe_message_type(),
+                                                          signature_keyid)
+                    self.component.call_component(System.COMPNAME_LOGGING, "log", logstr=logstr)
                     # Pass to the system's message handler
                     self.component.call_component(System.COMPNAME_MSG_HANDLER, "receive",
                                                   msg=received_msg)

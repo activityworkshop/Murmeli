@@ -231,7 +231,8 @@ def add_message_to_outbox(msg, crypto, database, dont_relay=None):
                     database.add_row_to_outbox({"recipient":recpt,
                                                 "message":to_send,
                                                 "queue":msg.should_be_queued,
-                                                "encType":msg.enc_type})
+                                                "encType":msg.enc_type,
+                                                "msgType":msg.describe_message_type()})
                 except CryptoError as exc:
                     print("CryptoError thrown: can't add message to Outbox!", exc)
             else:

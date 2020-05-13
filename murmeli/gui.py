@@ -2,7 +2,7 @@
 
 from urllib.parse import parse_qs
 from PyQt5 import QtGui, QtCore
-from PyQt5.QtWidgets import QMainWindow
+from PyQt5.QtWidgets import QMainWindow, QSplitter
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
 
 
@@ -15,7 +15,7 @@ class Webpage(QWebEnginePage):
     def __init__(self):
         QWebEnginePage.__init__(self)
 
-    def acceptNavigationRequest(self, url, navtype, ismain):
+    def acceptNavigationRequest(self, url, navtype, _):
         '''Override parent method to intercept clicks'''
         navigation_type_link_clicked = 0
         navigation_type_form = 2
@@ -48,10 +48,17 @@ class WebView(QWebEngineView):
 
 class GuiWindow(QMainWindow):
     '''Superclass of all the GUI Windows with a WebView in the middle'''
-    def __init__(self):
+    def __init__(self, lower_item=None):
         QMainWindow.__init__(self)
         self.webpane = WebView(self)
-        self.setCentralWidget(self.webpane)
+        if lower_item:
+            splitter = QSplitter(QtCore.Qt.Vertical)
+            splitter.addWidget(self.webpane)
+            splitter.addWidget(lower_item)
+            splitter.setSizes([250, 10])
+            self.setCentralWidget(splitter)
+        else:
+            self.setCentralWidget(self.webpane)
 
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap("images/window-icon.png"), QtGui.QIcon.Normal,

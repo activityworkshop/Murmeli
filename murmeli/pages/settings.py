@@ -12,19 +12,20 @@ class SettingsPageSet(PageSet):
 
     def serve_page(self, view, url, params):
         '''Serve a page to the given view'''
-        print("Settings serving page '%s'" % url)
-        print("params:", params)
         config = self.get_config()
         if not config:
             view.set_html("Error: Settings didn't find the config!")
             return
         if url == "edit":
-            print("Edit settings")
             selected_lang = params.get('lang')
             if selected_lang and len(selected_lang) == 2:
                 config.set_property(config.KEY_LANGUAGE, selected_lang)
+                # I18nManager will be triggered here because it listens to the Config
             friendsseefriends = bool(params.get('friendsseefriends'))
             config.set_property(config.KEY_LET_FRIENDS_SEE_FRIENDS, friendsseefriends)
+            # If Config has changed, may need to update own profile to include/hide friends info
+            showlogwindow = bool(params.get('showlogwindow'))
+            config.set_property(config.KEY_SHOW_LOG_WINDOW, showlogwindow)
             allowfriendrequests = bool(params.get('allowfriendrequests'))
             config.set_property(config.KEY_ALLOW_FRIEND_REQUESTS, allowfriendrequests)
             # Save config to file in case it's changed
