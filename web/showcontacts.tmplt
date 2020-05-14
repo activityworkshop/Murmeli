@@ -4,13 +4,14 @@
 {{if profiles}}
 <h3>Profiles table</h3>
 <table border='1'>
-    <tr><th>Id</th><th>Name</th><th>Status</th><th>Contacts</th></tr>
+    <tr><th>Id</th><th>Name</th><th>Status</th><th>Contacts</th><th>ProfileHash</th></tr>
 {{for p in profiles}}
 	<tr>
-		<td>{{p['torid']}}</td>
+		<td><small>{{p['torid']}}<small></td>
 		<td>{{p['displayName']}}</td>
 		<td>{{p.get('status')}}</td>
 		<td>{{p.get('contactlist')}}</td>
+		<td>{{p.get('profileHash')}}</td>
 	</tr>
 {{endfor}}
 </table>

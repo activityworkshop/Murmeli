@@ -53,17 +53,6 @@ class MessageHandler(Component):
         '''Receive a status notification'''
         _ = msg # by default do nothing, the sender now knows we're online
 
-    def _create_pong(self, recipient):
-        '''Create a StatusNotify pong message for the given recipient'''
-        pong = message.StatusNotifyMessage()
-        pong.set_field(pong.FIELD_PING, 0)
-        pong.recipients = [recipient]
-        # Calculate profile hash and add to msg
-        database = self.get_component(System.COMPNAME_DATABASE)
-        own_hash = dbutils.calculate_hash(database.get_profile())
-        pong.set_field(pong.FIELD_PROFILE_HASH, own_hash)
-        return pong
-
     def receive_info_request(self, msg):
         '''Receive an info request'''
         pass
@@ -91,7 +80,7 @@ class MessageHandler(Component):
 
     def _get_sender_status(self, msg):
         '''Return status of the sender of the given message from the database'''
-        sender_id = msg.get_field(msg.FIELD_SENDER_ID) if msg else None
+        sender_id = msg.get_sender_id() if msg else None
         return self._get_contact_status(sender_id)
 
     def _get_contact_status(self, tor_id):
@@ -116,7 +105,7 @@ class RobotMessageHandler(MessageHandler):
         owner_keyid = self.get_config_property(Config.KEY_ROBOT_OWNER_KEY)
         print("Contact request from key '%s', my owner has key '%s'" % (sender_keyid, owner_keyid))
         if sender_keyid == owner_keyid and sender_keyid:
-            sender_id = msg.get_field(msg.FIELD_SENDER_ID)
+            sender_id = msg.get_sender_id()
             print("Contact request from my owner with id '%s'" % sender_id)
             # Check if owner already set, if so then don't change it
             database = self.get_component(System.COMPNAME_DATABASE)
@@ -160,13 +149,12 @@ class RobotMessageHandler(MessageHandler):
 
     def _is_message_from_owner(self, msg):
         '''Return true if message is from this robot's owner'''
-        sender_id = msg.get_field(msg.FIELD_SENDER_ID)
         owner_profiles = self.call_component(System.COMPNAME_DATABASE,
                                              "get_profiles_with_status",
                                              status="owner")
         owner_profile = owner_profiles[0] if owner_profiles else None
         owner_id = owner_profile.get('torid') if owner_profile else None
-        return owner_id and sender_id == owner_id
+        return owner_id and owner_id == msg.get_sender_id()
 
 
 class RegularMessageHandler(MessageHandler):
@@ -178,19 +166,43 @@ class RegularMessageHandler(MessageHandler):
     def receive_status_notify(self, msg):
         '''Receive a status notification'''
         # Update our list of who is online, offline
-        sender_id = msg.get_field(msg.FIELD_SENDER_ID)
+        sender_id = msg.get_sender_id()
         is_online = msg.get_field(msg.FIELD_ONLINE)
         self.call_component(System.COMPNAME_CONTACTS, "set_online_status", tor_id=sender_id,
                             online=is_online)
+        database = self.get_component(System.COMPNAME_DATABASE)
         # If it's a ping, reply with a pong
         if msg.get_field(msg.FIELD_PING) and msg.get_field(msg.FIELD_ONLINE):
             if not self.is_from_trusted_contact(msg):
                 return
             # Create new pong for the sender and pass to outbox
-            sender_of_ping = msg.get_field(msg.FIELD_SENDER_ID)
-            pong = self._create_pong(sender_of_ping)
+            pong = self._create_pong(database, sender_id)
             dbutils.add_message_to_outbox(pong, self.get_component(System.COMPNAME_CRYPTO),
-                                          self.get_component(System.COMPNAME_DATABASE))
+                                          database)
+        # Compare profile hash with stored one
+        received_hash = msg.get_field(msg.FIELD_PROFILE_HASH)
+        if received_hash:
+            print("Got hash: '%s'" % received_hash)
+            profile = database.get_profile(sender_id)
+            if profile and profile.get('profileHash') != received_hash:
+                print("Profile hash is different, need to send an InfoRequest")
+                inforeq = message.InfoRequestMessage()
+                inforeq.recipients = [sender_id]
+                dbutils.add_message_to_outbox(inforeq,
+                                              self.get_component(System.COMPNAME_CRYPTO),
+                                              database)
+
+    @staticmethod
+    def _create_pong(database, recipient):
+        '''Create a StatusNotify pong message for the given recipient'''
+        pong = message.StatusNotifyMessage()
+        pong.set_field(pong.FIELD_PING, 0)
+        pong.recipients = [recipient]
+        # Calculate profile hash and add to msg
+        if dbutils.is_trusted(database, recipient):
+            own_hash = dbutils.calculate_hash(database.get_profile())
+            pong.set_field(pong.FIELD_PROFILE_HASH, own_hash)
+        return pong
 
     def receive_contact_request(self, msg):
         '''Receive a contact request'''
@@ -203,7 +215,7 @@ class RegularMessageHandler(MessageHandler):
 
     def receive_contact_response(self, msg):
         '''Receive a contact response (either accept or refuse)'''
-        sender_id = msg.get_field(msg.FIELD_SENDER_ID)
+        sender_id = msg.get_sender_id()
         database = self.get_component(System.COMPNAME_DATABASE)
         if isinstance(msg, message.ContactDenyMessage):
             ContactManager(database, None).handle_receive_deny(sender_id)
@@ -230,13 +242,42 @@ class RegularMessageHandler(MessageHandler):
 
     def receive_info_request(self, msg):
         '''Receive an info request'''
-        # TODO: Validate, then respond or discard
-        pass
+        sender_id = msg.get_sender_id()
+        print("Info request from sender:", sender_id)
+        database = self.get_component(System.COMPNAME_DATABASE)
+        if dbutils.is_trusted(database, sender_id):
+            print("Info request is from trusted sender, so should reply with info")
+            self._send_info_response(database, self.get_component(System.COMPNAME_CRYPTO), msg)
+
+    @staticmethod
+    def _send_info_response(database, crypto, req_msg):
+        '''Send an info response to the given info request message'''
+        if req_msg.get_field(req_msg.FIELD_INFOTYPE) == req_msg.INFO_PROFILE:
+            sender_id = req_msg.get_sender_id()
+            print("Should send profile info to:", sender_id)
+            outmsg = message.InfoResponseMessage()
+            own_profile = database.get_profile() if database else {}
+            own_profile['profileHash'] = dbutils.calculate_hash(own_profile)
+            profile_string = dbutils.get_profile_as_string(own_profile)
+            outmsg.set_field(outmsg.FIELD_RESULT, profile_string)
+            outmsg.recipients = [sender_id]
+            dbutils.add_message_to_outbox(outmsg, crypto, database)
 
     def receive_info_response(self, msg):
         '''Receive an info response'''
-        # TODO: Validate, then save in database
-        pass
+        print("RegularMessageHandler, Info response received!")
+        if not self.is_from_trusted_contact(msg):
+            return
+        if msg.get_field(msg.FIELD_INFOTYPE) == msg.INFO_PROFILE:
+            sender_id = msg.get_sender_id()
+            in_profile = dbutils.convert_string_to_dictionary(msg.get_field(msg.FIELD_RESULT))
+            database = self.get_component(System.COMPNAME_DATABASE)
+            curr_profile = database.get_profile(sender_id)
+            if in_profile and curr_profile:
+                print("Updating profile with:", repr(in_profile.keys()))
+                # Make sure that displayName in db has priority over incoming one
+                in_profile['displayName'] = curr_profile.get('displayName')
+                dbutils.update_profile(database, sender_id, in_profile, None)
 
     def receive_friend_referral(self, msg):
         '''Receive a friend referral'''

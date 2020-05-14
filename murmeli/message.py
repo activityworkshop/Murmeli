@@ -103,6 +103,10 @@ class Message:
         '''Get the given field from the message'''
         return self.body.get(key)
 
+    def get_sender_id(self):
+        '''Get the sender id from the message'''
+        return self.get_field(self.FIELD_SENDER_ID)
+
     @staticmethod
     def from_received_data(data, decrypter=None):
         '''Using the bytes received in the message, reconstruct it into a Message object'''
@@ -459,14 +463,16 @@ class StatusNotifyMessage(AsymmetricMessage):
         # set default values
         self.set_field(self.FIELD_PING, 1)
         self.set_field(self.FIELD_ONLINE, 1)
+        self.set_field(self.FIELD_PROFILE_HASH, "")
 
     def get_body_fields(self):
         '''Get which fields should be packed in body'''
         return [self.FIELD_PING, self.FIELD_ONLINE, self.FIELD_PROFILE_HASH]
 
-    def get_required_body_fields(self):
+    @staticmethod
+    def get_required_body_fields():
         '''Get which fields are necessary for the message to be valid'''
-        return [self.FIELD_PROFILE_HASH]
+        return []
 
 
 class InfoMessage(AsymmetricMessage):

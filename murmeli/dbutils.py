@@ -172,6 +172,10 @@ def get_status(database, tor_id):
     profile = database.get_profile(tor_id) if database else None
     return profile.get('status') if profile else None
 
+def is_trusted(database, tor_id):
+    '''Return true if the given tor id is trusted'''
+    return get_status(database, tor_id) == 'trusted'
+
 def get_robot_status(database, tor_id, contacts):
     '''Return string describing robot status'''
     profile = database.get_profile(tor_id) if database else None

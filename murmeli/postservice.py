@@ -219,9 +219,6 @@ class PostService(Component):
             if profile_list:
                 crypto = self.get_component(System.COMPNAME_CRYPTO)
                 msg = StatusNotifyMessage()
-                # Calculate profile hash and add to msg
-                own_hash = dbutils.calculate_hash(database.get_profile())
-                msg.set_field(msg.FIELD_PROFILE_HASH, own_hash)
                 msg.recipients = [c['torid'] for c in profile_list]
                 dbutils.add_message_to_outbox(msg, crypto, database)
             self.work_lock.release()
