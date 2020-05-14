@@ -243,7 +243,6 @@ class RegularMessageHandler(MessageHandler):
     def receive_info_request(self, msg):
         '''Receive an info request'''
         sender_id = msg.get_sender_id()
-        print("Info request from sender:", sender_id)
         database = self.get_component(System.COMPNAME_DATABASE)
         if dbutils.is_trusted(database, sender_id):
             print("Info request is from trusted sender, so should reply with info")
@@ -277,7 +276,8 @@ class RegularMessageHandler(MessageHandler):
                 print("Updating profile with:", repr(in_profile.keys()))
                 # Make sure that displayName in db has priority over incoming one
                 in_profile['displayName'] = curr_profile.get('displayName')
-                dbutils.update_profile(database, sender_id, in_profile, None)
+                cache_dir = self.call_component(System.COMPNAME_CONFIG, "get_web_cache_dir")
+                dbutils.update_profile(database, sender_id, in_profile, cache_dir)
 
     def receive_friend_referral(self, msg):
         '''Receive a friend referral'''

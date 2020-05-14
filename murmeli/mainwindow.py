@@ -2,6 +2,7 @@
    Copyright activityworkshop.net and released under the GPL v2.'''
 
 import os
+import shutil
 from PyQt5 import QtWidgets, QtGui, QtCore
 from murmeli.gui import GuiWindow
 from murmeli.config import Config
@@ -33,6 +34,7 @@ class MainWindow(GuiWindow):
         title = self.system.invoke_call(System.COMPNAME_I18N, "get_text",
                                         key="mainwindow.title")
         self.setWindowTitle(title or "Cannot get texts")
+        self.clear_web_cache()
         self.toolbar = self.make_toolbar([
             ("toolbar-home.png", self.on_home_clicked, "mainwindow.toolbar.home"),
             ("toolbar-people.png", self.on_contacts_clicked, "mainwindow.toolbar.contacts"),
@@ -112,6 +114,14 @@ class MainWindow(GuiWindow):
             self.toolbar_actions.append(action)
         self.config_updated()  # to set the tooltips
         return toolbar
+
+    def clear_web_cache(self):
+        '''Delete all the files in the web cache'''
+        cache_dir = self.system.invoke_call(System.COMPNAME_CONFIG,
+                                            "get_web_cache_dir")
+        if cache_dir and os.path.exists(cache_dir):
+            shutil.rmtree(cache_dir, ignore_errors=True)
+            os.makedirs(cache_dir)
 
     def on_home_clicked(self):
         '''home button on toolbar clicked'''
