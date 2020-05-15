@@ -21,14 +21,7 @@ class MessagesPageSet(PageSet):
         database = self.system.get_component(self.system.COMPNAME_DATABASE)
         dbutils.export_all_avatars(database, self.get_web_cache_dir())
 
-        if url == 'send':
-            if params['messageType'] == "contactresponse":
-                if params.get('accept') == "1":
-                    crypto = self.system.get_component(self.system.COMPNAME_CRYPTO)
-                    ContactManager(database, crypto).handle_accept(params.get('sendTo'),
-                                                                   params.get('messageBody'))
-                else:
-                    ContactManager(database, None).handle_deny(params.get('sendTo'))
+        self._process_command(url, params)
 
         # Make dictionary to convert ids to names
         contact_names = {cont['torid']:cont['displayName'] for cont in database.get_profiles()}
@@ -77,6 +70,22 @@ class MessagesPageSet(PageSet):
                                     'pageBody':bodytext,
                                     'pageFooter':"<p>Footer</p>"})
         view.set_html(contents)
+
+    def _process_command(self, url, params):
+        '''Process a command given by the url and params'''
+        database = self.system.get_component(self.system.COMPNAME_DATABASE)
+        if url == 'send':
+            if params.get('messageType') == "contactresponse":
+                if params.get('accept') == "1":
+                    crypto = self.system.get_component(self.system.COMPNAME_CRYPTO)
+                    ContactManager(database, crypto).handle_accept(params.get('sendTo'),
+                                                                   params.get('messageBody'))
+                else:
+                    ContactManager(database, None).handle_deny(params.get('sendTo'))
+        elif url == 'delete':
+            msg_index = self.get_param_as_int(params, 'msgId')
+            if msg_index >= 0 and not database.delete_from_inbox(msg_index):
+                print("Delete of inbox message '%d' failed" % msg_index)
 
     def fix_conresp_body(self, msg_body, accepted):
         '''If a contact response message has a blank message body, replace it'''

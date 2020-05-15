@@ -77,11 +77,11 @@ class MessageHandler(Component):
 
     def is_from_trusted_contact(self, msg):
         '''Return true if given message is from a contact with trusted status'''
-        return self._get_sender_status(msg) in ['trusted', 'robot', 'owner']
+        return self._get_sender_status(msg) in ['trusted', 'robot']
 
     def is_from_known_contact(self, msg):
         '''Return true if given message is from either trusted or untrusted contact'''
-        return self._get_sender_status(msg) in ['trusted', 'untrusted', 'robot', 'owner']
+        return self._get_sender_status(msg) in ['trusted', 'untrusted', 'robot']
 
     def _get_sender_status(self, msg):
         '''Return status of the sender of the given message from the database'''
@@ -102,6 +102,14 @@ class RobotMessageHandler(MessageHandler):
 
     def __init__(self, parent):
         MessageHandler.__init__(self, parent)
+
+    def is_from_trusted_contact(self, msg):
+        '''Return true if given message is from a contact with trusted status'''
+        return self._get_sender_status(msg) in ['trusted', 'owner']
+
+    def is_from_known_contact(self, msg):
+        '''Return true if given message is from either trusted or untrusted contact'''
+        return self.is_from_trusted_contact(msg)
 
     def receive_contact_request(self, msg):
         '''Receive a contact request'''
