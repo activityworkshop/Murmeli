@@ -85,15 +85,15 @@
 {{for m in mails}}
 	<div class="genericbox msgLevel{{min(4,m.level)}}" style="float:left;margin-top:10px">
 		<table><tr valign="top">
-			<td valign="middle"><img src='file:///{{webcachedir}}/avatar-{{m.msg["fromId"]}}.jpg' width="48" height="48" title="{{m.msg["senderName"]}}"></td>
+			<td valign="middle"><img src='file:///{{webcachedir}}/avatar-{{m.msg["fromId"]}}.jpg' width="48" height="48" title="{{m.msg["fromName"]}}"></td>
 			<td nowrap="1" style="font-size:85%">
-				<b>{{langs['messages.from']}}</b>: {{m.msg["senderName"]}}<br>
+				<b>{{langs['messages.from']}}</b>: {{m.msg["fromName"]}}<br>
 				<b>{{langs['messages.sendtime']}}:</b> {{m.msg["sentTimeStr"]}}<br>
-				<b>{{langs['messages.to']}}:</b> {{m.msg["recipients"]}}<br>
+				<b>{{langs['messages.to']}}:</b> {{m.msg["recipientNames"]}}<br>
 				<div style="float:right"><a href='/new/compose/start?reply={{m.msg["messageHash"]}}&sendto={{m.msg["replyAll"]}}' class='reversebutton'>{{langs['button.reply']}}</a></div>
 			</td>
 			<td style="padding-left:30px">{{m.msg["messageBody"]|html}}</td>
-			<td valign="bottom"><a href='' onclick='deleteMessage("{{m.msg["msgId"]}}", "");return false' class='reversebutton'>{{langs['button.delete']}}</a></td>
+			<td valign="bottom"><a href='' onclick='deleteMessage("{{m.msg["_id"]}}", "");return false' class='reversebutton'>{{langs['button.delete']}}</a></td>
 		</tr></table>
 	</div><br clear="all">
 {{endfor}}

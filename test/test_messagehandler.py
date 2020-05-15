@@ -5,7 +5,7 @@ from murmeli.messagehandler import RobotMessageHandler, RegularMessageHandler
 from murmeli.system import System, Component
 from murmeli.config import Config
 from murmeli.message import (StatusNotifyMessage, ContactRequestMessage,
-                             ContactReferralMessage)
+                             ContactReferralMessage, RegularMessage)
 
 
 class MockDatabase(Component):
@@ -14,7 +14,7 @@ class MockDatabase(Component):
         Component.__init__(self, parent, System.COMPNAME_DATABASE)
         self.inbox = []
         self.outbox = []
-        self.profiles = []
+        self.profiles = {}
 
     def add_row_to_outbox(self, msg):
         '''React to storing messages in the outbox'''
@@ -24,20 +24,23 @@ class MockDatabase(Component):
         '''React to storing messages in the inbox'''
         self.inbox.append(msg)
 
-    @staticmethod
-    def get_profile(torid=None):
-        '''Get a dummy profile for this torid'''
-        return {"torid":(torid or "own_id"), "keyid":"dummy_keyid", "status":"trusted"}
+    def get_profile(self, torid=None):
+        '''Get a profile for this torid'''
+        if not torid:
+            selfs = self.get_profiles_with_status('self')
+            if selfs:
+                return selfs[0]
+        return self.profiles.get(torid)
 
     def get_profiles_with_status(self, status):
         '''Return list of profiles with the given status'''
         if self.profiles and status:
-            return [self.profiles[0]]
+            return [p for _, p in self.profiles.items() if p.get('status') == status]
         return None
 
     def add_or_update_profile(self, profile):
         '''Add or update the given profile'''
-        self.profiles.append(profile)
+        self.profiles[profile.get('torid')] = profile
 
 
 class MockCrypto(Component):
@@ -49,7 +52,7 @@ class MockCrypto(Component):
     def import_public_key(self, strkey):
         '''Fake the import of a key, return a fake keyid'''
         self.last_imported_key = strkey
-        return strkey + "_keyid"
+        return str(strkey) + "_keyid"
 
     @staticmethod
     def encrypt_and_sign(message, recipient, own_key):
@@ -60,7 +63,7 @@ class MockCrypto(Component):
     @staticmethod
     def get_public_key(key_id):
         '''Fake the retrieval of a key from its id'''
-        return "key_of_" + key_id
+        return "key_of_" + str(key_id)
 
 
 class MockContacts(Component):
@@ -116,6 +119,7 @@ class RobotHandlerTest(unittest.TestCase):
 
     def test_sending_conreqs_to_robot(self):
         '''Check that contact requests are handled properly by robot'''
+        self.fakedb.add_or_update_profile({"status":"self", "torid":"Marvin"})
         req = ContactRequestMessage()
         # send a message with a different sender key, this should be ignored
         req.set_field(req.FIELD_SENDER_KEY, "ABC987DEF")
@@ -145,10 +149,22 @@ class RobotHandlerTest(unittest.TestCase):
         self.robot.receive(req)
         self.assertFalse(self.fakedb.outbox, "outbox still empty after invalid referral")
         # Now add an owner to the db
-        self.fakedb.profiles.append({"status":"owner", "torid":owner_id})
+        self.fakedb.add_or_update_profile({"status":"owner", "torid":owner_id})
         self.robot.receive(req)
         self.assertEqual(len(self.fakedb.profiles), 2, "now two profiles")
         self.assertIsNotNone(self.fakecrypto.last_imported_key, "key imported")
+
+    def test_sending_regular(self):
+        '''Check that regular messages are ignored by robot, not added to inbox'''
+        friend_id = "Zarniwoop"
+        msg = RegularMessage()
+        msg.set_field(msg.FIELD_SENDER_ID, friend_id)
+        self.robot.receive(msg)
+        self.assertFalse(self.fakedb.inbox, "inbox still empty after msg")
+        # add trusted friend, handle another message from that id
+        self.robot.receive(msg)
+        self.fakedb.add_or_update_profile({"status":"trusted", "torid":friend_id})
+        self.assertFalse(self.fakedb.inbox, "inbox still empty after msg from trusted friend")
 
 
 class RegularHandlerTest(unittest.TestCase):
@@ -177,20 +193,24 @@ class RegularHandlerTest(unittest.TestCase):
         self.assertFalse(self.fakedb.outbox, "outbox still empty")
 
     def test_sending_pongs_pings(self):
-        '''Check that pings are replied to and pongs are ignored'''
+        '''Check that pings are replied to and pongs are not'''
+        self.fakedb.add_or_update_profile({'torid':'Jeltz', 'status':'self'})
+        self.fakedb.add_or_update_profile({'torid':'abcdefg', 'status':'trusted', 'keyid':'ci'})
         pong = StatusNotifyMessage()
         pong.set_field(pong.FIELD_PING, 0)
         pong.set_field(pong.FIELD_SENDER_ID, "abcdefg")
         self.handler.receive(pong)
         self.assertFalse(self.fakedb.outbox, "outbox still empty after pong")
         # ping but offline - should also be ignored
-        pong.set_field(pong.FIELD_PING, 1)
-        pong.set_field(pong.FIELD_ONLINE, 0)
-        self.handler.receive(pong)
+        ping = StatusNotifyMessage()
+        ping.set_field(ping.FIELD_PING, 1)
+        ping.set_field(ping.FIELD_ONLINE, 0)
+        ping.set_field(ping.FIELD_SENDER_ID, "abcdefg")
+        self.handler.receive(ping)
         self.assertFalse(self.fakedb.outbox, "outbox still empty after offline ping")
         # online ping - should generate pong
-        pong.set_field(pong.FIELD_ONLINE, 1)
-        self.handler.receive(pong)
+        ping.set_field(ping.FIELD_ONLINE, 1)
+        self.handler.receive(ping)
         self.assertEqual(len(self.fakedb.outbox), 1, "outbox now has one message")
         reply = self.fakedb.outbox.pop()
         self.assertTrue(isinstance(reply, dict), "reply exists as a dict")
@@ -202,6 +222,7 @@ class RegularHandlerTest(unittest.TestCase):
         '''Check that pings to a regular message handler cause contacts to be updated'''
         friend_id = "abcdefg"
         stranger_id = "aabbccddeeffgg"
+        self.fakedb.add_or_update_profile({'torid':friend_id, 'status':'trusted'})
         pong = StatusNotifyMessage()
         pong.set_field(pong.FIELD_PING, 0)
         pong.set_field(pong.FIELD_SENDER_ID, friend_id)
@@ -231,6 +252,17 @@ class RegularHandlerTest(unittest.TestCase):
         self.config.set_property(Config.KEY_ALLOW_FRIEND_REQUESTS, True)
         self.handler.receive(req)
         self.assertEqual(len(self.fakedb.inbox), 1, "inbox now has one message")
+
+    def test_sending_regular(self):
+        '''Check that regular messages are stored in inbox if from trusted source'''
+        friend_id = "Zarniwoop"
+        msg = RegularMessage()
+        msg.set_field(msg.FIELD_SENDER_ID, friend_id)
+        self.handler.receive(msg)
+        self.assertFalse(self.fakedb.inbox, "inbox still empty after msg")
+        # add trusted friend, handle another message from that id
+        self.handler.receive(msg)
+        # self.assertEqual(len(self.fakedb.inbox), 1, "inbox now has one message")
 
 
 if __name__ == "__main__":

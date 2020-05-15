@@ -54,7 +54,7 @@ def create_row(msg, context):
         if context == MC_CONREQ_INCOMING and isinstance(msg, ContactRequestMessage):
             # Incoming contact request
             row = _create_base_row(msg_type="contactrequest",
-                                   from_id=msg.get_field(msg.FIELD_SENDER_ID),
+                                   from_id=msg.get_sender_id(),
                                    msg_body=msg.get_field(msg.FIELD_MESSAGE),
                                    timestamp=timestamp, recipients=None)
             row[FN_FROM_NAME] = msg.get_field(msg.FIELD_SENDER_NAME)
@@ -67,7 +67,7 @@ def create_row(msg, context):
             replied = context == MC_CONRESP_ALREADY_ACCEPTED
             msg_body = msg.get_field(msg.FIELD_MESSAGE) if accepted else ""
             row = _create_base_row(msg_type="contactresponse",
-                                   from_id=msg.get_field(msg.FIELD_SENDER_ID),
+                                   from_id=msg.get_sender_id(),
                                    msg_body=msg_body, timestamp=timestamp,
                                    recipients=None, already_replied=replied)
             name_field = msg.FIELD_SENDER_NAME if accepted else msg.FIELD_SENDER_ID
@@ -76,20 +76,19 @@ def create_row(msg, context):
 
         elif context in [MC_NORMAL_INCOMING, MC_NORMAL_SENT] and isinstance(msg, RegularMessage):
             # Incoming regular message or a copy of one which we sent
-            from_id = msg.get_field(msg.FIELD_SENDER_ID)
-            already_read = True if context == MC_NORMAL_SENT else False
+            from_id = msg.get_sender_id()
             row = _create_base_row(msg_type="normal",
                                    from_id=from_id,
                                    msg_body=msg.get_field(msg.FIELD_MSGBODY),
                                    timestamp=timestamp,
                                    recipients=msg.get_field(msg.FIELD_RECIPIENTS),
-                                   already_read=already_read)
+                                   already_read=(context == MC_NORMAL_SENT))
             row[FN_PARENT_HASH] = msg.get_field(msg.FIELD_REPLYHASH)
 
         elif context == MC_REFER_INCOMING and isinstance(msg, ContactReferralMessage):
             # Incoming contact referral
             row = _create_base_row(msg_type="contactrefer",
-                                   from_id=msg.get_field(msg.FIELD_SENDER_ID),
+                                   from_id=msg.get_sender_id(),
                                    msg_body=msg.get_field(msg.FIELD_MSGBODY),
                                    timestamp=timestamp,
                                    recipients=None)
@@ -100,7 +99,7 @@ def create_row(msg, context):
         elif context == MC_REFERREQ_INCOMING and isinstance(msg, ContactReferRequestMessage):
             # Incoming request for a contact referral
             row = _create_base_row(msg_type="referrequest",
-                                   from_id=msg.get_field(msg.FIELD_SENDER_ID),
+                                   from_id=msg.get_sender_id(),
                                    msg_body=msg.get_field(msg.FIELD_MSGBODY),
                                    timestamp=timestamp,
                                    recipients=None)

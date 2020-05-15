@@ -19,8 +19,9 @@ class MessageHandler(Component):
         if msg and isinstance(msg, message.Message):
             # Check if it's from a trusted sender
             if msg.sender_must_be_trusted:
-                # TODO: Check sender
-                pass
+                if not self.is_from_trusted_contact(msg):
+                    print("Ignoring message from untrusted contact:", msg.get_sender_id())
+                    return
             if msg.msg_type == msg.TYPE_CONTACT_REQUEST:
                 self.receive_contact_request(msg)
             elif msg.msg_type == msg.TYPE_CONTACT_RESPONSE:
@@ -76,7 +77,11 @@ class MessageHandler(Component):
 
     def is_from_trusted_contact(self, msg):
         '''Return true if given message is from a contact with trusted status'''
-        return self._get_sender_status(msg) in ['trusted', 'robot']
+        return self._get_sender_status(msg) in ['trusted', 'robot', 'owner']
+
+    def is_from_known_contact(self, msg):
+        '''Return true if given message is from either trusted or untrusted contact'''
+        return self._get_sender_status(msg) in ['trusted', 'untrusted', 'robot', 'owner']
 
     def _get_sender_status(self, msg):
         '''Return status of the sender of the given message from the database'''
@@ -291,5 +296,7 @@ class RegularMessageHandler(MessageHandler):
 
     def receive_regular_message(self, msg):
         '''Receive a regular message'''
-        # TODO: Validate, then save in database
-        pass
+        if self.is_from_known_contact(msg):
+            # sender could be trusted or untrusted
+            dbutils.add_message_to_inbox(msg, self.get_component(System.COMPNAME_DATABASE),
+                                         inbox.MC_NORMAL_INCOMING)

@@ -203,7 +203,15 @@ def add_message_to_inbox(msg, database, context):
         assert isinstance(msg, message.Message)
         # Make a dictionary using the given context
         db_row = inbox.create_row(msg, context)
-        database.add_row_to_inbox(db_row)
+        if db_row:
+            # Calculate hash of message's type + body + timestamp + sender
+            this_hash = calculate_hash({"type":db_row.get(inbox.FN_MSG_TYPE),
+                                        "body":db_row.get(inbox.FN_MSG_BODY),
+                                        "tstamp":db_row.get(inbox.FN_TIMESTAMP),
+                                        "from":db_row.get(inbox.FN_FROM_ID)})
+            # TODO: If hash is already in inbox, do nothing
+            db_row[inbox.FN_MSG_HASH] = this_hash
+            database.add_row_to_inbox(db_row)
 
 def delete_messages_from_inbox(sender_id, database):
     '''Find all messages in the inbox from the given sender and delete them all'''
