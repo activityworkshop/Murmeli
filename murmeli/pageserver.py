@@ -1,6 +1,8 @@
 '''Module for the pages provided by the system'''
 
+from murmeli.compose import ComposeWindow
 from murmeli.pages.default import DefaultPageSet
+from murmeli.pages.compose import ComposePageSet
 from murmeli.pages.contacts import ContactsPageSet
 from murmeli.pages.messages import MessagesPageSet
 from murmeli.pages.settings import SettingsPageSet
@@ -22,6 +24,17 @@ class PageServer:
     def serve_page(self, view, url, params):
         '''Serve the page associated with the given url and parameters'''
         domain, path = self.get_domain_and_path(url)
+        # Do I need to intercept this to create a new window?
+        if domain == "new":
+            window_title = self.get_page_title(path)
+            compwin = ComposeWindow(window_title or "Murmeli")
+            compwin.set_page_server(self)
+            compwin.show_page("<html></html>")
+            compwin.navigate_to(path, params)
+            self.extra_windows.add(compwin)
+            # Remove invisible (closed) windows
+            self.extra_windows = set(win for win in self.extra_windows if win.isVisible())
+            return
         page_set = self.page_sets.get(domain)
         if not page_set:
             page_set = self.page_sets.get("")
@@ -56,5 +69,6 @@ class MurmeliPageServer(PageServer):
         self.add_page_set(ContactsPageSet(system))
         self.add_page_set(MessagesPageSet(system))
         self.add_page_set(SettingsPageSet(system))
+        self.add_page_set(ComposePageSet(system))
         self.add_page_set(SpecialFunctions(system))
         self.add_page_set(TestPageSet(system))

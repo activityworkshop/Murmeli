@@ -2,7 +2,7 @@
 	#editpane {font-size:75%; padding:0px}
 	.dontshow {display:none}
 </style>
-<script src="file:///{{webcachedir}}/jquery-3.3.1.slim.js"></script>
+<script src="file:///{{webcachedir}}/jquery-3.5.0.slim.js"></script>
 <script>
 function makeBold() {document.execCommand("Bold", false, null);}
 function makeItalic() {document.execCommand("Italic", false, null);}
@@ -10,7 +10,7 @@ function makeUnderline() {document.execCommand("Underline", false, null);}
 var recptIndexes = [];
 var contactList = [
 {{for c in contactlist}}
-	{name:"{{c.dispName}}", torid:"{{c.torid}}"},
+	{name:"{{c.disp_name}}", torid:"{{c.torid}}"},
 {{endfor}}
 ];
 function selectWhoTo() {
@@ -19,7 +19,7 @@ function selectWhoTo() {
 		selectPage += "<div id='leftList" + i + "' style='border:1px solid #222;margin:2px' onclick='addRecipient(" + i + ")'><img src='file:///{{webcachedir}}/avatar-" + contactList[i].torid + ".jpg' width='36' height='36' style='float:right; margin:2px'>Add \"" + contactList[i].name + "\"<br clear='all'></div>";
 	selectPage += "</div><div id='sendToDivList' style='float:right;width:40%;border:2px solid #222;margin:10px;padding:5px;height:200px;overflow-y:scroll'>";
 	for (i=0; i<contactList.length; i++)
-		selectPage += "<div id='rightList" + i + "' class='dontshow' style='border:1px solid #222;margin:2px' pername='" + contactList[i].name + "' perindex='" + i + "' onclick='removeRecipient(" + i + ")'><img src='file:///{{webcachedir}}/avatar-" + contactList[i].torid + ".jpg' width='36' height='36' style='float:right; margin:2px'>Remove \"" + contactList[i].name + "\"<br clear='all'></div>";
+		selectPage += "<div id='rightList" + i + "' class='dontshow' style='border:1px solid #222;margin:2px' pername='" + contactList[i].name.replace("'", "") + "' perindex='" + i + "' onclick='removeRecipient(" + i + ")'><img src='file:///{{webcachedir}}/avatar-" + contactList[i].torid + ".jpg' width='36' height='36' style='float:right; margin:2px'>Remove \"" + contactList[i].name + "\"<br clear='all'></div>";
 	selectPage += "</div><div style='clear:both'><div style='float:right'><a class='reversebutton' onclick='removeAllRecipients()'>{{langs['button.removeall']}}</a></div><div style='float:left'><a class='reversebutton' onclick='addAllRecipients()'>{{langs['button.addall']}}</a></div></div><p style='clear:both'>This is where the button goes: <a class='reversebutton' onclick='finishSelect()'>{{langs['button.ok']}}</a></p></div>";
 	showMessage(selectPage);
 	for (i=0; i<recptIndexes.length; i++) {addRecipient(recptIndexes[i]);} 
@@ -85,7 +85,6 @@ or <a class='reversebutton' href="javascript:send()">{{langs['button.send']}}</a
 {{if parenthash}}
 	<p>In case you're interested, the parent hash is '{{parenthash}}'.</p>
 {{endif}}
-<script>document.write("<p><small>(Using JQuery: " + $.fn.jquery + ")</small></p>");</script>
 
 {{if recipientids}}
 <script>
@@ -94,7 +93,7 @@ or <a class='reversebutton' href="javascript:send()">{{langs['button.send']}}</a
 		{{for loop, c in looper(contactlist)}}
 			{{if c.torid == torid}}
 				recptIndexes.push({{loop.index}});
-				recptNames.push('{{c.dispName}}');
+				recptNames.push("{{c.disp_name}}");
 			{{endif}}
 		{{endfor}}
 	{{endfor}}

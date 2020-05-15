@@ -10,7 +10,7 @@
 		<td>EncType: {{m.get('encType')}}</td>
 		<td>MsgType: {{m.get('msgType')}}</td>
 		<td>Recipient: {{m.get('recipient')}}</td>
-		<td>Recipients: {{m.get('recipientList')}}</td>
+		<td>Recipients: <small>{{m.get('recipientList')}}</small></td>
 		<td>Relays: {{m.get('relays')}}</td>
 	</tr>
 {{endfor}}

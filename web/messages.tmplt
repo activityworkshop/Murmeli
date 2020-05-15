@@ -28,6 +28,10 @@
 	}
 </script>
 
+<div class="genericbox" style='float:right; width:140px;'>
+<div style='float:left;margin-right:5px;font-size:80%%'><a href='/new/compose/start'><img src='file:///{{webcachedir}}/button-compose.png' title='{{langs['messages.createnew']}}'></a></div>
+<a href='/new/compose/start'>{{langs['messages.createnew']}}</a></div>
+
 {{if contactrequests}}
 <h3>{{langs['messages.contactrequests']}}</h3>
 	{{for m in contactrequests}}
