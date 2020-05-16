@@ -179,6 +179,11 @@ class PostService(Component):
                 should_delete = True
             elif msg.get('relays'):
                 print("Failed to send but I can try to relay it")
+                if not msg.get('relayMessage'):
+                    print("No signed blob in message, need to create one")
+                # Loop over each relay in the list and try to send to each one
+                for relay in msg.get('relays'):
+                    print("Should send message to relay '%s'" % relay)
             else:
                 print("Couldn't send message, couldn't relay it either")
         return (msg_sent, should_delete)

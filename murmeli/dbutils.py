@@ -233,6 +233,13 @@ def add_message_to_outbox(msg, crypto, database, dont_relay=None):
         print("Message is not complete, cannot add to outbox:", msg)
         assert False
     if msg.recipients:
+        # To whom can I relay this message?
+        relays = set()
+        if msg.should_be_relayed:
+            relays = {profile['torid'] for profile in \
+                      database.get_profiles_with_status(["trusted", "robot"])}
+            relays.difference_update({dont_relay})
+
         for recpt in msg.recipients:
             if isinstance(msg, message.UnencryptedMessage):
                 # If msg doesn't need encryption, then doesn't need a profile
@@ -249,6 +256,7 @@ def add_message_to_outbox(msg, crypto, database, dont_relay=None):
                     if not to_send:
                         print("WARN: message to send is empty for enc type:", msg.enc_type)
                     database.add_row_to_outbox({"recipient":recpt,
+                                                "relays":list(relays.difference({recpt})),
                                                 "message":to_send,
                                                 "queue":msg.should_be_queued,
                                                 "encType":msg.enc_type,

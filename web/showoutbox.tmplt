@@ -9,9 +9,9 @@
 	<tr>
 		<td>EncType: {{m.get('encType')}}</td>
 		<td>MsgType: {{m.get('msgType')}}</td>
-		<td>Recipient: {{m.get('recipient')}}</td>
-		<td>Recipients: <small>{{m.get('recipientList')}}</small></td>
-		<td>Relays: {{m.get('relays')}}</td>
+		<td>Recipient: <small>{{m.get('recipient')}}</small></td>
+		<td>{{if m.get('recipientList')}}Recipients: <small>{{m.get('recipientList')}}</small>{{endif}}</td>
+		<td>Relays: <small>{{m.get('relays')}}</small></td>
 	</tr>
 {{endfor}}
 </table>
