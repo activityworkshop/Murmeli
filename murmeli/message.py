@@ -156,7 +156,7 @@ class Message:
             elif msg:
                 msg.original_payload = enc_payload
         elif enc_type == Message.ENCTYPE_RELAY:
-            msg = RelayingMessage.unpack_payload(payload, decrypter)
+            msg = RelayMessage.unpack_payload(payload, decrypter)
             if sig_id:
                 # print("Relay msg got signature key id: '%s'" % sig_id)
                 msg.set_field(msg.FIELD_SIGNATURE_KEYID, sig_id)
@@ -606,8 +606,8 @@ class ContactReferRequestMessage(AsymmetricMessage):
         return [self.FIELD_FRIEND_ID]
 
 
-class RelayingMessage(Message):
-    '''A relaying message is some (unknown) kind of binary message which we cannot decrypt
+class RelayMessage(Message):
+    '''A relay message is some (unknown) kind of binary message which we cannot decrypt
        but we can check the signature and relay it to our contacts'''
 
     def __init__(self):
@@ -618,7 +618,7 @@ class RelayingMessage(Message):
     @staticmethod
     def wrap_outgoing_message(msg_bytes):
         '''Create a relay wrapper around an existing outgoing message'''
-        relay_msg = RelayingMessage()
+        relay_msg = RelayMessage()
         relay_msg.parcel = msg_bytes
         return relay_msg.create_output() if msg_bytes else None
 
@@ -641,7 +641,7 @@ class RelayingMessage(Message):
             if msg_for_me:
                 return msg_for_me
             # message isn't for me, but I can store a wrapped version
-            msg = RelayingMessage()
+            msg = RelayMessage()
             msg.received_bytes = payload
             return msg
         return None

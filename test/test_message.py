@@ -312,7 +312,7 @@ class RelayMessageTest(unittest.TestCase):
     def test_pack_for_sending(self):
         '''Test the packing of arbitrary content inside a Relay message'''
         signed_output = "This should be a signed message".encode("utf-8")
-        wrapped = message.RelayingMessage.wrap_outgoing_message(signed_output)
+        wrapped = message.RelayMessage.wrap_outgoing_message(signed_output)
         self.assertTrue("murmeli".encode("utf-8") in wrapped, "Header present")
         self.assertTrue("signed message".encode("utf-8") in wrapped, "Payload present")
 
@@ -322,7 +322,7 @@ class RelayMessageTest(unittest.TestCase):
         msg_body = "Smörgåsbord"
         reg.set_field(reg.FIELD_MSGBODY, msg_body)
         unenc_output = reg.create_output(encrypter=None)
-        wrapped = message.RelayingMessage.wrap_outgoing_message(unenc_output)
+        wrapped = message.RelayMessage.wrap_outgoing_message(unenc_output)
         back_again = message.Message.from_received_data(wrapped)
         self.assertTrue(isinstance(back_again, message.RegularMessage), "Correct type")
         self.assertEqual(back_again.body[back_again.FIELD_MSGBODY], msg_body, "Content match")
@@ -331,9 +331,9 @@ class RelayMessageTest(unittest.TestCase):
     def test_unpack_unknown_message(self):
         '''Test that an unknown message can be forwarded'''
         signed_output = "This should be a signed message".encode("utf-8")
-        wrapped = message.RelayingMessage.wrap_outgoing_message(signed_output)
+        wrapped = message.RelayMessage.wrap_outgoing_message(signed_output)
         back_again = message.Message.from_received_data(wrapped)
-        self.assertTrue(isinstance(back_again, message.RelayingMessage), "Correct type")
+        self.assertTrue(isinstance(back_again, message.RelayMessage), "Correct type")
         forwarded_output = back_again.create_output(encrypter=None)
         self.assertEqual(signed_output, forwarded_output, "Forwarded data correct")
 

@@ -5,7 +5,7 @@ import time
 import socks
 from murmeli.system import System, Component
 from murmeli.signals import Timer
-from murmeli.message import StatusNotifyMessage, Message
+from murmeli.message import StatusNotifyMessage, Message, RelayMessage
 from murmeli import dbutils
 from murmeli import imageutils
 from murmeli import guinotification
@@ -179,15 +179,30 @@ class PostService(Component):
                 should_delete = True
             elif msg.get('relays'):
                 print("Failed to send but I can try to relay it")
-                if not msg.get('relayMessage'):
+                if msg.get('relayMessage'):
+                    signed_blob = bytes(msg.get('relayMessage'))
                     print("No signed blob in message, need to create one")
+                    msg_bytes = msg_bytes or imageutils.string_to_bytes(msg['message'])
+                    signed_blob = RelayMessage.wrap_outgoing_message(self._sign_message(msg_bytes))
+                    database.update_outbox_message(index=msg["_id"],
+                                                   props={"relayMessage":list(signed_blob)})
                 # Loop over each relay in the list and try to send to each one
                 for relay in msg.get('relays'):
-                    print("Should send message to relay '%s'" % relay)
+                    if relay not in failed_recpts:
+                        print("Should send message to relay '%s'" % relay)
             else:
                 print("Couldn't send message, couldn't relay it either")
         return (msg_sent, should_delete)
 
+    def _sign_message(self, msg_bytes):
+        '''Sign the given bytes with our own key id'''
+        database = self.get_component(System.COMPNAME_DATABASE)
+        own_key_id = dbutils.get_own_key_id(database)
+        crypto = self.get_component(System.COMPNAME_CRYPTO)
+        if not own_key_id or not crypto:
+            print("Failed to sign message using own key '%s'" % own_key_id)
+            return None
+        return crypto.sign_data(msg_bytes, own_key_id)
 
     def _send_message(self, msg_bytes, enctype, whoto):
         '''Send the given message to the specified recipient'''
