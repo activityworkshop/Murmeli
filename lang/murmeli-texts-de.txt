@@ -30,6 +30,7 @@ selectprivatekey=Dieser Schlüsselbund hat mehrere Schlüssel.  Welcher sollte f
 realorrobot=Sollte dieses System ein normales sein, oder einen Robotersystem für Weiterleitung?
 system.real=Normales System
 system.robot=Robotersystem für das Weiterleiten der Nachrichten
+system.parrot=Papageisystem, nur für das Testen
 selectrobotownerkey=Den Schlüssel des Owners auswählen, entweder vom Schlüsselbund\noder von einer .key Datei im Datenverzeichnis
 refreshkeylist=Liste aktualisieren
 exportpublickey=Den öffentlichen Schlüssel zur Datei exportieren (für das Aufsetzten eines Robotersystems)

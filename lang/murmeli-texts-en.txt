@@ -32,6 +32,7 @@ selectprivatekey=This keyring has more than one key already.  Which one should M
 realorrobot=Would you like to setup a normal system, or a robot relay?
 system.real=Normal system
 system.robot=Robot system, just for your personal relay
+system.parrot=Parrot system, just for testing
 selectrobotownerkey=Select the key of the robot's owner, either from the keyring\nor from a .key file in the data directory
 refreshkeylist=Refresh list
 exportpublickey=Export the public key to a file (for setting up a robot)

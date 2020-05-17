@@ -167,13 +167,17 @@ class RobotMessageHandler(MessageHandler):
                 database = self.get_component(System.COMPNAME_DATABASE)
                 dbutils.create_profile(database, new_friend_id, profile)
 
-    def _is_message_from_owner(self, msg):
-        '''Return true if message is from this robot's owner'''
+    def _get_owner_id(self):
+        '''Get this robot's owner id from the database'''
         owner_profiles = self.call_component(System.COMPNAME_DATABASE,
                                              "get_profiles_with_status",
                                              status="owner")
         owner_profile = owner_profiles[0] if owner_profiles else None
-        owner_id = owner_profile.get('torid') if owner_profile else None
+        return owner_profile.get('torid') if owner_profile else None
+
+    def _is_message_from_owner(self, msg):
+        '''Return true if message is from this robot's owner'''
+        owner_id = self._get_owner_id()
         return owner_id and owner_id == msg.get_sender_id()
 
 
@@ -193,7 +197,7 @@ class ParrotMessageHandler(RobotMessageHandler):
         return self._get_sender_status(msg) == 'owner'
 
     def process_unknown_conreq(self, msg):
-        '''Receive and automatically accept a contact request from non-owner'''
+        '''Receive and automatically accept an unknown contact request'''
         sender_key = msg.get_field(msg.FIELD_SENDER_KEY)
         sender_id = msg.get_sender_id()
         print("Contact request from unknown sender with id '%s'" % sender_id)
@@ -202,6 +206,12 @@ class ParrotMessageHandler(RobotMessageHandler):
         crypto = self.get_component(System.COMPNAME_CRYPTO)
         # Use ContactManager to auto-accept and update db
         ContactManager(database, crypto).handle_accept(sender_id, "I'm a parrot", sender_key)
+        # get key id from sender_id, compare with stored owner id
+        sender_profile = database.get_profile(sender_id) if database else None
+        sender_keyid = sender_profile.get("keyid") if sender_profile else None
+        owner_keyid = self.get_config_property(Config.KEY_ROBOT_OWNER_KEY)
+        if sender_keyid and sender_keyid == owner_keyid:
+            database.add_or_update_profile({"torid":sender_id, 'status':'owner'})
 
     @staticmethod
     def receive_friend_referral(msg):
@@ -213,8 +223,25 @@ class ParrotMessageHandler(RobotMessageHandler):
         print("Parrot received regular message from:", msg.get_sender_id())
         if self.is_from_known_contact(msg):
             print("Received regular message, should auto-reply and also forward to owner")
+            recvd_body = msg.get_field(msg.FIELD_MSGBODY)
+            if "Parrot: " in recvd_body[:13]:
+                print("Already parroted, so ignoring this message.")
+                return
+            sender_id = msg.get_sender_id()
+            self._send_message("Parrot: '%s'" % recvd_body[:100], sender_id)
+            self._send_message("Parrot (%s): '%s'" % (sender_id, recvd_body), self._get_owner_id())
         else:
             print("Regular message ignored because status=", self._get_sender_status(msg))
+
+    def _send_message(self, msg_body, send_to):
+        '''Send a regular message to the given id'''
+        reply = message.RegularMessage()
+        reply.set_field(reply.FIELD_RECIPIENTS, send_to)
+        reply.set_field(reply.FIELD_MSGBODY, msg_body[:1000])
+        reply.recipients = [send_to]
+        crypto = self.get_component(System.COMPNAME_CRYPTO)
+        database = self.get_component(System.COMPNAME_DATABASE)
+        dbutils.add_message_to_outbox(reply, crypto, database)
 
 
 class RegularMessageHandler(MessageHandler):

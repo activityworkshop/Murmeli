@@ -168,7 +168,7 @@ def select_keypair(system):
 def select_robot_status(system, private_keyid):
     '''Specify whether we're setting up a robot system or a real system'''
     system_type = ask_question(system, "setup.realorrobot",
-                               ["setup.system.real", "setup.system.robot"])
+                               ["setup.system.real", "setup.system.robot", "setup.system.parrot"])
     check_abort(system_type, system)
     # print("Selected system type:", system_type)
     data_path = system.invoke_call(System.COMPNAME_CONFIG, "get_data_dir")
@@ -186,9 +186,10 @@ def select_robot_status(system, private_keyid):
                                                  key_id=private_keyid))
             print(get_text(system, "setup.publickeyexported") % keyfile_name)
 
-    elif system_type == "2":
-        return setup_robot_system(system, data_path, private_keyid)
-    return None
+    elif system_type in ["2", "3"]:
+        own_name = "Parrot" if system_type == "3" else "Robot"
+        return (setup_robot_system(system, data_path, private_keyid), own_name)
+    return (None, None)
 
 
 def setup_robot_system(system, data_path, private_keyid):
@@ -229,13 +230,14 @@ def setup_robot_system(system, data_path, private_keyid):
                                key=Config.KEY_ROBOT_OWNER_KEY, value=key_id)
             return key_id
 
-def setup_database(system, torid, private_keyid):
+def setup_database(system, torid, private_keyid, own_name=None):
     '''Setup database and store private key'''
     print("Storing database: tor id='%s', key id='%s'" % (torid, private_keyid))
+    name = (own_name + torid[:12]) if own_name else torid
     db_filename = system.invoke_call(System.COMPNAME_CONFIG, "get_ss_database_file")
     ssdb = MurmeliDb(None, db_filename)
     ssdb.add_or_update_profile({"torid":torid, "keyid":private_keyid, "status":"self",
-                                "ownprofile":True})
+                                "ownprofile":True, "name":name})
     ssdb.save_to_file()
 
 def ask_question(system, question_key, answer_keys):
@@ -288,12 +290,15 @@ def setup_murmeli():
     check_keyring(system)
     # Select which keypair to use
     private_keyid = select_keypair(system)
+    if not private_keyid:
+        print("ERROR: Failed to generate keypair.  Aborting.")
+        return
     print("Selected key '%s'" % private_keyid)
     # Define robot parameters
-    owner_keyid = select_robot_status(system, private_keyid)
+    owner_keyid, own_name = select_robot_status(system, private_keyid)
     print("Owner keyid '%s'" % owner_keyid)
     # Setup database and store private key
-    setup_database(system, tor_id, private_keyid)
+    setup_database(system, tor_id, private_keyid, own_name)
     # Save config
     system.invoke_call(System.COMPNAME_CONFIG, "save")
 
