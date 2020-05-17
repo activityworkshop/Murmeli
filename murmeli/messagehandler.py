@@ -66,9 +66,11 @@ class MessageHandler(Component):
     def receive_friend_refer_request(self, msg):
         '''Receive a friend referral request'''
         pass
-    def receive_regular_message(self, msg):
+
+    @staticmethod
+    def receive_regular_message(msg):
         '''Receive a regular message'''
-        pass
+        _ = msg
 
     def receive_relayed_message(self, msg):
         '''Receive a relayed message for somebody else'''
@@ -142,7 +144,12 @@ class RobotMessageHandler(MessageHandler):
             dbutils.add_message_to_outbox(resp, crypto, database)
             print("Contact response added to outbox")
         else:
-            print("Contact request wasn't from our owner so I'll ignore it")
+            self.process_unknown_conreq(msg)
+
+    @staticmethod
+    def process_unknown_conreq(msg):
+        '''Robot ignores contact requests if not from owner'''
+        print("Contact request wasn't from our owner so I'll ignore it:", msg)
 
     def receive_friend_referral(self, msg):
         '''Receive a friend referral'''
@@ -168,6 +175,46 @@ class RobotMessageHandler(MessageHandler):
         owner_profile = owner_profiles[0] if owner_profiles else None
         owner_id = owner_profile.get('torid') if owner_profile else None
         return owner_id and owner_id == msg.get_sender_id()
+
+
+class ParrotMessageHandler(RobotMessageHandler):
+    '''Message handler subclass for parrot system'''
+
+    def __init__(self, parent):
+        RobotMessageHandler.__init__(self, parent)
+        print("I'm a parrot message handler")
+
+    def is_from_known_contact(self, msg):
+        '''Return true if message is from a known contact'''
+        return self._get_sender_status(msg) in ['owner', 'untrusted', 'trusted']
+
+    def is_from_trusted_contact(self, msg):
+        '''Return true if given message is from a contact with trusted status'''
+        return self._get_sender_status(msg) == 'owner'
+
+    def process_unknown_conreq(self, msg):
+        '''Receive and automatically accept a contact request from non-owner'''
+        sender_key = msg.get_field(msg.FIELD_SENDER_KEY)
+        sender_id = msg.get_sender_id()
+        print("Contact request from unknown sender with id '%s'" % sender_id)
+        print("Received key was '%s'" % sender_key)
+        database = self.get_component(System.COMPNAME_DATABASE)
+        crypto = self.get_component(System.COMPNAME_CRYPTO)
+        # Use ContactManager to auto-accept and update db
+        ContactManager(database, crypto).handle_accept(sender_id, "I'm a parrot", sender_key)
+
+    @staticmethod
+    def receive_friend_referral(msg):
+        '''Receive and ignore a friend referral'''
+        _ = msg
+
+    def receive_regular_message(self, msg):
+        '''Receive a regular message'''
+        print("Parrot received regular message from:", msg.get_sender_id())
+        if self.is_from_known_contact(msg):
+            print("Received regular message, should auto-reply and also forward to owner")
+        else:
+            print("Regular message ignored because status=", self._get_sender_status(msg))
 
 
 class RegularMessageHandler(MessageHandler):

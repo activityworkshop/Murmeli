@@ -79,13 +79,15 @@ class ContactManager:
         outmsg.recipients = [friend_id]
         dbutils.add_message_to_outbox(outmsg, self._crypto, self._database)
 
-    def handle_accept(self, tor_id, reply_text):
+    def handle_accept(self, tor_id, reply_text, public_key=None):
         '''We want to accept a contact request, so we need to find the request(s),
            and use it/them to update our keyring and our database entry'''
         if not self._crypto:
             return
         print("ContactMgr.handle_accept for id '%s'" % tor_id)
         name, key_str = self.get_contact_request_details(tor_id)
+        if public_key and not key_str:
+            name, key_str = tor_id, public_key
         key_valid = key_str and len(key_str) > 20
         if key_valid:
             # Get this person's current status from the db, if available

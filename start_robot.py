@@ -93,6 +93,7 @@ if __name__ == "__main__":
         SYSTEM = create_system()
         MY_ROBOT = launch(SYSTEM)
         if MY_ROBOT:
-            MY_ROBOT.start()
+            USE_PARROT = len(sys.argv) == 2 and sys.argv[1] == "parrot"
+            MY_ROBOT.start(parrot_mode=USE_PARROT)
             input("Press Enter to close Murmeli")
             MY_ROBOT.stop()

@@ -7,7 +7,7 @@ from murmeli.i18n import I18nManager
 from murmeli.torclient import TorClient
 from murmeli.cryptoclient import CryptoClient
 from murmeli.supersimpledb import MurmeliDb
-from murmeli.messagehandler import RobotMessageHandler
+from murmeli.messagehandler import RobotMessageHandler, ParrotMessageHandler
 from murmeli.postservice import PostService
 try:
     from murmeli.scrollbot import ScrollbotGuiNotifier as RobotNotifier
@@ -22,7 +22,7 @@ class Robot:
         '''Constructor'''
         self.system = system or System()
 
-    def start(self):
+    def start(self, parrot_mode=False):
         '''Start up the system and start listening'''
         # Load config if not already there
         if not self.system.has_component(System.COMPNAME_CONFIG):
@@ -68,9 +68,7 @@ class Robot:
                                    config.get_property(config.KEY_TOR_EXE))
             self.system.add_component(tor_client)
         # Add a message handler if not already present
-        if not self.system.has_component(System.COMPNAME_MSG_HANDLER):
-            msg_handler = RobotMessageHandler(self.system)
-            self.system.add_component(msg_handler)
+        self._add_message_handler(parrot_mode)
         # Add post service
         if not self.system.has_component(System.COMPNAME_POSTSERVICE):
             post = PostService(self.system)
@@ -82,6 +80,15 @@ class Robot:
         self.system.add_component(notifier)
         # Use config to activate current language
         self.system.invoke_call(System.COMPNAME_I18N, "set_language")
+
+    def _add_message_handler(self, parrot_mode):
+        '''Add the correct kind of message handler to the system'''
+        if not self.system.has_component(System.COMPNAME_MSG_HANDLER):
+            if parrot_mode:
+                msg_handler = ParrotMessageHandler(self.system)
+            else:
+                msg_handler = RobotMessageHandler(self.system)
+            self.system.add_component(msg_handler)
 
     def stop(self):
         '''Stop the whole system'''
