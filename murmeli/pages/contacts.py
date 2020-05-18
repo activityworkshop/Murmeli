@@ -29,20 +29,25 @@ class ContactsPageSet(PageSet):
         database = self.system.get_component(self.system.COMPNAME_DATABASE)
         crypto = self.system.get_component(self.system.COMPNAME_CRYPTO)
         dbutils.export_all_avatars(database, self.get_web_cache_dir())
+        commands = self.interpret_commands(url)
+        if commands[0] == "exportkey":
+            self._export_key(crypto, database)
+            return
+
+        contents, page_params, userid = self.make_page_contents(commands, params)
+        # If we haven't got any contents yet, then do a show details
+        contents = contents or self.make_list_page(do_edit=False, userid=userid,
+                                                   extra_params=page_params)
+        view.set_html(contents)
+
+    def make_page_contents(self, commands, params):
+        '''Make the page contents given the command and parameters'''
+        userid = commands[1] if len(commands) == 2 else None
+
+        database = self.system.get_component(self.system.COMPNAME_DATABASE)
+        crypto = self.system.get_component(self.system.COMPNAME_CRYPTO)
         contents = None
         page_params = {}
-        commands = self.interpret_commands(url)
-        userid = commands[1] if len(commands) == 2 else None
-        print("Commands:", commands, ", userid:", userid, ", params:", params)
-        if commands[0] == "exportkey":
-            own_keyid = dbutils.get_own_key_id(database)
-            data_dir = self.get_config().get_data_dir()
-            if cryptoutils.export_public_key(own_keyid, data_dir, crypto):
-                print("Exported public key")
-            else:
-                print("FAILED to export public key")
-            # TODO: Show javascript alert to confirm that export was done
-            return
         if commands[0] == "add":
             contents = self.make_add_page()
         elif commands[0] == "submitadd":
@@ -56,10 +61,8 @@ class ContactsPageSet(PageSet):
             contents = self.make_add_robot_page()
         elif commands[0] == "submitaddrobot":
             req_id = params.get('murmeliid') if params else None
-            if req_id:
-                # initiate contact with robot
-                if ContactManager(database, crypto).handle_initiate(req_id, "", "", True):
-                    print("Initiated contact")
+            if req_id and ContactManager(database, crypto).handle_initiate(req_id, "", "", True):
+                print("Initiated contact")
         elif commands[0] == "edit":
             contents = self.make_list_page(do_edit=True, userid=userid)
         elif commands[0] == "submitedit":
@@ -71,20 +74,27 @@ class ContactsPageSet(PageSet):
         elif commands[0] == "checkedfingerprint":
             given_answer = self.get_param_as_int(params, "answer", -1)
             fingers = self._make_fingerprint_checker(userid)
-            expected_answer = fingers.get_correct_answer()
-            print("checked fingerprint with answer '%d', correct answer is '%d'" \
-                  % (given_answer, expected_answer))
             # Compare with expected answer, generate appropriate page
-            if given_answer == expected_answer:
+            if given_answer == fingers.get_correct_answer():
                 ContactManager(database, None).key_fingerprint_checked(userid)
                 # Show page again
                 contents = self.make_checkfinger_page(userid)
             else:
                 page_params['fingerprint_check_failed'] = True
-        # If we haven't got any contents yet, then do a show details
-        if not contents:
-            contents = self.make_list_page(do_edit=False, userid=userid, extra_params=page_params)
-        view.set_html(contents)
+        elif commands[0] == "delete" and userid:
+            dbutils.update_profile(database, userid, {'status':'deleted'})
+            userid = None
+        return (contents, page_params, userid)
+
+    def _export_key(self, crypto, database):
+        '''Export our own public key to a file in our data directory'''
+        own_keyid = dbutils.get_own_key_id(database)
+        data_dir = self.get_config().get_data_dir()
+        if cryptoutils.export_public_key(own_keyid, data_dir, crypto):
+            print("Exported public key")
+        else:
+            print("FAILED to export public key")
+        # TODO: Show javascript alert to confirm that export was done
 
     @staticmethod
     def interpret_commands(url):
