@@ -202,6 +202,28 @@ class ContactsPageSet(PageSet):
             return self.i18n("contacts.online")
         return ""
 
+    def make_add_page(self):
+        '''Build the form page for adding a new contact, using the template'''
+        own_profile = self.system.invoke_call(self.system.COMPNAME_DATABASE, "get_profile")
+        own_tor_id = own_profile.get("torid") if own_profile else None
+        tokens = self.get_all_i18n()
+        bodytext = self.add_template.get_html(tokens, {"owntorid":own_tor_id or ""})
+        return self.build_page({'pageTitle':self.i18n("contacts.title"),
+                                'pageBody':bodytext,
+                                'pageFooter':"<p>Footer</p>"})
+
+    def make_add_robot_page(self):
+        '''Build the form page for adding a new robot, using the template'''
+        own_profile = self.system.invoke_call(self.system.COMPNAME_DATABASE, "get_profile") or {}
+        own_tor_id = own_profile.get("torid")
+        robot_id = own_profile.get("robotid")
+        bodytext = self.addrobot_template.get_html(self.get_all_i18n(),
+                                                   {"owntorid":own_tor_id or "",
+                                                    "robotid":robot_id or ""})
+        return self.build_page({'pageTitle':self.i18n("contacts.title"),
+                                'pageBody':bodytext,
+                                'pageFooter':"<p>Footer</p>"})
+
     def make_checkfinger_page(self, userid):
         '''Generate a page for checking the fingerprint of the given user'''
         # First, get the name of the user
@@ -229,16 +251,6 @@ class ContactsPageSet(PageSet):
                                 'pageBody':body_text,
                                 'pageFooter':"<p>Footer</p>"})
 
-    def make_add_page(self):
-        '''Build the form page for adding a new contact, using the template'''
-        own_profile = self.system.invoke_call(self.system.COMPNAME_DATABASE, "get_profile")
-        own_tor_id = own_profile.get("torid") if own_profile else None
-        tokens = self.get_all_i18n()
-        bodytext = self.add_template.get_html(tokens, {"owntorid":own_tor_id or ""})
-        return self.build_page({'pageTitle':self.i18n("contacts.title"),
-                                'pageBody':bodytext,
-                                'pageFooter':"<p>Footer</p>"})
-
     def _make_fingerprint_checker(self, userid):
         '''Use the given userid to make a FingerprintChecker between me and them'''
         own_profile = self.system.invoke_call(self.system.COMPNAME_DATABASE, "get_profile",
@@ -251,15 +263,3 @@ class ContactsPageSet(PageSet):
                                                     key_id=person['keyid'])
         assert own_fingerprint and other_fingerprint
         return FingerprintChecker(own_fingerprint, other_fingerprint)
-
-    def make_add_robot_page(self):
-        '''Build the form page for adding a new robot, using the template'''
-        own_profile = self.system.invoke_call(self.system.COMPNAME_DATABASE, "get_profile") or {}
-        own_tor_id = own_profile.get("torid")
-        robot_id = own_profile.get("robotid")
-        bodytext = self.addrobot_template.get_html(self.get_all_i18n(),
-                                                   {"owntorid":own_tor_id or "",
-                                                    "robotid":robot_id or ""})
-        return self.build_page({'pageTitle':self.i18n("contacts.title"),
-                                'pageBody':bodytext,
-                                'pageFooter':"<p>Footer</p>"})

@@ -181,17 +181,28 @@ class PostService(Component):
                 print("Failed to send but I can try to relay it")
                 if msg.get('relayMessage'):
                     signed_blob = bytes(msg.get('relayMessage'))
+                else:
                     print("No signed blob in message, need to create one")
                     msg_bytes = msg_bytes or imageutils.string_to_bytes(msg['message'])
                     signed_blob = RelayMessage.wrap_outgoing_message(self._sign_message(msg_bytes))
                     database.update_outbox_message(index=msg["_id"],
                                                    props={"relayMessage":list(signed_blob)})
                 # Loop over each relay in the list and try to send to each one
+                failed_relays = set()
                 for relay in msg.get('relays'):
-                    if relay not in failed_recpts:
-                        print("Should send message to relay '%s'" % relay)
-            else:
-                print("Couldn't send message, couldn't relay it either")
+                    if relay not in failed_recpts and \
+                      self._send_message(signed_blob, Message.ENCTYPE_RELAY,
+                                         relay) == self.RC_MESSAGE_SENT:
+                        print("Sent message to relay '%s'" % relay)
+                        self.call_component(System.COMPNAME_LOGGING, "log",
+                                            logstr="Relayed '%s'" % msg.get('msgType'))
+                    else:
+                        # Send failed, so add this relay to the list of failed ones
+                        failed_relays.add(relay)
+                        failed_recpts.add(relay)
+                # here we update the list even if it hasn't changed
+                database.update_outbox_message(index=msg["_id"],
+                                               props={"relays":list(failed_relays)})
         return (msg_sent, should_delete)
 
     def _sign_message(self, msg_bytes):

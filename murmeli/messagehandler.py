@@ -74,8 +74,8 @@ class MessageHandler(Component):
 
     def receive_relayed_message(self, msg):
         '''Receive a relayed message for somebody else'''
-        # TODO: Validate, then save in database
-        pass
+        sender_id = msg.get_sender_id() if msg else None
+        print("Received relayed message from:", sender_id)
 
     def is_from_trusted_contact(self, msg):
         '''Return true if given message is from a contact with trusted status'''
@@ -126,12 +126,11 @@ class RobotMessageHandler(MessageHandler):
             database = self.get_component(System.COMPNAME_DATABASE)
             if not database:
                 return
-            crypto = self.get_component(System.COMPNAME_CRYPTO)
             if not database.get_profiles_with_status(status="owner"):
-                # update db with SENDER_ID
-                owner_profile = {"torid":sender_id, 'status':'owner', 'keyid':owner_keyid}
+                # update profile of owner with the murmeli id
                 # NOTE: For conreq to robot, only the keyid is sent, not the whole key
-                database.add_or_update_profile(profile=owner_profile)
+                database.add_or_update_profile({"torid":sender_id, "status":"owner",
+                                                "keyid":owner_keyid})
             # Send an automatic accept message
             resp = message.ContactAcceptMessage()
             resp.recipients = [sender_id]
@@ -139,6 +138,7 @@ class RobotMessageHandler(MessageHandler):
             resp.set_field(resp.FIELD_MESSAGE, "I'm your robot")
             resp.set_field(resp.FIELD_SENDER_NAME, "Robot")
             own_keyid = own_profile.get('keyid')
+            crypto = self.get_component(System.COMPNAME_CRYPTO)
             own_publickey = crypto.get_public_key(own_keyid) if crypto else None
             resp.set_field(resp.FIELD_SENDER_KEY, own_publickey)
             dbutils.add_message_to_outbox(resp, crypto, database)
