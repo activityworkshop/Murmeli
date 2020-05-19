@@ -2,6 +2,7 @@
 
 import unittest
 import datetime
+import time
 from murmeli.pages.base import PageSet
 from murmeli.system import System, Component
 
@@ -52,8 +53,9 @@ class BasePageSetTest(unittest.TestCase):
     def test_nonempty_timestamps(self):
         '''Check that getting the timestamp string from strings and numbers succeeds'''
         pageset = PageSet(self.system, "base")
-        from_number = pageset.make_local_time_string(1234567890.0)
-        self.assertEqual('2009-02-14 00:31', from_number)
+        example_time = 1234567890.0 + time.timezone
+        from_number = pageset.make_local_time_string(example_time)
+        self.assertEqual('2009-02-13 23:31', from_number)
         from_string = pageset.make_local_time_string('something')
         self.assertEqual('something', from_string)
 
