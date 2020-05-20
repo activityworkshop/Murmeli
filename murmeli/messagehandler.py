@@ -75,7 +75,8 @@ class MessageHandler(Component):
     def receive_relayed_message(self, msg):
         '''Receive a relayed message for somebody else'''
         sender_id = msg.get_sender_id() if msg else None
-        print("Received relayed message from:", sender_id)
+        database = self.get_component(System.COMPNAME_DATABASE)
+        dbutils.add_relayed_message_to_outbox(msg, sender_id, database)
 
     def is_from_trusted_contact(self, msg):
         '''Return true if given message is from a contact with trusted status'''

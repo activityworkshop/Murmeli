@@ -265,3 +265,17 @@ def add_message_to_outbox(msg, crypto, database, dont_relay=None):
                     print("CryptoError thrown: can't add message to Outbox!", exc)
             else:
                 print("Profile for '%s' has no keyid so can't add message to outbox!" % recpt)
+
+def add_relayed_message_to_outbox(msg, sender_id, database):
+    '''Unpack the given relayed message and copy contents to the outbox.'''
+    assert msg
+    print("Relayed msg is of type:", type(msg))
+    recipients = {profile['torid'] for profile in \
+      database.get_profiles_with_status(["trusted", "owner"])}
+    recipients.difference_update({sender_id})
+    # convert output to string for storage
+    to_send = imageutils.bytes_to_string(msg.create_output(encrypter=None))
+    database.add_row_to_outbox({"recipientList":list(recipients),
+                                "relays":[], "message":to_send,
+                                "queue":True, "encType":msg.enc_type,
+                                "msgType":msg.describe_message_type()})

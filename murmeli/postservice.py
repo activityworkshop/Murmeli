@@ -141,6 +141,10 @@ class PostService(Component):
         recipient = msg.get('recipient')
         if recipient:
             return self.deal_with_single_recipient(msg, recipient, failed_recpts)
+        if msg.get('recipientList'):
+            return self.deal_with_relayed_message(msg, failed_recpts)
+
+        print("msg in outbox had neither recipient nor recipientList?", msg)
         msg_sent = False
         should_delete = False
         return (msg_sent, should_delete)
@@ -214,6 +218,39 @@ class PostService(Component):
             print("Failed to sign message using own key '%s'" % own_key_id)
             return None
         return crypto.sign_data(msg_bytes, own_key_id)
+
+    def deal_with_relayed_message(self, msg, failed_recpts):
+        '''Try to send the given relay message to a recipient list'''
+        msg_sent = False
+        should_delete = False
+        msg_bytes = imageutils.string_to_bytes(msg['message'])
+        failed_recpts_for_message = set()
+        database = self.get_component(System.COMPNAME_DATABASE)
+        own_tor_id = dbutils.get_own_tor_id(database)
+        for recpt in msg.get('recipientList'):
+            if recpt in failed_recpts:
+                failed_recpts_for_message.add(recpt)
+            else:
+                send_result = self._send_message(msg_bytes, msg.get('encType'), recpt)
+                if send_result == self.RC_MESSAGE_SENT:
+                    msg_sent = True
+                    self.call_component(System.COMPNAME_CONTACTS, "come_online", tor_id=recpt)
+                    self.call_component(System.COMPNAME_CONTACTS, "come_online", tor_id=own_tor_id)
+                elif send_result == self.RC_MESSAGE_FAILED:
+                    # Couldn't send to this relay recipient
+                    failed_recpts_for_message.add(recpt)
+                    failed_recpts.add(recpt)
+        if failed_recpts_for_message:
+            # update msg with the new recipientList
+            relays = list(failed_recpts_for_message)
+            database.update_outbox_message(index=msg["_id"],
+                                           props={"recipientList":relays})
+            print("Failed to send a relay to:", failed_recpts_for_message)
+        else:
+            print("Relayed everything, now deleting relay message")
+            should_delete = True
+        return (msg_sent, should_delete)
+
 
     def _send_message(self, msg_bytes, enctype, whoto):
         '''Send the given message to the specified recipient'''
