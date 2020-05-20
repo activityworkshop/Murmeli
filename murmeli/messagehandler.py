@@ -1,5 +1,6 @@
 '''Message handlers for Murmeli'''
 
+import re
 from murmeli.system import System, Component
 from murmeli.config import Config
 from murmeli.contactmgr import ContactManager
@@ -202,7 +203,6 @@ class ParrotMessageHandler(RobotMessageHandler):
         sender_key = msg.get_field(msg.FIELD_SENDER_KEY)
         sender_id = msg.get_sender_id()
         print("Contact request from unknown sender with id '%s'" % sender_id)
-        print("Received key was '%s'" % sender_key)
         database = self.get_component(System.COMPNAME_DATABASE)
         crypto = self.get_component(System.COMPNAME_CRYPTO)
         # Use ContactManager to auto-accept and update db
@@ -219,18 +219,31 @@ class ParrotMessageHandler(RobotMessageHandler):
         '''Receive and ignore a friend referral'''
         _ = msg
 
+    @staticmethod
+    def receive_relayed_message(msg):
+        '''Receive and ignore a relayed message for somebody else'''
+        _ = msg
+
     def receive_regular_message(self, msg):
         '''Receive a regular message'''
         print("Parrot received regular message from:", msg.get_sender_id())
+        if self.is_from_trusted_contact(msg):
+            print("Received regular message from owner")
+            forward_id, cropped_body = self._get_forward_id(msg.get_field(msg.FIELD_MSGBODY))
+            if forward_id:
+                print("Forwarding message from owner to '%s'" % forward_id)
+                self._send_message(cropped_body, forward_id)
+                return
         if self.is_from_known_contact(msg):
-            print("Received regular message, should auto-reply and also forward to owner")
             recvd_body = msg.get_field(msg.FIELD_MSGBODY)
             if "Parrot: " in recvd_body[:13]:
                 print("Already parroted, so ignoring this message.")
                 return
             sender_id = msg.get_sender_id()
             self._send_message("Parrot: '%s'" % recvd_body[:100], sender_id)
-            self._send_message("Parrot (%s): '%s'" % (sender_id, recvd_body), self._get_owner_id())
+            owner_id = self._get_owner_id()
+            if sender_id != owner_id:
+                self._send_message("Parrot (%s): '%s'" % (sender_id, recvd_body), owner_id)
         else:
             print("Regular message ignored because status=", self._get_sender_status(msg))
 
@@ -243,6 +256,18 @@ class ParrotMessageHandler(RobotMessageHandler):
         crypto = self.get_component(System.COMPNAME_CRYPTO)
         database = self.get_component(System.COMPNAME_DATABASE)
         dbutils.add_message_to_outbox(reply, crypto, database)
+
+    @staticmethod
+    def _get_forward_id(msg_body):
+        '''Extract a forwarding address from the message body, and also return the cropped body'''
+        if msg_body and len(msg_body) > 58:
+            bare_match = re.match("([a-zA-Z0-9]{56}): ", msg_body)
+            if bare_match:
+                return (bare_match.group(1), msg_body[58:])
+            p_match = re.match("<p>([a-zA-Z0-9]{56}): ", msg_body)
+            if p_match:
+                return (p_match.group(1), "<p>" + msg_body[60:])
+        return (None, msg_body)
 
 
 class RegularMessageHandler(MessageHandler):
