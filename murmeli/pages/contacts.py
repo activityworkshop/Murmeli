@@ -55,6 +55,8 @@ class ContactsPageSet(PageSet):
                 disp_name = params.get('displayname', '') if params else None
                 intro_msg = params.get('intromessage', '') if params else None
                 ContactManager(database, crypto).handle_initiate(req_id, disp_name, intro_msg)
+                # ensure that avatar is exported for this new contact
+                dbutils.export_all_avatars(database, self.get_web_cache_dir())
         elif commands[0] == "addrobot":
             contents = self.make_add_robot_page()
         elif commands[0] == "submitaddrobot":
