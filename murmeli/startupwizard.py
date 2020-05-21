@@ -694,6 +694,18 @@ class KeygenPanel(WizardPanel):
         # Update list with new key
         self.prepare()
         self.redraw_navbuttons_signal.emit()
+        if not self.private_keys:
+            gen_result = self.keygen_thread.get_key() if self.keygen_thread else None
+            try:
+                warning = []
+                for eline in gen_result.stderr.split('\n'):
+                    if "warning" in eline.lower() or "failed" in eline.lower():
+                        warning.append(eline.strip())
+                if warning:
+                    QMessageBox.warning(None, self.get_text("gui.dialogtitle.warning"),
+                                        "\n".join(warning))
+            except AttributeError:
+                pass
 
     def get_buttons_enabled(self):
         return (True, self.keypair_list_widget.count() > 0)

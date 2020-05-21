@@ -66,7 +66,7 @@ class CryptoClient(Component):
 
     def get_keys(self, public_keys=False, private_keys=False):
         '''Get a list of either the public or private keys'''
-        assert(public_keys ^ private_keys)
+        assert public_keys ^ private_keys
         self.init_gpg()
         if self.gpg:
             return self.gpg.list_keys(private_keys) # True for private, false for public
@@ -106,7 +106,7 @@ class CryptoClient(Component):
                 if fingerprint:
                     for key in self.gpg.list_keys():
                         if key.get("fingerprint", "") == fingerprint:
-                            return key.get("keyid", None)
+                            return key.get("keyid")
         # import failed somehow, or fingerprint not found
         return None
 
@@ -116,7 +116,7 @@ class CryptoClient(Component):
             self.init_gpg()
             for key in self.gpg.list_keys():
                 if key.get("keyid", "") == key_id:
-                    return key.get("fingerprint", None)
+                    return key.get("fingerprint")
         return None
 
 
@@ -132,8 +132,6 @@ class CryptoClient(Component):
             raise CryptoError()
         print("EncryptAndSign: ownKey:", own_key, ", recpt:", recipient)
         self.init_gpg()
-        # TODO: Check that message is a Message, don't allow other encryptions?
-        #  (but that would mean tight coupling to message module)
         # Try to encrypt and sign, throw exception if it didn't work
         crypto_result = self.gpg.encrypt(message, recipients=recipient,
                                          sign=own_key, armor=False, always_trust=True)

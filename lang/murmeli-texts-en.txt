@@ -211,6 +211,7 @@ export=Export
 
 [gui]
 dialogtitle.error=Error
+dialogtitle.warning=Warning
 dialogtitle.openimage=Open Image
 fileselection.filetypes.jpg=Image files (*.jpg)
 

@@ -209,6 +209,7 @@ export=Exportieren
 
 [gui]
 dialogtitle.error=Fehler
+dialogtitle.warning=Warnung
 dialogtitle.openimage=Bilddatei Öffnen
 fileselection.filetypes.jpg=Bilddateien (*.jpg)
 
