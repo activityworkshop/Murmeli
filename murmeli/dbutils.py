@@ -4,6 +4,7 @@ import json    # for converting strings to and from json
 import hashlib # for calculating checksums
 import os      # for managing paths
 import shutil  # for managing files
+from murmeli import contactutils
 from murmeli import imageutils
 from murmeli.cryptoclient import CryptoError
 from murmeli import message
@@ -118,11 +119,8 @@ def create_profile(database, tor_id, in_profile, pic_output_path=None):
             print("FAILED to create profile, call failed!")
         if pic_output_path:
             _update_avatar(database, tor_id, pic_output_path)
-        if in_profile.get("status") == "trusted":
-            # TODO: Get friends-see-friends setting out of the config, use to update contact list
-            pass
 
-def update_profile(database, tor_id, in_profile, pic_output_path=None):
+def update_profile(database, tor_id, in_profile, pic_output_path=None, config=None):
     '''Updates the profile with the given torid, which should exist already.
        Also exports the avatar to the given output path if changed'''
     # If the profile pic path has changed, then we need to load the file
@@ -144,6 +142,9 @@ def update_profile(database, tor_id, in_profile, pic_output_path=None):
             print("FAILED to update profile!")
     if pic_changed and pic_output_path:
         _update_avatar(database, tor_id, pic_output_path)
+    if config and in_profile.get("status") in ["blocked", "deleted", "trusted"]:
+        allow_friends_see_friends = config.get_property(config.KEY_LET_FRIENDS_SEE_FRIENDS)
+        update_contact_list(database, allow_friends_see_friends)
 
 def _update_avatar(database, user_id, output_dir):
     '''Update the avatar for the given user id'''
@@ -157,6 +158,19 @@ def _update_avatar(database, user_id, output_dir):
     # We export pics for all the contacts but only the ones whose jpg doesn't exist already
     export_all_avatars(database, output_dir)
 
+def update_contact_list(database, show_list):
+    '''Depending on the setting, either clears the contact list from our own profile,
+       or populates it based on the list of contacts in the database'''
+    contact_list = []
+    if show_list and database:
+        # loop over trusted contacts
+        for profile in database.get_profiles_with_status("trusted"):
+            if profile['name']:
+                print(profile['name'])
+                contact_list.append((profile['torid'], profile['name']))
+    database.add_or_update_profile({'torid':get_own_tor_id(database),
+                                    'contactlist':contactutils.contacts_to_string(contact_list)})
+
 def get_messageable_profiles(database):
     '''Return list of profiles to whom we can send a message'''
     if database:
@@ -165,7 +179,7 @@ def get_messageable_profiles(database):
 
 def has_friends(database):
     '''Return True if there is at least one trusted or untrusted friend'''
-    return True if get_messageable_profiles(database) else False
+    return bool(get_messageable_profiles(database))
 
 def get_status(database, tor_id):
     '''Return the status of the given tor_id'''
@@ -238,7 +252,7 @@ def add_message_to_outbox(msg, crypto, database, dont_relay=None):
         if msg.should_be_relayed:
             relays = {profile['torid'] for profile in \
                       database.get_profiles_with_status(["trusted", "robot"])}
-            relays.difference_update({dont_relay})
+            relays.discard(dont_relay)
 
         for recpt in msg.recipients:
             if isinstance(msg, message.UnencryptedMessage):
@@ -272,7 +286,7 @@ def add_relayed_message_to_outbox(msg, sender_id, database):
     print("Relayed msg is of type:", type(msg))
     recipients = {profile['torid'] for profile in \
       database.get_profiles_with_status(["trusted", "owner"])}
-    recipients.difference_update({sender_id})
+    recipients.discard(sender_id)
     # convert output to string for storage
     to_send = imageutils.bytes_to_string(msg.create_output(encrypter=None))
     database.add_row_to_outbox({"recipientList":list(recipients),

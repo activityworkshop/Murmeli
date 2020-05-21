@@ -2,6 +2,7 @@
 
 from murmeli.pages.base import PageSet
 from murmeli.pagetemplate import PageTemplate
+from murmeli import dbutils
 
 
 class SettingsPageSet(PageSet):
@@ -22,8 +23,11 @@ class SettingsPageSet(PageSet):
                 config.set_property(config.KEY_LANGUAGE, selected_lang)
                 # I18nManager will be triggered here because it listens to the Config
             friendsseefriends = bool(params.get('friendsseefriends'))
+            fsf_before = config.get_property(config.KEY_LET_FRIENDS_SEE_FRIENDS)
             config.set_property(config.KEY_LET_FRIENDS_SEE_FRIENDS, friendsseefriends)
             # If Config has changed, may need to update own profile to include/hide friends info
+            if friendsseefriends != fsf_before:
+                self.update_contacts(friendsseefriends)
             showlogwindow = bool(params.get('showlogwindow'))
             config.set_property(config.KEY_SHOW_LOG_WINDOW, showlogwindow)
             allowfriendrequests = bool(params.get('allowfriendrequests'))
@@ -55,3 +59,8 @@ class SettingsPageSet(PageSet):
     def check_from_config(config, key):
         '''Get a string either "checked" or "" depending on the config flag'''
         return "checked" if config.get_property(key) else ""
+
+    def update_contacts(self, show_friends):
+        '''Our contacts visibility has changed, so update our own profile accordingly'''
+        database = self.system.get_component(self.system.COMPNAME_DATABASE)
+        dbutils.update_contact_list(database, show_friends)

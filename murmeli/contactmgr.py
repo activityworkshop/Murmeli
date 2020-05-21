@@ -10,10 +10,11 @@ class ContactManager:
     '''Class to manage contacts, like processing friend acceptance or rejection,
        working out which contacts are shared, etc'''
 
-    def __init__(self, database, crypto):
+    def __init__(self, database, crypto, config=None):
         '''Constructor'''
         self._database = database
         self._crypto = crypto
+        self._config = config
 
     def handle_initiate(self, tor_id, display_name, intro_msg, robot=False):
         '''We have requested contact with another id, so we can set up
@@ -143,7 +144,7 @@ class ContactManager:
     def delete_contact(self, tor_id):
         '''Set the specified contact's status to deleted'''
         print("ContactManager: set status of '%s' to 'deleted'" % tor_id)
-        dbutils.update_profile(self._database, tor_id, {'status':'deleted'})
+        dbutils.update_profile(self._database, tor_id, {'status':'deleted'}, config=self._config)
 
     def handle_receive_accept(self, tor_id, name, key_str):
         '''We have requested contact with another id, and this has now been accepted.
@@ -166,7 +167,8 @@ class ContactManager:
         # Check that userid exists and that status is ok
         curr_status = dbutils.get_status(self._database, tor_id)
         if curr_status == "untrusted":
-            dbutils.update_profile(self._database, tor_id, {'status':'trusted'})
+            dbutils.update_profile(self._database, tor_id, {'status':'trusted'},
+                                   config=self._config)
 
     def get_contact_request_details(self, tor_id):
         '''Use all received contact requests for the given id, and summarize name and public key'''

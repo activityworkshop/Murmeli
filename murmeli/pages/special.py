@@ -3,6 +3,7 @@
 import os
 from PyQt5.QtWidgets import QFileDialog # for file selection
 from murmeli.pages.base import PageSet
+from murmeli import contactutils
 from murmeli import dbutils
 from murmeli.brainstorm import StormWindow, FriendStorm
 
@@ -51,6 +52,8 @@ class SpecialFunctions(PageSet):
             friend_id = prof.get('torid')
             storm.add_friend(friend_id, prof.get('displayName'))
             # also add friends of friends
+            for ff_id, ff_name in contactutils.contacts_from_string(prof.get('contactlist')):
+                storm.add_friends_friend(friend_id, ff_id, ff_name)
         # Create window and pass storm to it
         win = StormWindow()
         win.set_storm(storm)

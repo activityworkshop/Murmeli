@@ -43,7 +43,6 @@ class ContactsPageSet(PageSet):
     def make_page_contents(self, commands, params):
         '''Make the page contents given the command and parameters'''
         userid = commands[1] if len(commands) == 2 else None
-
         database = self.system.get_component(self.system.COMPNAME_DATABASE)
         crypto = self.system.get_component(self.system.COMPNAME_CRYPTO)
         contents = None
@@ -55,19 +54,18 @@ class ContactsPageSet(PageSet):
             if req_id:
                 disp_name = params.get('displayname', '') if params else None
                 intro_msg = params.get('intromessage', '') if params else None
-                if ContactManager(database, crypto).handle_initiate(req_id, disp_name, intro_msg):
-                    print("Initiated contact")
+                ContactManager(database, crypto).handle_initiate(req_id, disp_name, intro_msg)
         elif commands[0] == "addrobot":
             contents = self.make_add_robot_page()
         elif commands[0] == "submitaddrobot":
             req_id = params.get('murmeliid') if params else None
-            if req_id and ContactManager(database, crypto).handle_initiate(req_id, "", "", True):
-                print("Initiated contact")
+            if req_id:
+                ContactManager(database, crypto).handle_initiate(req_id, "", "", True)
         elif commands[0] == "edit":
             contents = self.make_list_page(do_edit=True, userid=userid)
         elif commands[0] == "submitedit":
-            dbutils.update_profile(self.system.get_component(self.system.COMPNAME_DATABASE),
-                                   tor_id=userid, in_profile=params,
+            assert not set(params.keys()).intersection(['status', 'keyid'])
+            dbutils.update_profile(database, tor_id=userid, in_profile=params,
                                    pic_output_path=self.get_web_cache_dir())
         elif commands[0] == "checkfingerprint":
             contents = self.make_checkfinger_page(commands[1])
@@ -76,13 +74,13 @@ class ContactsPageSet(PageSet):
             fingers = self._make_fingerprint_checker(userid)
             # Compare with expected answer, generate appropriate page
             if given_answer == fingers.get_correct_answer():
-                ContactManager(database, None).key_fingerprint_checked(userid)
+                ContactManager(database, None, self.get_config()).key_fingerprint_checked(userid)
                 # Show page again
                 contents = self.make_checkfinger_page(userid)
             else:
                 page_params['fingerprint_check_failed'] = True
         elif commands[0] == "delete" and userid:
-            dbutils.update_profile(database, userid, {'status':'deleted'})
+            ContactManager(database, None, self.get_config()).delete_contact(userid)
             userid = None
         return (contents, page_params, userid)
 
