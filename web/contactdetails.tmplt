@@ -48,8 +48,8 @@ def limit_id_length(torid):
 </div>
 {{elif person['status']=='trusted'}}
 <div class='infobox' style='margin-top:5px'>
-<p><img src='file:///{{webcachedir}}/status-trusted.png' width='24' height='24'> {{langs['contacts.desc.reconfirmfingerprints']}}</p>
-<p><a href="/contacts/{{person['torid']}}/checkfingerprint">{{langs['contacts.link.confirmfingerprints']}}</a></p>
+<p><img src='file:///{{webcachedir}}/status-trusted.png' width='24' height='24'> {{langs['contacts.desc.reconfirmfingerprints']}}
+ <a href="/contacts/{{person['torid']}}/checkfingerprint">{{langs['contacts.link.confirmfingerprints']}}</a></p>
 </div>
 {{endif}}
 {{if person['status']!='self'}}
@@ -62,7 +62,7 @@ def limit_id_length(torid):
 	<script type='text/javascript'>window.alert("{{langs['messages.confirm.messagesent']}}");</script>
 {{endif}}
 {{if sharedcontacts}}
-<p>Shared contacts: {{for c in sharedcontacts}}<img src='file:///{{webcachedir}}/avatar-{{c.torid}}.jpg' width='36' height='36' style='margin:2px' title='{{c.disp_name}}'> {{endfor}}</p>
+<p>{{langs['contacts.details.sharedcontacts']}}: {{for c in sharedcontacts}}<img src='file:///{{webcachedir}}/avatar-{{c.torid}}.jpg' width='36' height='36' style='margin:2px' title='{{c.disp_name}}'> {{endfor}}</p>
 {{endif}}
 {{if posscontactsforthem}}
 <p>Possible contacts for {{person['displayName']}}: {{for c in posscontactsforthem}}<img src='file:///{{webcachedir}}/avatar-{{c.torid}}.jpg' width='36' height='36' style='margin:2px' title='{{c.disp_name}}'> 

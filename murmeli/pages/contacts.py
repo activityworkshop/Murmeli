@@ -133,9 +133,47 @@ class ContactsPageSet(PageSet):
         if not selectedprofile:
             selectedprofile = ownprofile
         userid = selectedprofile['torid']
-        own_page = userid == ownprofile['torid']
 
         # Build list of contacts
+        userboxes, has_friends = self._make_user_boxes(userid)
+        # build left side of page using these boxes
+        tokens = self.get_all_i18n()
+        lefttext = self.list_template.get_html(tokens, {'webcachedir':config.get_web_cache_dir(),
+                                                        'contacts':userboxes,
+                                                        'has_friends':has_friends})
+
+        page_props = {"webcachedir":config.get_web_cache_dir(), 'person':selectedprofile}
+        # Add extra parameters if necessary
+        if extra_params:
+            page_props.update(extra_params)
+        # See which contacts we have in common with this person
+        database = self.system.get_component(self.system.COMPNAME_DATABASE)
+        shared_info = ContactManager(database, None).get_shared_possible_contacts(userid)
+        page_props["sharedcontacts"] = self._make_id_name_bean_list(shared_info.get_shared_ids())
+        page_props["posscontactsforthem"] = []
+        page_props["posscontactsforme"] = []
+        # Work out status of this contact's robot
+        robot_status = dbutils.get_robot_status(database, userid, \
+          self.system.get_component(self.system.COMPNAME_CONTACTS))
+        page_props['robotstatus'] = self.i18n("contacts.details.robotstatus." + robot_status)
+        page_props['robotset'] = (robot_status != 'none')
+
+        # Which template to use depends on whether we're just showing or also editing
+        if do_edit:
+            # Use two different details templates, one for self and one for others
+            page_templ = self.editowndetails_template if userid == ownprofile['torid'] \
+              else self.editdetails_template
+        else:
+            page_templ = self.details_template
+
+        # Put left side and right side together
+        return self.build_two_column_page({'pageTitle':self.i18n("contacts.title"),
+                                           'leftColumn':lefttext,
+                                           'rightColumn':page_templ.get_html(tokens, page_props),
+                                           'pageFooter':"<p>Footer</p>"})
+
+    def _make_user_boxes(self, selected_id):
+        '''Make a list of boxes for our contacts'''
         userboxes = []
         has_friends = False
         database = self.system.get_component(self.system.COMPNAME_DATABASE)
@@ -145,7 +183,7 @@ class ContactsPageSet(PageSet):
                 box.set('disp_name', profile['displayName'])
                 tor_id = profile['torid']
                 box.set('torid', tor_id)
-                tile_selected = profile['torid'] == userid
+                tile_selected = profile['torid'] == selected_id
                 box.set('tilestyle', "contacttile" + ("selected" if tile_selected else ""))
                 box.set('status', profile['status'])
                 is_online = self.system.invoke_call(self.system.COMPNAME_CONTACTS,
@@ -157,40 +195,18 @@ class ContactsPageSet(PageSet):
                 userboxes.append(box)
                 if profile['status'] in ['untrusted', 'trusted']:
                     has_friends = True
-        # build list of contacts on left of page using these boxes
-        tokens = self.get_all_i18n()
-        lefttext = self.list_template.get_html(tokens, {'webcachedir':config.get_web_cache_dir(),
-                                                        'contacts':userboxes,
-                                                        'has_friends':has_friends})
+        return (userboxes, has_friends)
 
-        page_props = {"webcachedir":config.get_web_cache_dir(), 'person':selectedprofile}
-        # Add extra parameters if necessary
-        if extra_params:
-            page_props.update(extra_params)
-        page_props["sharedcontacts"] = []
-        page_props["posscontactsforthem"] = []
-        page_props["posscontactsforme"] = []
-        # Work out status of this contact's robot
-        contacts = self.system.get_component(self.system.COMPNAME_CONTACTS)
-        robot_status = dbutils.get_robot_status(database, userid, contacts)
-        page_props['robotstatus'] = self.i18n("contacts.details.robotstatus." + robot_status)
-        page_props['robotset'] = (robot_status != 'none')
-
-        # Which template to use depends on whether we're just showing or also editing
-        if do_edit:
-            # Use two different details templates, one for self and one for others
-            page_template = self.editowndetails_template if own_page else self.editdetails_template
-        else:
-            page_template = self.details_template
-        righttext = page_template.get_html(tokens, page_props)
-
-
-        # Put left side and right side together
-        contents = self.build_two_column_page({'pageTitle':self.i18n("contacts.title"),
-                                               'leftColumn':lefttext,
-                                               'rightColumn':righttext,
-                                               'pageFooter':"<p>Footer</p>"})
-        return contents
+    @staticmethod
+    def _make_id_name_bean_list(contact_list):
+        '''Make a list of Bean objects for the given contact list'''
+        con_list = []
+        for cid, cname in contact_list:
+            pair = Bean()
+            pair.set('torid', cid)
+            pair.set('disp_name', cname)
+            con_list.append(pair)
+        return con_list
 
     def _make_lastseen_string(self, online, last_time):
         '''Make a string describing the online / offline status'''
