@@ -4,6 +4,7 @@ import json
 import os.path
 import threading
 from murmeli.system import System, Component
+from murmeli import inbox
 
 
 class SuperSimpleDb:
@@ -204,7 +205,7 @@ class MurmeliDb(Component):
 
     def delete_from_inbox(self, index):
         '''Delete the message at the given index from the inbox, return True on success'''
-        return self.update_inbox_message(index, {'deleted':True})
+        return self.update_inbox_message(index, {inbox.FN_DELETED:True})
 
     def update_inbox_message(self, index, props):
         '''Update the inbox message at the given index'''

@@ -129,6 +129,8 @@ class ContactManager:
             else:
                 # status could be untrusted, or trusted
                 print("Trying to handle an accept but status is already", status)
+        # Mark all contact request messages from this id as 'replied'
+        dbutils.mark_conreqs_as_replied(tor_id, self._database)
 
     def is_robot_id(self, tor_id):
         '''Return True if this tor_id is configured as our robot'''

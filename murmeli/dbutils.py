@@ -234,6 +234,14 @@ def delete_messages_from_inbox(sender_id, database):
             if msg.get(inbox.FN_FROM_ID) == sender_id:
                 database.delete_from_inbox(msg.get('_id'))
 
+def mark_conreqs_as_replied(sender_id, database):
+    '''Find all contact requests from the given sender and mark them as already replied'''
+    if sender_id and database:
+        for msg in database.get_inbox():
+            if msg.get(inbox.FN_FROM_ID) == sender_id and \
+              msg.get(inbox.FN_MSG_TYPE) == 'contactrequest':
+                database.update_inbox_message(msg.get('_id'), {inbox.FN_REPLIED:True})
+
 def add_message_to_outbox(msg, crypto, database, dont_relay=None):
     '''Unpack the given message and add it to the outbox.
        Note: this method takes a message object (with recipients and

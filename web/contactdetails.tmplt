@@ -46,11 +46,6 @@ def limit_id_length(torid):
 <p><img src='file:///{{webcachedir}}/status-untrusted.png' width='24' height='24'> {{langs['contacts.desc.confirmfingerprints']}}</p>
 <p><a href="/contacts/{{person['torid']}}/checkfingerprint">{{langs['contacts.link.confirmfingerprints']}}</a></p>
 </div>
-{{elif person['status']=='trusted'}}
-<div class='infobox' style='margin-top:5px'>
-<p><img src='file:///{{webcachedir}}/status-trusted.png' width='24' height='24'> {{langs['contacts.desc.reconfirmfingerprints']}}
- <a href="/contacts/{{person['torid']}}/checkfingerprint">{{langs['contacts.link.confirmfingerprints']}}</a></p>
-</div>
 {{endif}}
 {{if person['status']!='self'}}
 <div style="float:right"><a href='' onclick='deleteContact();return false;' class='reversebutton'>{{langs['button.delete']}}</a></div>
@@ -71,4 +66,10 @@ def limit_id_length(torid):
 {{if posscontactsforme}}
 <p>Possible contacts for me: {{for c in posscontactsforme}}<img src='file:///{{webcachedir}}/avatar-none.jpg' width='36' height='36' style='margin:2px' title='{{c.disp_name}}'> 
  (<a href="" onclick="requestRefer('{{c.torid}}','{{c.disp_name}}');return false;">request contact with {{c.disp_name}}</a>) &nbsp; {{endfor}}</p>
+{{endif}}
+{{if person['status']=='trusted'}}
+<div class='infobox' style='margin-top:5px'>
+<p><img src='file:///{{webcachedir}}/status-trusted.png' width='24' height='24'> {{langs['contacts.desc.reconfirmfingerprints']}}
+ <a href="/contacts/{{person['torid']}}/checkfingerprint">{{langs['contacts.link.confirmfingerprints']}}</a></p>
+</div>
 {{endif}}
