@@ -116,7 +116,6 @@ class MurmeliDb(Component):
     TABLE_PENDING = "pendingcontacts"
     TABLE_OUTBOX = "outbox"
     TABLE_INBOX = "inbox"
-    TABLE_ADMIN = "admin"
 
     def __init__(self, parent, file_path=None):
         '''Constructor.  If file_path is None, then there will be no file loading or saving.'''
@@ -157,14 +156,14 @@ class MurmeliDb(Component):
     def get_profile(self, torid=None):
         '''Get the profile for the given torid'''
         if torid:
-            for p in self.db.get_table(MurmeliDb.TABLE_PROFILES):
-                if p and p.get("torid", None) == torid:
-                    return Profile(p)
+            for prof in self.db.get_table(MurmeliDb.TABLE_PROFILES):
+                if prof and prof.get("torid") == torid:
+                    return Profile(prof)
         else:
             # No id given, so get our own profile
-            for p in self.db.get_table(MurmeliDb.TABLE_PROFILES):
-                if p and p.get("status") == "self":
-                    return Profile(p)
+            for prof in self.db.get_table(MurmeliDb.TABLE_PROFILES):
+                if prof and prof.get("status") == "self":
+                    return Profile(prof)
             print("%d rows in profiles table, but self not found?"
                   % len(self.db.get_table(MurmeliDb.TABLE_PROFILES)))
         return None # not found
@@ -172,24 +171,6 @@ class MurmeliDb(Component):
     def get_outbox(self):
         '''Get copies of all the messages in the outbox'''
         return [m.copy() for m in self.db.get_table(MurmeliDb.TABLE_OUTBOX) if m]
-
-    def add_pending_contact(self, message):
-        '''Add the given message to the pending contacts table
-           (caller should have already checked that same hash
-           isn't there in the table already)'''
-        with threading.Condition(self.db_write_lock):
-            self.db.get_table(MurmeliDb.TABLE_PENDING).append(message)
-
-    def delete_from_pending_contacts(self, sender_id):
-        '''Delete all the pending contact messages from the given senderId'''
-        with threading.Condition(self.db_write_lock):
-            for i, prow in enumerate(self.db.get_table(MurmeliDb.TABLE_PENDING)):
-                if prow and prow.get("fromId") == sender_id:
-                    self.db.delete_from_table(MurmeliDb.TABLE_PENDING, i)
-
-    def get_pending_contact_messages(self):
-        '''Get copies of all pending contact messages'''
-        return [m.copy() for m in self.db.get_table(MurmeliDb.TABLE_PENDING) if m]
 
     def get_num_tables(self):
         '''Only needed for testing'''
@@ -199,9 +180,9 @@ class MurmeliDb(Component):
         '''Append the given row to the inbox table'''
         with threading.Condition(self.db_write_lock):
             # Get current number in inbox, use this as index for msg
-            inbox = self.db.get_table(MurmeliDb.TABLE_INBOX)
-            msg['_id'] = len(inbox)
-            inbox.append(msg)
+            inbox_table = self.db.get_table(MurmeliDb.TABLE_INBOX)
+            msg['_id'] = len(inbox_table)
+            inbox_table.append(msg)
 
     def delete_from_inbox(self, index):
         '''Delete the message at the given index from the inbox, return True on success'''
@@ -212,9 +193,9 @@ class MurmeliDb(Component):
         if index is None or index < 0:
             return False
         with threading.Condition(self.db_write_lock):
-            inbox = self.db.get_table(MurmeliDb.TABLE_INBOX)
-            if len(inbox) > index:
-                row = inbox[index]
+            inbox_table = self.db.get_table(MurmeliDb.TABLE_INBOX)
+            if len(inbox_table) > index:
+                row = inbox_table[index]
                 if row:
                     row.update(props)
                     return True
@@ -267,21 +248,6 @@ class MurmeliDb(Component):
                     return True
             tab.append(profile)
         return True
-
-    def get_admin_value(self, key):
-        '''Get the value of the given key, or None if not found'''
-        tab = self.db.get_table(MurmeliDb.TABLE_ADMIN)
-        first_row = tab[0] if tab else None
-        return first_row.get(key) if first_row else None
-
-    def set_admin_value(self, key, value):
-        '''Set the value of the given key'''
-        tab = self.db.get_table(MurmeliDb.TABLE_ADMIN)
-        first_row = tab[0] if tab else None
-        if first_row:
-            first_row[key] = value
-        else:
-            tab.append({key:value})
 
     def load_from_file(self):
         '''Load the database from file'''

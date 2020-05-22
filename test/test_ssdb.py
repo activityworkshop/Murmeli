@@ -218,23 +218,6 @@ class SsdbTest(unittest.TestCase):
         self.assertEqual(len(inbox), 1, "Inbox should now still have one message")
         self.assertEqual(len(ssdb.get_inbox()), 2, "Real Inbox should now have 2 message")
 
-    def test_admin_table(self):
-        '''Test the storage and retrieval from the admin table'''
-        ssdb = supersimpledb.MurmeliDb(None)
-        self.assertIsNone(ssdb.get_admin_value(None))
-        self.assertIsNone(ssdb.get_admin_value("crocodile"))
-        self.assertIsNone(ssdb.get_admin_value("elephant"))
-        # Add a value
-        ssdb.set_admin_value("elephant", 18.1)
-        self.assertIsNone(ssdb.get_admin_value("crocodile"))
-        self.assertIsNotNone(ssdb.get_admin_value("elephant"))
-        self.assertEqual(ssdb.get_admin_value("elephant"), 18.1, "Value should be read again")
-        # Change it
-        ssdb.set_admin_value("elephant", "coelecanth")
-        self.assertIsNone(ssdb.get_admin_value("crocodile"))
-        self.assertNotEqual(ssdb.get_admin_value("elephant"), 18.1, "Value should have changed")
-        self.assertEqual(ssdb.get_admin_value("elephant"), "coelecanth", "Value read again")
-
 
 if __name__ == "__main__":
     unittest.main()

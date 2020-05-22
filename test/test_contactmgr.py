@@ -51,8 +51,12 @@ class MockDatabase:
 
     def delete_from_inbox(self, row_id):
         '''Delete a single message from the inbox'''
+        self.update_inbox_message(row_id, {'deleted':True})
+
+    def update_inbox_message(self, row_id, props):
+        '''Update an inbox message'''
         if row_id is not None:
-            self.inbox[row_id].update({'deleted':True})
+            self.inbox[row_id].update(props)
 
     def add_row_to_outbox(self, inrow):
         '''add a row to the outbox'''
