@@ -15,8 +15,13 @@ class SharedContacts:
         self.name_map = {}
 
     def get_shared_ids(self):
-        '''Return a list of id and name tuples'''
+        '''Return a list of id and name tuples for contacts in common'''
         return [(cid, self.name_map.get(cid, cid)) for cid in self.shared_ids]
+
+    def get_ids_for_them(self):
+        '''Return a list of id and name tuples to recommend to them'''
+        return [(cid, self.name_map.get(cid, cid)) for cid in self.ids_for_them]
+
 
 class ContactManager:
     '''Class to manage contacts, like processing friend acceptance or rejection,

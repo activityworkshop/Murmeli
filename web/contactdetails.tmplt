@@ -2,7 +2,12 @@
 def limit_id_length(torid):
    return (torid[:18]+"...") if len(torid)>20 else torid
 }}
+{{py:
+def escapos(instr):
+   return instr.replace("'", "&apos;") if instr else ""
+}}
 <script>
+	var _r=function(p,c){return p.replace(/%s/,c);};
 	function deleteContact()
 	{
 		showMessage("{{langs['contacts.confirmdelete']}}"
@@ -12,8 +17,9 @@ def limit_id_length(torid):
 	}
 	function sendRefer(id, referName)
 	{
+		var msg=["{{person['displayName']}}", referName].reduce(_r, "{{langs["messages.contactrefer.confirm"]}}");
 		showMessage("<form action='http://murmeli/contacts/{{person['torid']}}/refer/" + id + "' method='get'>"
-			+ "<p>Send referral messages to both '{{person['displayName']}}' and '" + referName + "'</p>"
+			+ "<p>" + msg + "</p>"
 			+ "<input type='text' name='introMessage' value=''>"
 			+ "<input type='submit' class='reversebutton' value='{{langs['button.send']}}'></form>");
 	}
@@ -60,8 +66,8 @@ def limit_id_length(torid):
 <p>{{langs['contacts.details.sharedcontacts']}}: {{for c in sharedcontacts}}<img src='file:///{{webcachedir}}/avatar-{{c.torid}}.jpg' width='36' height='36' style='margin:2px' title='{{c.disp_name}}'> {{endfor}}</p>
 {{endif}}
 {{if posscontactsforthem}}
-<p>Possible contacts for {{person['displayName']}}: {{for c in posscontactsforthem}}<img src='file:///{{webcachedir}}/avatar-{{c.torid}}.jpg' width='36' height='36' style='margin:2px' title='{{c.disp_name}}'> 
- (<a href="" onclick="sendRefer('{{c.torid}}','{{c.disp_name}}');return false;">recommend {{c.disp_name}}</a>) &nbsp; {{endfor}}</p>
+<p>{{langs['contacts.details.recommendcontacts']}} {{person['displayName']}}: {{for c in posscontactsforthem}}<img src='file:///{{webcachedir}}/avatar-{{c.torid}}.jpg' width='36' height='36' style='margin:2px' title='{{c.disp_name}}'> 
+ (<a href="" onclick="sendRefer('{{c.torid}}','{{c.disp_name | escapos}}');return false;">{{langs['contacts.details.recommendname'] % c.disp_name}}</a>) &nbsp; {{endfor}}</p>
 {{endif}}
 {{if posscontactsforme}}
 <p>Possible contacts for me: {{for c in posscontactsforme}}<img src='file:///{{webcachedir}}/avatar-none.jpg' width='36' height='36' style='margin:2px' title='{{c.disp_name}}'> 

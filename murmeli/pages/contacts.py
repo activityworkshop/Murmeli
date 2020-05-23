@@ -124,7 +124,6 @@ class ContactsPageSet(PageSet):
         '''Generate a page for listing all the contacts and showing the details of one of them'''
         self.require_resources(['status-self.png', 'status-requested.png', 'status-untrusted.png',
                                 'status-trusted.png', 'status-pending.png', 'status-robot.png'])
-        config = self.get_config()
         # Who are we showing?
         selectedprofile = self.system.invoke_call(self.system.COMPNAME_DATABASE, "get_profile",
                                                   torid=userid)
@@ -137,12 +136,12 @@ class ContactsPageSet(PageSet):
         # Build list of contacts
         userboxes, has_friends = self._make_user_boxes(userid)
         # build left side of page using these boxes
-        tokens = self.get_all_i18n()
-        lefttext = self.list_template.get_html(tokens, {'webcachedir':config.get_web_cache_dir(),
-                                                        'contacts':userboxes,
-                                                        'has_friends':has_friends})
+        lefttext = self.list_template.get_html(self.get_all_i18n(),
+                                               {'webcachedir':self.get_web_cache_dir(),
+                                                'contacts':userboxes,
+                                                'has_friends':has_friends})
 
-        page_props = {"webcachedir":config.get_web_cache_dir(), 'person':selectedprofile}
+        page_props = {"webcachedir":self.get_web_cache_dir(), 'person':selectedprofile}
         # Add extra parameters if necessary
         if extra_params:
             page_props.update(extra_params)
@@ -150,7 +149,8 @@ class ContactsPageSet(PageSet):
         database = self.system.get_component(self.system.COMPNAME_DATABASE)
         shared_info = ContactManager(database, None).get_shared_possible_contacts(userid)
         page_props["sharedcontacts"] = self._make_id_name_bean_list(shared_info.get_shared_ids())
-        page_props["posscontactsforthem"] = []
+        page_props["posscontactsforthem"] = self._make_id_name_bean_list( \
+          shared_info.get_ids_for_them())
         page_props["posscontactsforme"] = []
         # Work out status of this contact's robot
         robot_status = dbutils.get_robot_status(database, userid, \
@@ -169,7 +169,8 @@ class ContactsPageSet(PageSet):
         # Put left side and right side together
         return self.build_two_column_page({'pageTitle':self.i18n("contacts.title"),
                                            'leftColumn':lefttext,
-                                           'rightColumn':page_templ.get_html(tokens, page_props),
+                                           'rightColumn':page_templ.get_html(self.get_all_i18n(),
+                                                                             page_props),
                                            'pageFooter':"<p>Footer</p>"})
 
     def _make_user_boxes(self, selected_id):
