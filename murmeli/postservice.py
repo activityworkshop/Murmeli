@@ -158,7 +158,10 @@ class PostService(Component):
         should_delete = False
         send_result = self.RC_MESSAGE_IGNORED
         database = self.get_component(System.COMPNAME_DATABASE)
-        if recipient in failed_recpts:
+        # Check recipient status, if it's deleted then delete message also
+        if dbutils.get_status(database, recipient) in [None, 'deleted']:
+            send_result = self.RC_MESSAGE_IGNORED
+        elif recipient in failed_recpts:
             print("Not even bothering to try to send to '%s', previously failed" % recipient)
             send_result = self.RC_MESSAGE_FAILED
         else:
@@ -183,14 +186,7 @@ class PostService(Component):
                 should_delete = True
             elif msg.get('relays'):
                 print("Failed to send but I can try to relay it")
-                if msg.get('relayMessage'):
-                    signed_blob = bytes(msg.get('relayMessage'))
-                else:
-                    print("No signed blob in message, need to create one")
-                    msg_bytes = msg_bytes or imageutils.string_to_bytes(msg['message'])
-                    signed_blob = RelayMessage.wrap_outgoing_message(self._sign_message(msg_bytes))
-                    database.update_outbox_message(index=msg["_id"],
-                                                   props={"relayMessage":list(signed_blob)})
+                signed_blob = self._get_blob_to_relay(msg, database)
                 # Loop over each relay in the list and try to send to each one
                 failed_relays = set()
                 for relay in msg.get('relays'):
@@ -208,6 +204,17 @@ class PostService(Component):
                 database.update_outbox_message(index=msg["_id"],
                                                props={"relays":list(failed_relays)})
         return (msg_sent, should_delete)
+
+    def _get_blob_to_relay(self, msg, database):
+        '''Get a signed blob so the message can be relayed'''
+        if msg.get('relayMessage'):
+            return bytes(msg.get('relayMessage'))
+        print("No signed blob in message, need to create one")
+        msg_bytes = imageutils.string_to_bytes(msg['message'])
+        signed_blob = RelayMessage.wrap_outgoing_message(self._sign_message(msg_bytes))
+        database.update_outbox_message(index=msg["_id"],
+                                       props={"relayMessage":list(signed_blob)})
+        return signed_blob
 
     def _sign_message(self, msg_bytes):
         '''Sign the given bytes with our own key id'''
