@@ -3,7 +3,8 @@
 from murmeli import contactutils
 from murmeli import dbutils
 from murmeli import inbox
-from murmeli.message import ContactRequestMessage, ContactAcceptMessage, ContactDenyMessage
+from murmeli.message import ContactRequestMessage, ContactAcceptMessage
+from murmeli.message import ContactDenyMessage, ContactReferralMessage
 
 
 class SharedContacts:
@@ -226,7 +227,7 @@ class ContactManager:
             if found_id != my_tor_id:
                 their_contact_ids.add(found_id)
                 shared_info.name_map[found_id] = found_name
-        found_their_contacts = True if their_contact_ids else False
+        found_their_contacts = bool(their_contact_ids)
         # Now get information about our contacts
         for cont in dbutils.get_messageable_profiles(self._database):
             found_id = cont['torid']
@@ -254,3 +255,31 @@ class ContactManager:
             if contact_id and contact_id == tor_id:
                 return True
         return False
+
+    def send_referral_messages(self, friend_id1, friend_id2, intro):
+        '''Send messages to both friends, to recommend they become friends with each other'''
+        if not friend_id1 or not friend_id2 or friend_id1 == friend_id2:
+            return
+        if dbutils.get_status(self._database, friend_id1) != 'trusted':
+            return
+        if dbutils.get_status(self._database, friend_id2) != 'trusted':
+            return
+        self._send_referral_message(friend_id1, friend_id2, intro)
+        self._send_referral_message(friend_id2, friend_id1, intro)
+
+    def _send_referral_message(self, recipient_id, friend_id, intro, refer_type=None):
+        '''Send a single referral message'''
+        print("Send msg to '%s' referring '%s' with msg '%s' and type '%s'" % \
+          (recipient_id, friend_id, intro, refer_type))
+        outmsg = ContactReferralMessage()
+        outmsg.set_field(outmsg.FIELD_MSGBODY, intro)
+        outmsg.set_field(outmsg.FIELD_FRIEND_ID, friend_id)
+        if refer_type:
+            outmsg.set_field(outmsg.FIELD_REFERRAL_TYPE, refer_type)
+        # Get name and key of friend_id from database
+        profile = self._database.get_profile(friend_id)
+        outmsg.set_field(outmsg.FIELD_FRIEND_NAME, profile.get('name'))
+        key_str = self._crypto.get_public_key(profile.get('keyid'))
+        outmsg.set_field(outmsg.FIELD_FRIEND_KEY, key_str)
+        outmsg.recipients = [recipient_id]
+        dbutils.add_message_to_outbox(outmsg, self._crypto, self._database, dont_relay=friend_id)

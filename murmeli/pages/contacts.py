@@ -84,6 +84,10 @@ class ContactsPageSet(PageSet):
         elif commands[0] == "delete" and userid:
             ContactManager(database, None, self.get_config()).delete_contact(userid)
             userid = None
+        elif commands[0] == "refer":
+            intro = str(params.get('introMessage', ""))
+            ContactManager(database, crypto).send_referral_messages(commands[1], commands[2],
+                                                                    intro)
         return (contents, page_params, userid)
 
     def _export_key(self, crypto, database):

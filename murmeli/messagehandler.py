@@ -394,8 +394,14 @@ class RegularMessageHandler(MessageHandler):
 
     def receive_friend_referral(self, msg):
         '''Receive a friend referral'''
-        # TODO: Validate, then save in database
-        pass
+        print("Received friend referral")
+        if not self.is_from_trusted_contact(msg):
+            print("Received friend referral but sender wasn't trusted?!")
+            return
+        suggested_friendid = msg.get_field(msg.FIELD_FRIEND_ID)
+        print("Received referral for '%s'" % suggested_friendid)
+        current_status = self._get_contact_status(suggested_friendid)
+        print("Current status of this contact is '%s'" % current_status)
 
     def receive_friend_refer_request(self, msg):
         '''Receive a friend referral request'''
