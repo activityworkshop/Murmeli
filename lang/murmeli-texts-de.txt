@@ -155,6 +155,7 @@ prompt.contactreject=Anfrage von '%s' ablehnen
 contactrequest.refused=Deine Anfrage ist nicht akzeptiert worden.
 contactrequest.accepted=Deine Anfrage wurde akzeptiert.
 contactrequest.acceptednomessage=Deine Anfrage wurde akzeptiert, aber ohne Nachricht.
+contactrequest.recommends=empfiehlt
 contactresponses=Kontakt-Antworten
 contactresponse.delete=Diese Antwort von '%s' löschen?
 contactrefer.confirm=Empfehlungen an '%s' und '%s' schicken

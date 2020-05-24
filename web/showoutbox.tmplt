@@ -7,7 +7,7 @@
     <tr><th colspan="2">Type</th><th colspan="2">Recipients</th><th>Relays</th></tr>
 {{for m in mails}}
 	<tr>
-		<td>EncType: {{m.get('encType')}}</td>
+		<td>Enc: {{m.get('encType')}}</td>
 		<td>MsgType: {{m.get('msgType')}}</td>
 		<td>Recipient: <small>{{m.get('recipient')}}</small></td>
 		<td>{{if m.get('recipientList')}}Recipients: <small>{{m.get('recipientList')}}</small>{{endif}}</td>

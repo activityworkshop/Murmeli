@@ -42,7 +42,7 @@ class MessagesPageSet(PageSet):
             sender_id = msg.get(inbox.FN_FROM_ID)
             if not msg.get(inbox.FN_FROM_NAME):
                 msg[inbox.FN_FROM_NAME] = contact_names.get(sender_id, unknown_sender)
-            if msg_type == "contactrequest":
+            if msg_type in ["contactrequest", "contactrefer"]:
                 conreqs.append(msg)
             elif msg_type == "contactresponse":
                 msg[inbox.FN_MSG_BODY] = self.fix_conresp_body(msg.get(inbox.FN_MSG_BODY),
@@ -64,7 +64,6 @@ class MessagesPageSet(PageSet):
                                                    {"contactrequests":conreqs,
                                                     "contactresponses":conresps,
                                                     "mails":mails, "nummessages":num_msgs,
-                                                    "searchterm":'',
                                                     "webcachedir":self.get_web_cache_dir()})
         contents = self.build_page({'pageTitle':self.i18n("messages.title"),
                                     'pageBody':bodytext,

@@ -1,3 +1,7 @@
+{{py:
+def escapos(instr):
+   return instr.replace("'", "&apos;") if instr else ""
+}}
 <script>
 	var _r=function(p,c){return p.replace(/%s/,c);};
 	function respondToContactRequest(id, name, accept)
@@ -44,19 +48,23 @@
 				{{if m['messageReplied']}}
 					<td valign="bottom"><a href='' onclick='deleteMessage("{{m["_id"]}}", "");return false' class='reversebutton'>{{langs['button.delete']}}</a></td>
 				{{else}}
-					<td><p><a href='' onclick='respondToContactRequest("{{m["fromId"]}}", "{{m["fromName"]}}", true);return false' class='reversebutton'>{{langs['button.accept']}}</a>
-						<a href='' onclick='respondToContactRequest("{{m["fromId"]}}", "{{m["fromName"]}}", false);return false' class='reversebutton'>{{langs['button.reject']}}</a></p></td>
+					<td><p><a href='' onclick='respondToContactRequest("{{m["fromId"]}}", "{{m["fromName"] | escapos}}", true);return false' class='reversebutton'>{{langs['button.accept']}}</a>
+						<a href='' onclick='respondToContactRequest("{{m["fromId"]}}", "{{m["fromName"] | escapos}}", false);return false' class='reversebutton'>{{langs['button.reject']}}</a></p></td>
 				{{endif}}
 				</tr></table>
 			</div><br clear="all">
 		{{elif m['messageType'] == 'contactrefer'}}
 			<div class="genericbox" style="float:left;margin-top:10px">
 				<table border="0"><tr>
-					<td><b>{{langs['messages.from']}}</b>: {{m["senderName"]}}</td>
-					<td><b>recommends</b>: {{m["friendName"]}}</td>
+					<td><b>{{langs['messages.from']}}</b>: {{m["fromName"]}}</td>
+					<td><b>{{langs['messages.contactrequest.recommends']}}</b>: {{m["friendName"]}}</td>
 					<td style="padding-left:30px"><p>{{m["messageBody"]}}</p></td>
-					<td><p><a href='' onclick='respondToContactRequest("{{m["friendId"]}}", "{{m["friendName"]}}", true);return false' class='reversebutton'>{{langs['button.accept']}}</a>
-						<a href='' onclick='respondToContactRequest("{{m["friendId"]}}", "{{m["friendName"]}}", false);return false' class='reversebutton'>{{langs['button.reject']}}</a></p></td>
+				{{if m['messageReplied']}}
+					<td valign="bottom"><a href='' onclick='deleteMessage("{{m["_id"]}}", "");return false' class='reversebutton'>{{langs['button.delete']}}</a></td>
+				{{else}}
+					<td><p><a href='' onclick='respondToContactRequest("{{m["friendId"]}}", "{{m["friendName"] | escapos}}", true);return false' class='reversebutton'>{{langs['button.accept']}}</a>
+						<a href='' onclick='deleteMessage("{{m["_id"]}}","");return false' class='reversebutton'>{{langs['button.reject']}}</a></p></td>
+				{{endif}}
 				</tr></table>
 			</div><br clear="all">
 		{{else}}

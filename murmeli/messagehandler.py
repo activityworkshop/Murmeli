@@ -294,7 +294,7 @@ class RegularMessageHandler(MessageHandler):
                                           database)
         # Compare profile hash with stored one
         received_hash = msg.get_field(msg.FIELD_PROFILE_HASH)
-        if received_hash:
+        if received_hash and self.is_from_trusted_contact(msg):
             print("Got hash: '%s'" % received_hash)
             profile = database.get_profile(sender_id)
             if profile and profile.get('profileHash') != received_hash:
@@ -319,7 +319,7 @@ class RegularMessageHandler(MessageHandler):
 
     def receive_contact_request(self, msg):
         '''Receive a contact request'''
-        # Maybe: check we haven't got this contact already
+        # Maybe: check we haven't got this contact already, or its status if we have
         # Check config to see whether we accept untrusted contact requests
         if self.call_component(System.COMPNAME_CONFIG, "get_property",
                                key=Config.KEY_ALLOW_FRIEND_REQUESTS):
@@ -402,6 +402,11 @@ class RegularMessageHandler(MessageHandler):
         print("Received referral for '%s'" % suggested_friendid)
         current_status = self._get_contact_status(suggested_friendid)
         print("Current status of this contact is '%s'" % current_status)
+        if msg.is_normal_referral():
+            print("It's a regular friend referral")
+            if current_status in [None, 'deleted', 'requested']:
+                dbutils.add_message_to_inbox(msg, self.get_component(System.COMPNAME_DATABASE),
+                                             inbox.MC_REFER_INCOMING)
 
     def receive_friend_refer_request(self, msg):
         '''Receive a friend referral request'''
