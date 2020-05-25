@@ -127,7 +127,7 @@ class ContactsPageSet(PageSet):
     def make_list_page(self, do_edit=False, userid=None, extra_params=None):
         '''Generate a page for listing all the contacts and showing the details of one of them'''
         self.require_resources(['status-self.png', 'status-requested.png', 'status-untrusted.png',
-                                'status-trusted.png', 'status-pending.png', 'status-robot.png'])
+                                'status-trusted.png', 'status-robot.png'])
         # Who are we showing?
         selectedprofile = self.system.invoke_call(self.system.COMPNAME_DATABASE, "get_profile",
                                                   torid=userid)

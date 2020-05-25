@@ -223,7 +223,12 @@ def add_message_to_inbox(msg, database, context):
                                         "body":db_row.get(inbox.FN_MSG_BODY),
                                         "tstamp":db_row.get(inbox.FN_TIMESTAMP),
                                         "from":db_row.get(inbox.FN_FROM_ID)})
-            # TODO: If hash is already in inbox, do nothing
+            # If hash is already in inbox, do nothing
+            for found_msg in database.get_inbox():
+                if found_msg and found_msg.get(inbox.FN_MSG_HASH) == this_hash:
+                    print("Message already received, don't need it again!")
+                    return
+            # This is a new message
             db_row[inbox.FN_MSG_HASH] = this_hash
             database.add_row_to_inbox(db_row)
 
@@ -234,12 +239,28 @@ def delete_messages_from_inbox(sender_id, database):
             if msg.get(inbox.FN_FROM_ID) == sender_id:
                 database.delete_from_inbox(msg.get('_id'))
 
+def find_inbox_message(database, find_criteria):
+    '''Find any inbox messages matching the given critera and return True if any found'''
+    for msg in database.get_inbox():
+        if msg and not msg.get(inbox.FN_DELETED):
+            all_found = True
+            for key, val in find_criteria.items():
+                if msg.get(key) != val:
+                    all_found = False
+            if all_found:
+                return True
+    return False
+
+
 def mark_conreqs_as_replied(sender_id, database):
     '''Find all contact requests from the given sender and mark them as already replied'''
     if sender_id and database:
         for msg in database.get_inbox():
-            if msg.get(inbox.FN_FROM_ID) == sender_id and \
-              msg.get(inbox.FN_MSG_TYPE) == 'contactrequest':
+            conreq = msg.get(inbox.FN_MSG_TYPE) == "contactrequest" and \
+              msg.get(inbox.FN_FROM_ID) == sender_id
+            conref = msg.get(inbox.FN_MSG_TYPE) == "contactrefer" and \
+              msg.get(inbox.FN_FRIEND_ID) == sender_id
+            if conreq or conref:
                 database.update_inbox_message(msg.get('_id'), {inbox.FN_REPLIED:True})
 
 def add_message_to_outbox(msg, crypto, database, dont_relay=None):
@@ -297,6 +318,8 @@ def add_relayed_message_to_outbox(msg, sender_id, database):
     recipients.discard(sender_id)
     # convert output to string for storage
     to_send = imageutils.bytes_to_string(msg.create_output(encrypter=None))
+    if not to_send:
+        print("ERROR: Relayed message to send is empty for type", msg.enc_type)
     database.add_row_to_outbox({"recipientList":list(recipients),
                                 "relays":[], "message":to_send,
                                 "queue":True, "encType":msg.enc_type,

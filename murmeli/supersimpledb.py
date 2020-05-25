@@ -172,6 +172,13 @@ class MurmeliDb(Component):
         '''Get copies of all the messages in the outbox'''
         return [m.copy() for m in self.db.get_table(MurmeliDb.TABLE_OUTBOX) if m]
 
+    @staticmethod
+    def add_row_to_pending_table(row):
+        '''Add the given row to the pending contacts table,
+           if it isn't there in the table already'''
+        if row:
+            print("Add row to pending table:", row)
+
     def get_num_tables(self):
         '''Only needed for testing'''
         return self.db.get_num_tables()

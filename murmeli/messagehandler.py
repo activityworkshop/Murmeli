@@ -7,6 +7,7 @@ from murmeli.contactmgr import ContactManager
 from murmeli import message
 from murmeli import dbutils
 from murmeli import inbox
+from murmeli import pendingtable
 
 
 class MessageHandler(Component):
@@ -336,7 +337,7 @@ class RegularMessageHandler(MessageHandler):
         elif isinstance(msg, message.ContactAcceptMessage):
             print("  MessageHandler process Accept from '%s'" % sender_id)
             sender_status = dbutils.get_status(database, sender_id)
-            if sender_status in ['pending', 'requested', 'reqrobot', 'untrusted']:
+            if sender_status in ['requested', 'reqrobot', 'untrusted']:
                 sender_name = msg.get_field(msg.FIELD_SENDER_NAME) or sender_id
                 key_str = msg.get_field(msg.FIELD_SENDER_KEY)
                 crypto = self.get_component(System.COMPNAME_CRYPTO)
@@ -350,6 +351,7 @@ class RegularMessageHandler(MessageHandler):
                     dbutils.add_message_to_inbox(msg, database, inbox.MC_CONRESP_ACCEPT)
             elif sender_status in [None, 'blocked', 'deleted']:
                 print("Received a contact response but I didn't send them a request!")
+                database.add_row_to_pending_table(pendingtable.create_row(msg))
         else:
             assert False
 

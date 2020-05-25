@@ -118,9 +118,13 @@ class ContactManager:
                 # Import the found key into the keyring
                 key_id = self._crypto.import_public_key(key_str)
                 print("Imported key into keyring, got id:", key_id)
+                is_direct = dbutils.find_inbox_message(self._database,
+                                                       {inbox.FN_MSG_TYPE:"contactrequest",
+                                                        inbox.FN_FROM_ID:tor_id})
                 dbutils.create_profile(self._database, tor_id,
                                        {'displayName':name, 'name':name,
-                                        'status':'untrusted', 'keyid':key_id})
+                                        'status':'untrusted' if is_direct else 'requested',
+                                        'keyid':key_id})
                 # send response
                 own_profile = self._database.get_profile()
                 own_publickey = self._crypto.get_public_key(own_profile.get('keyid'))
@@ -130,8 +134,9 @@ class ContactManager:
                 outmsg.set_field(outmsg.FIELD_MESSAGE, reply_text or "")
                 outmsg.recipients = [tor_id]
                 dbutils.add_message_to_outbox(outmsg, self._crypto, self._database)
-            elif status == "pending":
-                print("Request already pending, nothing to do")
+                # Maybe there is a pending contact response to deal with
+                if not is_direct:
+                    self.process_pending_contacts(tor_id)
             else:
                 # status could be untrusted, or trusted
                 print("Trying to handle an accept but status is already", status)
@@ -148,6 +153,11 @@ class ContactManager:
         # Now check other profile
         robot_status = dbutils.get_status(self._database, tor_id)
         return robot_status in ['robot', 'reqrobot']
+
+    @staticmethod
+    def process_pending_contacts(tor_id):
+        '''Perhaps some contact responses are pending, deal with them now'''
+        print("Process pending contact accept responses from:", tor_id)
 
     def handle_deny(self, tor_id):
         '''We want to deny a contact request - update database and send reply'''
