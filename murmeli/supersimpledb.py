@@ -5,6 +5,7 @@ import os.path
 import threading
 from murmeli.system import System, Component
 from murmeli import inbox
+from murmeli import pendingtable
 
 
 class SuperSimpleDb:
@@ -172,12 +173,26 @@ class MurmeliDb(Component):
         '''Get copies of all the messages in the outbox'''
         return [m.copy() for m in self.db.get_table(MurmeliDb.TABLE_OUTBOX) if m]
 
-    @staticmethod
-    def add_row_to_pending_table(row):
+    def add_row_to_pending_table(self, row):
         '''Add the given row to the pending contacts table,
            if it isn't there in the table already'''
         if row:
-            print("Add row to pending table:", row)
+            with threading.Condition(self.db_write_lock):
+                for msg in self.db.get_table(MurmeliDb.TABLE_PENDING):
+                    if msg == row:
+                        return
+                self.db.get_table(MurmeliDb.TABLE_PENDING).append(row)
+
+    def delete_from_pending_table(self, sender_id):
+        '''Delete all the pending contact responses from the given sender_id'''
+        with threading.Condition(self.db_write_lock):
+            for i, prow in enumerate(self.db.get_table(MurmeliDb.TABLE_PENDING)):
+                if prow and prow.get(pendingtable.FN_FROM_ID) == sender_id:
+                    self.db.delete_from_table(MurmeliDb.TABLE_PENDING, i)
+
+    def get_pending_contact_messages(self):
+        '''Get copies of all pending contact messages'''
+        return [m.copy() for m in self.db.get_table(MurmeliDb.TABLE_PENDING) if m]
 
     def get_num_tables(self):
         '''Only needed for testing'''

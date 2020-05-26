@@ -59,8 +59,6 @@ class Message:
     TYPE_FRIENDREFER_REQUEST = 8
     TYPE_REGULAR_MESSAGE = 20
     TYPE_RELAYED_MESSAGE = 21
-    # TYPE_SYMMETRIC_BLOB = 30
-    # TYPE_SYMMETRIC_KEY = 31
 
     ENCTYPE_NONE = 0
     ENCTYPE_ASYM = 1
@@ -150,16 +148,12 @@ class Message:
             msg = UnencryptedMessage.from_received_payload(payload)
         elif enc_type == Message.ENCTYPE_ASYM:
             msg = AsymmetricMessage.from_received_payload(payload)
-            if sig_id:
-                # print("AsymMsg got signature key id: '%s'" % sig_id)
-                msg.set_field(msg.FIELD_SIGNATURE_KEYID, sig_id)
-            elif msg:
+            if msg and (not sig_id or isinstance(msg, ContactAcceptMessage)):
                 msg.original_payload = enc_payload
         elif enc_type == Message.ENCTYPE_RELAY:
             msg = RelayMessage.unpack_payload(payload, decrypter)
-            if sig_id:
-                # print("Relay msg got signature key id: '%s'" % sig_id)
-                msg.set_field(msg.FIELD_SIGNATURE_KEYID, sig_id)
+        if sig_id and enc_type in [Message.ENCTYPE_ASYM, Message.ENCTYPE_RELAY]:
+            msg.set_field(msg.FIELD_SIGNATURE_KEYID, sig_id)
         return msg
 
     @staticmethod

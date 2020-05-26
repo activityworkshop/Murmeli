@@ -3,8 +3,10 @@
 from murmeli import contactutils
 from murmeli import dbutils
 from murmeli import inbox
-from murmeli.message import ContactRequestMessage, ContactAcceptMessage
+from murmeli import pendingtable
+from murmeli.message import Message, ContactRequestMessage, ContactAcceptMessage
 from murmeli.message import ContactDenyMessage, ContactReferralMessage
+from murmeli.decrypter import DecrypterShim
 
 
 class SharedContacts:
@@ -154,10 +156,22 @@ class ContactManager:
         robot_status = dbutils.get_status(self._database, tor_id)
         return robot_status in ['robot', 'reqrobot']
 
-    @staticmethod
-    def process_pending_contacts(tor_id):
+    def process_pending_contacts(self, tor_id):
         '''Perhaps some contact responses are pending, deal with them now'''
         print("Process pending contact accept responses from:", tor_id)
+        found = False
+        for resp in self._database.get_pending_contact_messages():
+            if resp and resp.get(pendingtable.FN_FROM_ID) == tor_id:
+                payload = resp.get(pendingtable.FN_PAYLOAD)
+                msg = Message.from_encrypted_payload(payload, DecrypterShim(self._crypto))
+                if msg and isinstance(msg, ContactAcceptMessage):
+                    found = True
+                    # Construct inbox message and pass to db
+                    dbutils.add_message_to_inbox(msg, self._database,
+                                                 inbox.MC_CONRESP_ALREADY_ACCEPTED)
+        if found:
+            print("Found pending contact accept from:", tor_id)
+            dbutils.update_profile(self._database, tor_id, {'status':'untrusted'})
 
     def handle_deny(self, tor_id):
         '''We want to deny a contact request - update database and send reply'''

@@ -166,7 +166,6 @@ def update_contact_list(database, show_list):
         # loop over trusted contacts
         for profile in database.get_profiles_with_status("trusted"):
             if profile['name']:
-                print(profile['name'])
                 contact_list.append((profile['torid'], profile['name']))
     database.add_or_update_profile({'torid':get_own_tor_id(database),
                                     'contactlist':contactutils.contacts_to_string(contact_list)})
