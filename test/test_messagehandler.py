@@ -24,6 +24,10 @@ class MockDatabase(Component):
         '''React to storing messages in the inbox'''
         self.inbox.append(msg)
 
+    def get_inbox(self):
+        '''Return the inbox'''
+        return self.inbox
+
     def get_profile(self, torid=None):
         '''Get a profile for this torid'''
         if not torid:

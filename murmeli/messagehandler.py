@@ -344,9 +344,7 @@ class RegularMessageHandler(MessageHandler):
                 manager = ContactManager(database, crypto)
                 from_robot = manager.is_robot_id(sender_id)
                 manager.handle_receive_accept(sender_id, sender_name, key_str)
-                if from_robot:
-                    print("Recognised accept from robot - need to check connections")
-                else:
+                if not from_robot:
                     # Only add message to inbox if it's not from the robot
                     dbutils.add_message_to_inbox(msg, database, inbox.MC_CONRESP_ACCEPT)
             elif sender_status in [None, 'blocked', 'deleted']:
@@ -409,6 +407,10 @@ class RegularMessageHandler(MessageHandler):
             if current_status in [None, 'deleted', 'requested']:
                 dbutils.add_message_to_inbox(msg, self.get_component(System.COMPNAME_DATABASE),
                                              inbox.MC_REFER_INCOMING)
+        elif msg.is_robot_referral() and not current_status:
+            print("My friend has referred their robot to me!")
+        elif msg.is_robot_removal() and current_status == 'robot':
+            print("My friend wants to remove their robot!")
 
     def receive_friend_refer_request(self, msg):
         '''Receive a friend referral request'''

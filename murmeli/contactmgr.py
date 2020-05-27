@@ -172,6 +172,8 @@ class ContactManager:
         if found:
             print("Found pending contact accept from:", tor_id)
             dbutils.update_profile(self._database, tor_id, {'status':'untrusted'})
+            # delete_from_pending_table
+            self._database.delete_from_pending_table(tor_id)
 
     def handle_deny(self, tor_id):
         '''We want to deny a contact request - update database and send reply'''
@@ -189,6 +191,7 @@ class ContactManager:
         '''Set the specified contact's status to deleted'''
         print("ContactManager: set status of '%s' to 'deleted'" % tor_id)
         dbutils.update_profile(self._database, tor_id, {'status':'deleted'}, config=self._config)
+        # TODO: If I have a robot, send disconnect message to robot
 
     def handle_receive_accept(self, tor_id, name, key_str):
         '''We have requested contact with another id, and this has now been accepted.
@@ -196,9 +199,11 @@ class ContactManager:
            accordingly.'''
         key_id = self._crypto.import_public_key(key_str)
         print("Imported key into keyring, got id:", key_id)
-        new_status = 'robot' if self.is_robot_id(tor_id) else "untrusted"
+        accept_from_robot = self.is_robot_id(tor_id)
+        new_status = 'robot' if accept_from_robot else "untrusted"
         profile = {'status':new_status, 'keyid':key_id, 'name':name}
         dbutils.update_profile(self._database, tor_id, profile)
+        # TODO: If accept_from_robot, send pairs of referral messages to everybody
 
     def handle_receive_deny(self, tor_id):
         '''We have requested contact with another id, but this has been denied.
@@ -213,6 +218,7 @@ class ContactManager:
         if curr_status == "untrusted":
             dbutils.update_profile(self._database, tor_id, {'status':'trusted'},
                                    config=self._config)
+        # TODO: If I have a robot, send pair of referral messages
 
     def get_contact_request_details(self, tor_id):
         '''Use all received contact requests for the given id, and summarize name and public key'''
