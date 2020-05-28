@@ -190,8 +190,15 @@ class ContactManager:
     def delete_contact(self, tor_id):
         '''Set the specified contact's status to deleted'''
         print("ContactManager: set status of '%s' to 'deleted'" % tor_id)
+        their_robot_id = dbutils.get_robot_id(self._database, tor_id)
         dbutils.update_profile(self._database, tor_id, {'status':'deleted'}, config=self._config)
-        # TODO: If I have a robot, send disconnect message to robot
+        # If I have a robot, send disconnect message to robot
+        my_robot_id = dbutils.get_robot_id(self._database, tor_id=None)
+        if my_robot_id:
+            self.send_robot_referral_messages(my_robot_id, tor_id, add=False)
+        # If the friend had a robot, then delete that too
+        if their_robot_id:
+            dbutils.update_profile(self._database, their_robot_id, {'status':'deleted'})
 
     def handle_receive_accept(self, tor_id, name, key_str):
         '''We have requested contact with another id, and this has now been accepted.
@@ -203,7 +210,10 @@ class ContactManager:
         new_status = 'robot' if accept_from_robot else "untrusted"
         profile = {'status':new_status, 'keyid':key_id, 'name':name}
         dbutils.update_profile(self._database, tor_id, profile)
-        # TODO: If accept_from_robot, send pairs of referral messages to everybody
+        # If accept_from_robot, send pairs of referral messages to everybody
+        if accept_from_robot:
+            for profile in self._database.get_profiles_with_status("trusted"):
+                self.send_robot_referral_messages(tor_id, profile['torid'], add=True)
 
     def handle_receive_deny(self, tor_id):
         '''We have requested contact with another id, but this has been denied.
@@ -218,7 +228,10 @@ class ContactManager:
         if curr_status == "untrusted":
             dbutils.update_profile(self._database, tor_id, {'status':'trusted'},
                                    config=self._config)
-        # TODO: If I have a robot, send pair of referral messages
+        # If I have a robot, send pair of referral messages
+        my_robot_id = dbutils.get_robot_id(self._database, tor_id=None)
+        if my_robot_id:
+            self.send_robot_referral_messages(my_robot_id, tor_id, add=True)
 
     def get_contact_request_details(self, tor_id):
         '''Use all received contact requests for the given id, and summarize name and public key'''
@@ -313,3 +326,17 @@ class ContactManager:
         outmsg.set_field(outmsg.FIELD_FRIEND_KEY, key_str)
         outmsg.recipients = [recipient_id]
         dbutils.add_message_to_outbox(outmsg, self._crypto, self._database, dont_relay=friend_id)
+
+    def send_robot_referral_messages(self, robot_id, friend_id, add=True):
+        '''Send message to friend, to ask them to add or remove our robot'''
+        if not robot_id or not friend_id or robot_id == friend_id:
+            return
+        robot_status = dbutils.get_status(self._database, robot_id)
+        friend_status = dbutils.get_status(self._database, friend_id)
+        if robot_status != 'robot' or friend_status != 'trusted':
+            return
+        msg_type = ContactReferralMessage.REFERTYPE_ROBOT if add else \
+                   ContactReferralMessage.REFERTYPE_REMOVEROBOT
+        self._send_referral_message(friend_id, robot_id, "robot", msg_type)
+        if add:
+            self._send_referral_message(robot_id, friend_id, "robot", msg_type)

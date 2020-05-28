@@ -398,24 +398,33 @@ class RegularMessageHandler(MessageHandler):
         if not self.is_from_trusted_contact(msg):
             print("Received friend referral but sender wasn't trusted?!")
             return
-        suggested_friendid = msg.get_field(msg.FIELD_FRIEND_ID)
-        print("Received referral for '%s'" % suggested_friendid)
-        current_status = self._get_contact_status(suggested_friendid)
+        friend_id = msg.get_field(msg.FIELD_FRIEND_ID)
+        print("Received referral for '%s'" % friend_id)
+        current_status = self._get_contact_status(friend_id)
         print("Current status of this contact is '%s'" % current_status)
-        if msg.is_normal_referral():
-            print("It's a regular friend referral")
-            if current_status in [None, 'deleted', 'requested']:
-                dbutils.add_message_to_inbox(msg, self.get_component(System.COMPNAME_DATABASE),
-                                             inbox.MC_REFER_INCOMING)
-        elif msg.is_robot_referral() and not current_status:
+        database = self.get_component(System.COMPNAME_DATABASE)
+        if msg.is_normal_referral() and current_status in [None, 'deleted', 'requested']:
+            dbutils.add_message_to_inbox(msg, database, inbox.MC_REFER_INCOMING)
+        elif msg.is_robot_referral() and current_status in [None, 'deleted']:
             print("My friend has referred their robot to me!")
+            # Import robot's key to keyring and create new profile
+            robot_keyid = self.call_component(System.COMPNAME_CRYPTO, "import_public_key",
+                                              strkey=msg.get_field(msg.FIELD_FRIEND_KEY))
+            profile = {'status':'robot', 'keyid':robot_keyid}
+            dbutils.create_profile(database, friend_id, profile)
         elif msg.is_robot_removal() and current_status == 'robot':
             print("My friend wants to remove their robot!")
+            if friend_id == dbutils.get_robot_id(database, msg.get_sender_id):
+                # TODO: Remove previous robot's key from keyring?
+                dbutils.update_profile(database, friend_id, {'status':'deleted'})
+            else:
+                print("Ignoring robot removal because id doesn't match the sender's robot")
 
-    def receive_friend_refer_request(self, msg):
+    @staticmethod
+    def receive_friend_refer_request(msg):
         '''Receive a friend referral request'''
         # TODO: Validate, then save in database
-        pass
+        _ = msg
 
     def receive_regular_message(self, msg):
         '''Receive a regular message'''
