@@ -76,7 +76,7 @@ class ContactsPageSet(PageSet):
             fingers = self._make_fingerprint_checker(userid)
             # Compare with expected answer, generate appropriate page
             if given_answer == fingers.get_correct_answer():
-                ContactManager(database, None, self.get_config()).key_fingerprint_checked(userid)
+                ContactManager(database, crypto, self.get_config()).key_fingerprint_checked(userid)
                 # Show page again
                 contents = self.make_checkfinger_page(userid)
             else:
