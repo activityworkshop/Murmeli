@@ -221,13 +221,22 @@ class ContactManager:
         self.delete_contact(tor_id)
         print("ContactMgr received contact refusal from %s" % tor_id)
 
-    def key_fingerprint_checked(self, tor_id):
+    def key_fingerprint_checked(self, tor_id, pending_referrals):
         '''The fingerprint of this contact's key has been checked (over a separate channel)'''
         # Check that userid exists and that status is ok
         curr_status = dbutils.get_status(self._database, tor_id)
         if curr_status == "untrusted":
             dbutils.update_profile(self._database, tor_id, {'status':'trusted'},
                                    config=self._config)
+            # user has become trusted, so extract any pending referrals which they may have sent
+            for cont_msg in self._database.get_pending_contact_messages():
+                if cont_msg and cont_msg.get(pendingtable.FN_FROM_ID) == tor_id:
+                    payload = cont_msg.get(pendingtable.FN_PAYLOAD)
+                    msg = Message.from_encrypted_payload(payload, DecrypterShim(self._crypto))
+                    if msg and isinstance(msg, ContactReferralMessage):
+                        msg.set_field(Message.FIELD_SENDER_ID, tor_id)
+                        pending_referrals.append(msg)
+            self._database.delete_from_pending_table(tor_id)
         # If I have a robot, send pair of referral messages
         my_robot_id = dbutils.get_robot_id(self._database, tor_id=None)
         if my_robot_id:

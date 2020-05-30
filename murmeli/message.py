@@ -150,6 +150,8 @@ class Message:
             msg = AsymmetricMessage.from_received_payload(payload)
             if msg and (not sig_id or isinstance(msg, ContactAcceptMessage)):
                 msg.original_payload = enc_payload
+            if msg and sig_id and isinstance(msg, ContactReferralMessage):
+                msg.original_payload = enc_payload
         elif enc_type == Message.ENCTYPE_RELAY:
             msg = RelayMessage.unpack_payload(payload, decrypter)
         if sig_id and enc_type in [Message.ENCTYPE_ASYM, Message.ENCTYPE_RELAY]:
@@ -559,6 +561,7 @@ class ContactReferralMessage(AsymmetricMessage):
 
     def __init__(self):
         AsymmetricMessage.__init__(self, Message.TYPE_FRIEND_REFERRAL)
+        self.sender_must_be_trusted = False  # ok if sender not yet trusted
 
     def get_body_fields(self):
         '''Get which fields should be packed in body'''

@@ -394,7 +394,11 @@ class RegularMessageHandler(MessageHandler):
 
     def receive_friend_referral(self, msg):
         '''Receive a friend referral'''
-        print("Received friend referral")
+        database = self.get_component(System.COMPNAME_DATABASE)
+        if self._get_sender_status(msg) in ['requested', 'untrusted']:
+            print("Received a friend referral but their key hasn't been verified yet!")
+            database.add_row_to_pending_table(pendingtable.create_row(msg))
+            return
         if not self.is_from_trusted_contact(msg):
             print("Received friend referral but sender wasn't trusted?!")
             return
@@ -402,7 +406,6 @@ class RegularMessageHandler(MessageHandler):
         print("Received referral for '%s'" % friend_id)
         current_status = self._get_contact_status(friend_id)
         print("Current status of this contact is '%s'" % current_status)
-        database = self.get_component(System.COMPNAME_DATABASE)
         if msg.is_normal_referral() and current_status in [None, 'deleted', 'requested']:
             dbutils.add_message_to_inbox(msg, database, inbox.MC_REFER_INCOMING)
         elif msg.is_robot_referral() and current_status in [None, 'deleted']:

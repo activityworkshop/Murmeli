@@ -76,7 +76,12 @@ class ContactsPageSet(PageSet):
             fingers = self._make_fingerprint_checker(userid)
             # Compare with expected answer, generate appropriate page
             if given_answer == fingers.get_correct_answer():
-                ContactManager(database, crypto, self.get_config()).key_fingerprint_checked(userid)
+                pending_referrals = []
+                ContactManager(database, crypto, self.get_config()).key_fingerprint_checked( \
+                  userid, pending_referrals)
+                print("Pending referrals:", pending_referrals)
+                for msg in pending_referrals:
+                    self.system.invoke_call(self.system.COMPNAME_MSG_HANDLER, "receive", msg=msg)
                 # Show page again
                 contents = self.make_checkfinger_page(userid)
             else:
