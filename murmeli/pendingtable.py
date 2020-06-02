@@ -1,5 +1,8 @@
 '''Specifics about how rows are stored in the pending table'''
 
+from murmeli import imageutils
+
+
 # Field names for table row
 FN_FROM_ID = "fromId"
 FN_PAYLOAD = "originalPayload"
@@ -10,5 +13,5 @@ def create_row(msg):
     row = {}
     if msg and msg.original_payload and msg.get_field(msg.FIELD_SENDER_ID):
         row = {FN_FROM_ID:msg.get_field(msg.FIELD_SENDER_ID),
-               FN_PAYLOAD:msg.original_payload}
+               FN_PAYLOAD:imageutils.bytes_to_string(msg.original_payload)}
     return row

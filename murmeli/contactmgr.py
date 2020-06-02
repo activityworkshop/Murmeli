@@ -2,6 +2,7 @@
 
 from murmeli import contactutils
 from murmeli import dbutils
+from murmeli import imageutils
 from murmeli import inbox
 from murmeli import pendingtable
 from murmeli.message import Message, ContactRequestMessage, ContactAcceptMessage
@@ -162,7 +163,7 @@ class ContactManager:
         found = False
         for resp in self._database.get_pending_contact_messages():
             if resp and resp.get(pendingtable.FN_FROM_ID) == tor_id:
-                payload = resp.get(pendingtable.FN_PAYLOAD)
+                payload = imageutils.string_to_bytes(resp.get(pendingtable.FN_PAYLOAD))
                 msg = Message.from_encrypted_payload(payload, DecrypterShim(self._crypto))
                 if msg and isinstance(msg, ContactAcceptMessage):
                     found = True
@@ -231,7 +232,7 @@ class ContactManager:
             # user has become trusted, so extract any pending referrals which they may have sent
             for cont_msg in self._database.get_pending_contact_messages():
                 if cont_msg and cont_msg.get(pendingtable.FN_FROM_ID) == tor_id:
-                    payload = cont_msg.get(pendingtable.FN_PAYLOAD)
+                    payload = imageutils.string_to_bytes(cont_msg.get(pendingtable.FN_PAYLOAD))
                     msg = Message.from_encrypted_payload(payload, DecrypterShim(self._crypto))
                     if msg and isinstance(msg, ContactReferralMessage):
                         msg.set_field(Message.FIELD_SENDER_ID, tor_id)
