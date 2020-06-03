@@ -3,6 +3,12 @@
 		document.getElementById('nailpic').src = "file:///" + fname;
 		document.getElementById('profilepicpath').value = fname;
 	}
+	function removeRobot() {
+		showMessage('{{langs['contacts.removerobot.confirm']}}'
+			+ "<form action='http://murmeli/contacts/removerobot' method='get'>"
+			+ "<input type='submit' class='reversebutton' value='{{langs['button.delete']}}'>"
+			+ "</form>");
+	}
 </script>
 <style>th {text-align:left}</style>
 <div class='genericbox' style='float:left;margin:10px'><img src='file:///{{webcachedir}}/avatar-{{person['torid']}}.jpg' width='128' height='128' id='nailpic'><br style='clear:both'>
@@ -29,7 +35,8 @@
 	<tr><td>&nbsp;</td>
 		<td><div class="genericbox" style='float:right; width:140px;'>
 {{if robotset}}
-	<small>(option to remove / unconfigure robot?)</small>
+	<div style='float:left;margin-right:5px'><a href='' onclick='removeRobot();return false'><img src='file:///{{webcachedir}}/button-removerobot.png' title='{{langs['contacts.link.removerobot']}}'></a></div>
+	<a href='' onclick='removeRobot();return false'>{{langs['contacts.link.removerobot']}}</a></div>
 {{else}}
 	<div style='float:left;margin-right:5px'><a href='/contacts/addrobot'><img src='file:///{{webcachedir}}/button-addrobot.png' title='{{langs['contacts.link.addrobot']}}'></a></div>
 	<a href='/contacts/addrobot'>{{langs['contacts.link.addrobot']}}</a></div>

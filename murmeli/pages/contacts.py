@@ -25,6 +25,7 @@ class ContactsPageSet(PageSet):
         '''Serve a page to the given view'''
         print("Contacts serving page", url)
         self.require_resources(['button-addperson.png', 'button-addrobot.png',
+                                'button-removerobot.png',
                                 'button-drawgraph.png', 'avatar-none.jpg'])
         database = self.system.get_component(self.system.COMPNAME_DATABASE)
         crypto = self.system.get_component(self.system.COMPNAME_CRYPTO)
@@ -32,7 +33,8 @@ class ContactsPageSet(PageSet):
         commands = self.interpret_commands(url)
         if commands[0] == "exportkey":
             if self._export_key(crypto, database):
-                view.page().runJavaScript("showMessage('%s')" % self.i18n('contacts.confirm.keyexported'))
+                view.page().runJavaScript("showMessage('%s')" % \
+                  self.i18n('contacts.confirm.keyexported'))
             return
 
         contents, page_params, userid = self.make_page_contents(commands, params)
@@ -64,6 +66,8 @@ class ContactsPageSet(PageSet):
             req_id = params.get('murmeliid') if params else None
             if req_id:
                 ContactManager(database, crypto).handle_initiate(req_id, "", "", True)
+        elif commands[0] == "removerobot":
+            print("Remove our own robot!")
         elif commands[0] == "edit":
             contents = self.make_list_page(do_edit=True, userid=userid)
         elif commands[0] == "submitedit":
