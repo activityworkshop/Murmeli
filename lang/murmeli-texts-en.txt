@@ -108,6 +108,7 @@ adduser.messagefield=Message to identify yourself
 exportkey.intro=To setup your robot, you need to first export your public key to a file, and copy it to the robot.
 exportkey.buttonpreamble=Use this button to export your public key to your data directory
 addrobot.intro=Enter or paste the id of the robot to add.  The robot must already know your public key.
+confirm.keyexported=Key exported to your data directory.
 details.name=Name
 details.displayname=Display for me as
 details.owndescription=Describe yourself

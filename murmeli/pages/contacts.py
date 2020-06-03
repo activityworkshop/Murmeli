@@ -31,7 +31,8 @@ class ContactsPageSet(PageSet):
         dbutils.export_all_avatars(database, self.get_web_cache_dir())
         commands = self.interpret_commands(url)
         if commands[0] == "exportkey":
-            self._export_key(crypto, database)
+            if self._export_key(crypto, database):
+                view.page().runJavaScript("showMessage('%s')" % self.i18n('contacts.confirm.keyexported'))
             return
 
         contents, page_params, userid = self.make_page_contents(commands, params)
@@ -101,9 +102,9 @@ class ContactsPageSet(PageSet):
         data_dir = self.get_config().get_data_dir()
         if cryptoutils.export_public_key(own_keyid, data_dir, crypto):
             print("Exported public key")
-        else:
-            print("FAILED to export public key")
-        # TODO: Show javascript alert to confirm that export was done
+            return True
+        print("FAILED to export public key")
+        return False
 
     @staticmethod
     def interpret_commands(url):
