@@ -67,7 +67,7 @@ class ContactsPageSet(PageSet):
             if req_id:
                 ContactManager(database, crypto).handle_initiate(req_id, "", "", True)
         elif commands[0] == "removerobot":
-            print("Remove our own robot!")
+            ContactManager(database, crypto).handle_robot_removal()
         elif commands[0] == "edit":
             contents = self.make_list_page(do_edit=True, userid=userid)
         elif commands[0] == "submitedit":
@@ -118,7 +118,7 @@ class ContactsPageSet(PageSet):
             if command:
                 if len(command) == 1:
                     if command[0] in ['add', 'submitadd', 'addrobot', 'submitaddrobot',
-                                      'exportkey']:
+                                      'exportkey', 'removerobot']:
                         return command
                     if ContactsPageSet.looks_like_userid(command[0]):
                         return ['show', command[0]]

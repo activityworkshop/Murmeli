@@ -201,6 +201,14 @@ class ContactManager:
         if their_robot_id:
             dbutils.update_profile(self._database, their_robot_id, {'status':'deleted'})
 
+    def handle_robot_removal(self):
+        '''We want to disconnect our robot'''
+        my_tor_id = dbutils.get_own_tor_id(self._database)
+        my_robot_id = dbutils.get_robot_id(self._database, tor_id=None)
+        dbutils.update_profile(self._database, my_tor_id, {'robot':''})
+        for profile in self._database.get_profiles_with_status("trusted"):
+            self.send_robot_referral_messages(my_robot_id, profile['torid'], add=False)
+
     def handle_receive_accept(self, tor_id, name, key_str):
         '''We have requested contact with another id, and this has now been accepted.
            So we can import their public key into our keyring and update their status
