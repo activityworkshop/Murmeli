@@ -10,6 +10,8 @@
 <div class="genericbox" style="text-align:center;padding:2px">
 	<h2>{{mywords}}</h2>
 </div>
+<div class="genericbox" style='float:right; width:210px;'>{{langs['settings.language']}}: <form method='get' action='/contacts/{{userid}}/checkfingerprint'><select name='lang' onchange="this.form.submit()"><option value='en' {{language_en}}>English</option>
+<option value='de' {{language_de}}>Deutsch</option></select></form></div>
 {{if not alreadychecked}}
 	<p>{{langs['contacts.fingerprintcheck.theirwords'] % shortname}}</p>
 	<div class="genericbox" style="text-align:center;padding:2px">

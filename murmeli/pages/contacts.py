@@ -75,7 +75,7 @@ class ContactsPageSet(PageSet):
             dbutils.update_profile(database, tor_id=userid, in_profile=params,
                                    pic_output_path=self.get_web_cache_dir())
         elif commands[0] == "checkfingerprint":
-            contents = self.make_checkfinger_page(commands[1])
+            contents = self.make_checkfinger_page(commands[1], params.get('lang'))
         elif commands[0] == "checkedfingerprint":
             given_answer = self.get_param_as_int(params, "answer", -1)
             fingers = self._make_fingerprint_checker(userid)
@@ -88,7 +88,7 @@ class ContactsPageSet(PageSet):
                 for msg in pending_referrals:
                     self.system.invoke_call(self.system.COMPNAME_MSG_HANDLER, "receive", msg=msg)
                 # Show page again
-                contents = self.make_checkfinger_page(userid)
+                contents = self.make_checkfinger_page(userid, params.get('lang'))
             else:
                 page_params['fingerprint_check_failed'] = True
         elif commands[0] == "delete" and userid:
@@ -255,7 +255,7 @@ class ContactsPageSet(PageSet):
                                 'pageBody':bodytext,
                                 'pageFooter':"<p>Footer</p>"})
 
-    def make_checkfinger_page(self, userid):
+    def make_checkfinger_page(self, userid, lang):
         '''Generate a page for checking the fingerprint of the given user'''
         # First, get the name of the user
         person = self.system.invoke_call(self.system.COMPNAME_DATABASE, "get_profile",
@@ -270,13 +270,14 @@ class ContactsPageSet(PageSet):
             print("Not generating fingerprints page because status is", status)
             return None
         fingers = self._make_fingerprint_checker(userid)
-        # TODO: Provide way to choose another language, not just "en"
-        page_params = {"mywords":fingers.get_code_words(True, 0, "en"),
-                       "theirwords0":fingers.get_code_words(False, 0, "en"),
-                       "theirwords1":fingers.get_code_words(False, 1, "en"),
-                       "theirwords2":fingers.get_code_words(False, 2, "en"),
+        page_params = {"mywords":fingers.get_code_words(True, 0, lang or "en"),
+                       "theirwords0":fingers.get_code_words(False, 0, lang or "en"),
+                       "theirwords1":fingers.get_code_words(False, 1, lang or "en"),
+                       "theirwords2":fingers.get_code_words(False, 2, lang or "en"),
                        "fullname":full_name, "shortname":disp_name, "userid":userid,
+                       "language_en":"", "language_de":"",
                        "alreadychecked":status == "trusted"}
+        page_params["language_" + (lang or "en")] = "selected"
         body_text = self.fingerprintstemplate.get_html(self.get_all_i18n(), page_params)
         return self.build_page({'pageTitle':self.i18n("contacts.title"),
                                 'pageBody':body_text,
