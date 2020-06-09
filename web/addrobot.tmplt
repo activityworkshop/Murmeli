@@ -2,11 +2,23 @@
 function validateForm(){
 enteredId=(document.getElementById('murmeliidfield')?document.getElementById('murmeliidfield').value:'');
 matchedstr=enteredId.match(/[a-zA-Z0-9]+/);
-formOk=matchedstr != null && matchedstr[0].length==enteredId.length && enteredId.length>=16;
+formOk=matchedstr != null && matchedstr[0].length==enteredId.length && enteredId.length==56;
 if (!formOk) {showMessage('{{langs['contacts.adduser.checkuserid']}}'); return false;}
 formOk=matchedstr[0] != '{{owntorid}}';
 if (!formOk) {showMessage('{{langs['contacts.adduser.notownuserid']}}'); return false;}
 return formOk;
+}
+function showIdLength(l){
+  document.getElementById('idlength').innerHTML = getIdMessage(l);
+}
+function getIdMessage(l){
+  matchedstr = l.match(/[a-zA-Z0-9]+/);
+  if (matchedstr == null || l.length == 0){return "";}
+  if (matchedstr[0].length!=l.length){
+    return "<span style='color:red'>{{langs['contacts.idlength.notgood']}}</span>";
+  }
+  if (l.length==56){return "<span style='color:green'>{{langs['contacts.idlength.good']}}</span>";}
+  return l.length + " {{langs['contacts.idlength.numchars']}}";
 }
 </script>
 <p>{{langs['contacts.exportkey.intro']}}</p>
@@ -15,7 +27,8 @@ return formOk;
 <div style='margin:10px; padding:10px; border:3px solid a87; border-radius:5px; width:80%;'>
 <form action='http://murmeli/contacts/submitaddrobot' method='get'>
 <table border='0'><tr><td>{{langs['contacts.adduser.useridfield']}}</td>
-	<td><input type='text' name='murmeliid' maxlength='56' id='murmeliidfield'></td><tr>
+	<td><input type='text' name='murmeliid' maxlength='56' id='murmeliidfield' oninput="showIdLength(this.value)"></td><tr>
+<tr><td>&nbsp;</td><td><p><small id='idlength'></small></p></td></tr>
 <tr><td colspan='2'><div style='float:right;clear:both'>
 <a href='http://murmeli/contacts/' class='reversebutton' style='margin:right:40px'>{{langs['button.cancel']}}</a>
 <input type='submit' class='reversebutton' value='{{langs['button.send']}}' onclick='return validateForm()'>

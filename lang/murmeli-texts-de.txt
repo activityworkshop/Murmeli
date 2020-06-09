@@ -146,6 +146,9 @@ fingerprintcheck.yourwords=Hier sind die fünf Wörter die du '%s' mitteilen sol
 fingerprintcheck.theirwords=Und '%s' sollte dir eine von diesen Wortreihen geben.
 fingerprintcheck.alreadydone=Du hast die Wörter von '%s' schon bestätigt.
 error.fingerprintcheckfailed=Die sind nicht die erwartete Wörter.  Bitte nochmals (und vorsichtig!) prüfen.
+idlength.good=Id gültig.
+idlength.notgood=Id nicht gültig.
+idlength.numchars=Charakter
 
 [messages]
 title=Nachrichten

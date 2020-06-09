@@ -148,6 +148,9 @@ fingerprintcheck.yourwords=Here are the five words which you should say to '%s'.
 fingerprintcheck.theirwords=And '%s' should say one of these word sets to you.
 fingerprintcheck.alreadydone=You have already verified the words from '%s'.
 error.fingerprintcheckfailed=Those aren't the codewords expected from that key.  Please check (carefully!) again.
+idlength.good=Id valid.
+idlength.notgood=Id not valid.
+idlength.numchars=chars
 
 [messages]
 title=Messages
