@@ -170,6 +170,12 @@ def update_contact_list(database, show_list):
     database.add_or_update_profile({'torid':get_own_tor_id(database),
                                     'contactlist':contactutils.contacts_to_string(contact_list)})
 
+def set_own_murmeli_version(database, version_num):
+    '''Set the version number in our own profile'''
+    own_id = get_own_tor_id(database)
+    if own_id:
+        update_profile(database, own_id, {'version':version_num})
+
 def get_messageable_profiles(database):
     '''Return list of profiles to whom we can send a message'''
     if database:

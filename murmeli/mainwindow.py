@@ -8,6 +8,7 @@ from murmeli.gui import GuiWindow
 from murmeli.config import Config
 from murmeli.contacts import Contacts
 from murmeli.cryptoclient import CryptoClient
+from murmeli import dbutils
 from murmeli.i18n import I18nManager
 from murmeli.logger import Logger, PlainLogSink
 from murmeli.loggergui import GuiLogSink
@@ -18,6 +19,8 @@ from murmeli.supersimpledb import MurmeliDb
 from murmeli.system import System
 from murmeli.torclient import TorClient
 
+
+VERSION_NUM = 1
 
 class MainWindow(GuiWindow):
     '''Class for the main GUI window using Qt'''
@@ -69,6 +72,8 @@ class MainWindow(GuiWindow):
             if os.path.exists(db_file_path):
                 database = MurmeliDb(system, db_file_path)
                 my_system.add_component(database)
+        dbutils.set_own_murmeli_version(my_system.get_component(System.COMPNAME_DATABASE),
+                                        VERSION_NUM)
         # Add crypto
         if not my_system.has_component(System.COMPNAME_CRYPTO):
             crypto = CryptoClient(my_system)
