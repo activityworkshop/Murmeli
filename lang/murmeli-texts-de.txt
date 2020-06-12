@@ -86,7 +86,6 @@ title=Murmeli
 toolbar.home=Zuhause
 toolbar.contacts=Kontakte
 toolbar.messages=Nachrichten
-toolbar.calendar=Kalender
 toolbar.settings=Einstellungen
 
 [home]
@@ -183,9 +182,6 @@ to.helptext=Antippen um die Empfänger auszuwählen
 messagegoeshere=Hier die Nachricht
 norecipients=Bitte das 'An:' Feld antippen um die Empfänger auszuwählen
 nomessagebody=Bitte eine Nachricht eingeben
-
-[calendar]
-title=Kalender
 
 [settings]
 title=Einstellungen

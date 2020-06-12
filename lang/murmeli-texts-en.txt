@@ -88,7 +88,6 @@ title=Murmeli
 toolbar.home=Home
 toolbar.contacts=Contacts
 toolbar.messages=Messages
-toolbar.calendar=Calendar
 toolbar.settings=Settings
 
 [home]
@@ -185,9 +184,6 @@ to.helptext=Click to select recipients
 messagegoeshere=Enter your message here
 norecipients=Please select who to send this message to by clicking on the 'To:' field
 nomessagebody=Please enter a message to send
-
-[calendar]
-title=Calendar
 
 [settings]
 title=Settings
