@@ -165,7 +165,8 @@ class ContactsPageSet(PageSet):
         page_props["sharedcontacts"] = self._make_id_name_bean_list(shared_info.get_shared_ids())
         page_props["posscontactsforthem"] = self._make_id_name_bean_list( \
           shared_info.get_ids_for_them())
-        page_props["posscontactsforme"] = []
+        page_props["posscontactsforme"] = self._make_id_name_bean_list( \
+          shared_info.get_ids_for_me())
         # Work out status of this contact's robot
         robot_status = dbutils.get_robot_status(database, userid, \
           self.system.get_component(self.system.COMPNAME_CONTACTS))

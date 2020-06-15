@@ -128,6 +128,7 @@ details.robotstatus.enabled.offline=Aktiviert, offline
 details.sharedcontacts=Gemeinsame Bekannten
 details.recommendcontacts=Empfehlungen für
 details.recommendname=%s empfehlen
+details.possiblecontacts=Potentielle Empfehlungen
 details.editlink.before=Diese Details
 details.editlink.after=
 link.addnewcontact=Kontakt hinzufügen

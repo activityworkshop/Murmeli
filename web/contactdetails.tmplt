@@ -70,8 +70,8 @@ def escapos(instr):
  (<a href="" onclick="sendRefer('{{c.torid}}','{{c.disp_name | escapos}}');return false;">{{langs['contacts.details.recommendname'] % c.disp_name}}</a>) &nbsp; {{endfor}}</p>
 {{endif}}
 {{if posscontactsforme}}
-<p>Possible contacts for me: {{for c in posscontactsforme}}<img src='file:///{{webcachedir}}/avatar-none.jpg' width='36' height='36' style='margin:2px' title='{{c.disp_name}}'> 
- (<a href="" onclick="requestRefer('{{c.torid}}','{{c.disp_name}}');return false;">request contact with {{c.disp_name}}</a>) &nbsp; {{endfor}}</p>
+<p>{{langs['contacts.details.possiblecontacts']}}: {{for c in posscontactsforme}}<img src='file:///{{webcachedir}}/avatar-none.jpg' width='36' height='36' style='margin:2px' title='{{c.disp_name}}'> 
+ ({{c.disp_name}}) &nbsp; {{endfor}}</p>
 {{endif}}
 {{if person['status']=='trusted'}}
 <div class='infobox' style='margin-top:5px'>
