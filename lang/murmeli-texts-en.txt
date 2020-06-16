@@ -193,6 +193,7 @@ language=Language
 friendsseefriends=Friends can see your friends
 allowfriendrequests=Allow unverified friend requests
 showlogwindow=Show log messages
+changed=Your settings have been successfully updated.
 
 [button]
 back=Back

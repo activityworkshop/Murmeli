@@ -1,0 +1,3 @@
+<p>{{langs['settings.changed']}}</p>
+
+<p><a href="/home" class="reverseButton">{{langs['button.ok']}}</a></p>

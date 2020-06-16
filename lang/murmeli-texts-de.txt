@@ -191,6 +191,7 @@ language=Sprache
 friendsseefriends=Kontakte sind für andere sichtbar
 allowfriendrequests=Anfragen von Unbekannten erlaubt
 showlogwindow=Logmeldungen anzeigen
+changed=Deine Einstellungen wurden erfolgreich gespeichert.
 
 [button]
 back=Zurück

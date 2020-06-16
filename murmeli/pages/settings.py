@@ -10,6 +10,7 @@ class SettingsPageSet(PageSet):
     def __init__(self, system):
         PageSet.__init__(self, system, "settings")
         self.form_template = PageTemplate('settingsform')
+        self.finished_template = PageTemplate('settingschanged')
 
     def serve_page(self, view, url, params):
         '''Serve a page to the given view'''
@@ -17,6 +18,7 @@ class SettingsPageSet(PageSet):
         if not config:
             view.set_html("Error: Settings didn't find the config!")
             return
+        tokens = self.get_all_i18n()
         if url == "edit":
             selected_lang = params.get('lang')
             if selected_lang and len(selected_lang) == 2:
@@ -35,9 +37,7 @@ class SettingsPageSet(PageSet):
             # Save config to file in case it's changed
             config.save()
             contents = self.build_page({'pageTitle':self.i18n("settings.title"),
-                                        'pageBody':"<p>Settings changed... should I go back"
-                                                   + " to settings or back to home now?</p>"
-                                                   + "<p>(<a href='/'>back</a>)</p>",
+                                        'pageBody':self.finished_template.get_html(tokens),
                                         'pageFooter':"<p>Footer</p>"})
         else:
             page_props = {"friendsseefriends" :
@@ -49,7 +49,6 @@ class SettingsPageSet(PageSet):
                           "language_en":"",
                           "language_de":""}
             page_props["language_" + config.get_property(config.KEY_LANGUAGE)] = "selected"
-            tokens = self.get_all_i18n()
             contents = self.build_page({'pageTitle':self.i18n("settings.title"),
                                         'pageBody':self.form_template.get_html(tokens, page_props),
                                         'pageFooter':"<p>Footer</p>"})
