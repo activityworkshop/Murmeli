@@ -15,6 +15,6 @@ class ComposeWindow(GuiWindow):
     def _setup_ui(self, window_title):
         '''Initialise the user interface'''
         self.setObjectName("MainWindow") # TODO: needs to be different from MainWindow?
-        self.resize(551, 343)
+        self.resize(650, 480)
         # possibly a status bar?
         self.setWindowTitle(window_title or "Murmeli")

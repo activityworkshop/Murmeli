@@ -29,6 +29,7 @@ class MainWindow(GuiWindow):
         '''Constructor'''
         self.log_panel = GuiLogSink()
         GuiWindow.__init__(self, lower_item=self.log_panel)
+        self.resize(650, 450)
         self.system = self.ensure_system(system)
         # we want to be notified of Config changes
         self.system.invoke_call(System.COMPNAME_CONFIG,

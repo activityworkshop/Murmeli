@@ -180,7 +180,7 @@ class StormWindow(QtWidgets.QMainWindow):
     def _setup_ui(self, window_title):
         '''Initialise the user interface'''
         self.setObjectName("MainWindow")
-        self.resize(551, 343)
+        self.resize(600, 450)
         self.gwidget = GraphWidget()
         self.setCentralWidget(self.gwidget)
         # self.statusbar = QtGui.QStatusBar(self)
